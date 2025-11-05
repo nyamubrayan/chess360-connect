@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { User, Session } from "@supabase/supabase-js";
+import { ProfileEditDialog } from "@/components/ProfileEditDialog";
 
 interface Profile {
   id: string;
@@ -48,38 +49,38 @@ const Profile = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      const profileId = userId || user?.id;
-      if (!profileId) {
-        setLoading(false);
-        return;
-      }
-
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", profileId)
-        .single();
-
-      if (profileError) {
-        toast.error("Failed to load profile");
-        setLoading(false);
-        return;
-      }
-
-      setProfile(profileData);
-
-      const { data: statsData } = await supabase
-        .from("leaderboard_stats")
-        .select("*")
-        .eq("user_id", profileId)
-        .single();
-
-      setStats(statsData);
+  const fetchProfile = async () => {
+    const profileId = userId || user?.id;
+    if (!profileId) {
       setLoading(false);
-    };
+      return;
+    }
 
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", profileId)
+      .single();
+
+    if (profileError) {
+      toast.error("Failed to load profile");
+      setLoading(false);
+      return;
+    }
+
+    setProfile(profileData);
+
+    const { data: statsData } = await supabase
+      .from("leaderboard_stats")
+      .select("*")
+      .eq("user_id", profileId)
+      .single();
+
+    setStats(statsData);
+    setLoading(false);
+  };
+
+  useEffect(() => {
     if (user || userId) {
       fetchProfile();
     }
@@ -112,7 +113,19 @@ const Profile = () => {
         <div className="flex justify-between items-center">
           <Button variant="ghost" onClick={() => navigate("/")}>← Back to Home</Button>
           {isOwnProfile && (
-            <Button variant="outline" onClick={handleSignOut}>Sign Out</Button>
+            <div className="flex gap-2">
+              <ProfileEditDialog
+                userId={profile.id}
+                currentProfile={{
+                  display_name: profile.display_name,
+                  bio: profile.bio,
+                  avatar_url: profile.avatar_url,
+                  username: profile.username,
+                }}
+                onProfileUpdate={fetchProfile}
+              />
+              <Button variant="outline" onClick={handleSignOut}>Sign Out</Button>
+            </div>
           )}
         </div>
 
