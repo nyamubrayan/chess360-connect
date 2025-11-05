@@ -1,11 +1,30 @@
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Trophy, Zap, Brain, Users, Target, Sparkles } from "lucide-react";
+import { Trophy, Zap, Brain, Users, Target, Sparkles, User as UserIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/chess-hero.jpg";
+import { supabase } from "@/integrations/supabase/client";
+import { User, Session } from "@supabase/supabase-js";
 
 const Index = () => {
   const navigate = useNavigate();
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const features = [
     {
@@ -49,6 +68,24 @@ const Index = () => {
           className="absolute inset-0 opacity-20 bg-cover bg-center"
           style={{ backgroundImage: `url(${heroImage})` }}
         ></div>
+        <div className="absolute top-4 right-4 flex gap-2 z-20">
+          {user ? (
+            <>
+              <Button variant="outline" onClick={() => navigate('/profile')}>
+                <UserIcon className="mr-2 w-4 h-4" />
+                Profile
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/community')}>
+                <Users className="mr-2 w-4 h-4" />
+                Community
+              </Button>
+            </>
+          ) : (
+            <Button onClick={() => navigate('/auth')}>
+              Sign In
+            </Button>
+          )}
+        </div>
         <div className="container mx-auto max-w-6xl relative z-10">
           <div className="text-center space-y-6 mb-12">
             <div className="inline-block">
