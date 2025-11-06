@@ -127,6 +127,128 @@ export type Database = {
           },
         ]
       }
+      game_analysis: {
+        Row: {
+          created_at: string | null
+          game_id: string | null
+          id: string
+          key_moments: Json | null
+          overall_rating: string | null
+          strengths: Json | null
+          suggestions: string | null
+          user_id: string
+          weaknesses: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          game_id?: string | null
+          id?: string
+          key_moments?: Json | null
+          overall_rating?: string | null
+          strengths?: Json | null
+          suggestions?: string | null
+          user_id: string
+          weaknesses?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          game_id?: string | null
+          id?: string
+          key_moments?: Json | null
+          overall_rating?: string | null
+          strengths?: Json | null
+          suggestions?: string | null
+          user_id?: string
+          weaknesses?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_analysis_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "game_history"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_analysis_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_history: {
+        Row: {
+          black_player_id: string | null
+          created_at: string | null
+          game_duration: number | null
+          id: string
+          moves_pgn: string
+          result: string | null
+          room_id: string | null
+          time_control: number
+          total_moves: number
+          white_player_id: string | null
+          winner_id: string | null
+        }
+        Insert: {
+          black_player_id?: string | null
+          created_at?: string | null
+          game_duration?: number | null
+          id?: string
+          moves_pgn: string
+          result?: string | null
+          room_id?: string | null
+          time_control: number
+          total_moves?: number
+          white_player_id?: string | null
+          winner_id?: string | null
+        }
+        Update: {
+          black_player_id?: string | null
+          created_at?: string | null
+          game_duration?: number | null
+          id?: string
+          moves_pgn?: string
+          result?: string | null
+          room_id?: string | null
+          time_control?: number
+          total_moves?: number
+          white_player_id?: string | null
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_history_black_player_id_fkey"
+            columns: ["black_player_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_history_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_history_white_player_id_fkey"
+            columns: ["white_player_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_history_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leaderboard_stats: {
         Row: {
           annotations_count: number | null
@@ -158,6 +280,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "leaderboard_stats_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      player_stats: {
+        Row: {
+          avg_game_duration: number | null
+          draws: number | null
+          favorite_opening: string | null
+          id: string
+          losses: number | null
+          total_games: number | null
+          updated_at: string | null
+          user_id: string
+          win_rate: number | null
+          wins: number | null
+        }
+        Insert: {
+          avg_game_duration?: number | null
+          draws?: number | null
+          favorite_opening?: string | null
+          id?: string
+          losses?: number | null
+          total_games?: number | null
+          updated_at?: string | null
+          user_id: string
+          win_rate?: number | null
+          wins?: number | null
+        }
+        Update: {
+          avg_game_duration?: number | null
+          draws?: number | null
+          favorite_opening?: string | null
+          id?: string
+          losses?: number | null
+          total_games?: number | null
+          updated_at?: string | null
+          user_id?: string
+          win_rate?: number | null
+          wins?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_stats_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
             referencedRelation: "profiles"
@@ -655,6 +824,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      update_player_stats: { Args: { p_user_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "coach" | "player"

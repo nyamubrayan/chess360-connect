@@ -94,6 +94,44 @@ const Play = () => {
       .from("rooms")
       .update({ game_status: "completed" })
       .eq("id", roomId);
+
+    await saveGameHistory("timeout", color === "white" ? room?.black_player_id : room?.white_player_id);
+  };
+
+  const saveGameHistory = async (result: string, winnerId: string | null = null) => {
+    if (!room || !roomId) return;
+
+    try {
+      // Generate PGN from move history
+      const pgn = moveHistory.join(" ");
+      
+      const { error } = await supabase.from("game_history").insert({
+        room_id: roomId,
+        white_player_id: room.white_player_id,
+        black_player_id: room.black_player_id,
+        winner_id: winnerId,
+        result: result,
+        moves_pgn: pgn,
+        total_moves: moveHistory.length,
+        time_control: room.time_control,
+        game_duration: Math.floor((Date.now() - new Date(room.last_move_at || room.created_at).getTime()) / 1000),
+      });
+
+      if (error) {
+        console.error("Error saving game history:", error);
+        return;
+      }
+
+      // Update player stats for both players
+      if (room.white_player_id) {
+        await supabase.rpc("update_player_stats", { p_user_id: room.white_player_id });
+      }
+      if (room.black_player_id) {
+        await supabase.rpc("update_player_stats", { p_user_id: room.black_player_id });
+      }
+    } catch (error) {
+      console.error("Error in saveGameHistory:", error);
+    }
   };
 
   const fetchRoom = async () => {
@@ -196,10 +234,12 @@ const Play = () => {
       if (gameCopy.isCheckmate()) {
         toast.success(`Checkmate! ${isWhiteTurn ? "White" : "Black"} wins!`);
         setIsGameActive(false);
+        const winnerId = isWhiteTurn ? room.white_player_id : room.black_player_id;
         await supabase
           .from("rooms")
           .update({ game_status: "completed" })
           .eq("id", roomId);
+        await saveGameHistory(isWhiteTurn ? "white_win" : "black_win", winnerId);
       } else if (gameCopy.isCheck()) {
         toast("Check!");
       } else if (gameCopy.isDraw()) {
@@ -209,6 +249,7 @@ const Play = () => {
           .from("rooms")
           .update({ game_status: "completed" })
           .eq("id", roomId);
+        await saveGameHistory("draw", null);
       }
 
       return result;

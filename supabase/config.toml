@@ -1,1 +1,4 @@
 project_id = "bsalyuxinhzdqhwnbdvf"
+
+[functions.analyze-game]
+verify_jwt = true

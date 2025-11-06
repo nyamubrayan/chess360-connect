@@ -75,6 +75,10 @@ const Index = () => {
                 <UserIcon className="mr-2 w-4 h-4" />
                 Profile
               </Button>
+              <Button variant="outline" onClick={() => navigate('/analytics')}>
+                <Target className="mr-2 w-4 h-4" />
+                Analytics
+              </Button>
               <Button variant="outline" onClick={() => navigate('/community')}>
                 <Users className="mr-2 w-4 h-4" />
                 Community
