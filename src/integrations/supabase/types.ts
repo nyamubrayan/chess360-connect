@@ -406,42 +406,80 @@ export type Database = {
       }
       rooms: {
         Row: {
+          black_player_id: string | null
+          black_time_remaining: number | null
           created_at: string | null
           creator_id: string
           current_fen: string | null
           description: string | null
+          game_status: string | null
           id: string
           is_active: boolean | null
+          last_move_at: string | null
           member_count: number | null
           name: string
+          time_control: number | null
+          time_increment: number | null
           type: Database["public"]["Enums"]["room_type"]
+          white_player_id: string | null
+          white_time_remaining: number | null
         }
         Insert: {
+          black_player_id?: string | null
+          black_time_remaining?: number | null
           created_at?: string | null
           creator_id: string
           current_fen?: string | null
           description?: string | null
+          game_status?: string | null
           id?: string
           is_active?: boolean | null
+          last_move_at?: string | null
           member_count?: number | null
           name: string
+          time_control?: number | null
+          time_increment?: number | null
           type: Database["public"]["Enums"]["room_type"]
+          white_player_id?: string | null
+          white_time_remaining?: number | null
         }
         Update: {
+          black_player_id?: string | null
+          black_time_remaining?: number | null
           created_at?: string | null
           creator_id?: string
           current_fen?: string | null
           description?: string | null
+          game_status?: string | null
           id?: string
           is_active?: boolean | null
+          last_move_at?: string | null
           member_count?: number | null
           name?: string
+          time_control?: number | null
+          time_increment?: number | null
           type?: Database["public"]["Enums"]["room_type"]
+          white_player_id?: string | null
+          white_time_remaining?: number | null
         }
         Relationships: [
           {
+            foreignKeyName: "rooms_black_player_id_fkey"
+            columns: ["black_player_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "rooms_creator_id_fkey"
             columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rooms_white_player_id_fkey"
+            columns: ["white_player_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]

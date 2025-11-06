@@ -1,61 +1,220 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, RotateCcw, Lightbulb, TrendingUp } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Users } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import ChessClock from "@/components/ChessClock";
 
 const Play = () => {
   const navigate = useNavigate();
+  const { roomId } = useParams();
   const [game, setGame] = useState(new Chess());
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
+  const [user, setUser] = useState<any>(null);
+  const [room, setRoom] = useState<any>(null);
+  const [playerColor, setPlayerColor] = useState<"white" | "black" | null>(null);
+  const [whiteTime, setWhiteTime] = useState(600);
+  const [blackTime, setBlackTime] = useState(600);
+  const [isGameActive, setIsGameActive] = useState(false);
 
-  const makeAMove = (move: { from: string; to: string; promotion?: string }) => {
+  useEffect(() => {
+    if (!roomId) {
+      navigate("/lobby");
+      return;
+    }
+
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) {
+        navigate("/auth");
+        return;
+      }
+      setUser(user);
+    });
+
+    fetchRoom();
+
+    const channel = supabase
+      .channel(`room-${roomId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "rooms",
+          filter: `id=eq.${roomId}`,
+        },
+        (payload) => {
+          handleRoomUpdate(payload.new);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [roomId]);
+
+  useEffect(() => {
+    if (!isGameActive) return;
+
+    const interval = setInterval(() => {
+      const isWhiteTurn = game.turn() === "w";
+      
+      if (isWhiteTurn) {
+        setWhiteTime((prev) => {
+          if (prev <= 1) {
+            handleTimeout("white");
+            return 0;
+          }
+          return prev - 1;
+        });
+      } else {
+        setBlackTime((prev) => {
+          if (prev <= 1) {
+            handleTimeout("black");
+            return 0;
+          }
+          return prev - 1;
+        });
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isGameActive, game]);
+
+  const handleTimeout = async (color: string) => {
+    setIsGameActive(false);
+    toast.error(`${color === "white" ? "White" : "Black"} ran out of time!`);
+    
+    await supabase
+      .from("rooms")
+      .update({ game_status: "completed" })
+      .eq("id", roomId);
+  };
+
+  const fetchRoom = async () => {
+    const { data, error } = await supabase
+      .from("rooms")
+      .select("*")
+      .eq("id", roomId)
+      .single();
+
+    if (error) {
+      console.error("Error fetching room:", error);
+      toast.error("Failed to load game");
+      navigate("/lobby");
+      return;
+    }
+
+    handleRoomUpdate(data);
+  };
+
+  const handleRoomUpdate = async (roomData: any) => {
+    setRoom(roomData);
+    
+    if (roomData.current_fen) {
+      setGame(new Chess(roomData.current_fen));
+    }
+
+    setWhiteTime(roomData.white_time_remaining || roomData.time_control * 60);
+    setBlackTime(roomData.black_time_remaining || roomData.time_control * 60);
+
+    if (!user) return;
+
+    // Assign colors
+    if (roomData.white_player_id === user.id) {
+      setPlayerColor("white");
+    } else if (roomData.black_player_id === user.id) {
+      setPlayerColor("black");
+    } else if (!roomData.white_player_id) {
+      await supabase
+        .from("rooms")
+        .update({ white_player_id: user.id })
+        .eq("id", roomId);
+      setPlayerColor("white");
+    } else if (!roomData.black_player_id) {
+      await supabase
+        .from("rooms")
+        .update({ 
+          black_player_id: user.id,
+          game_status: "active",
+          last_move_at: new Date().toISOString()
+        })
+        .eq("id", roomId);
+      setPlayerColor("black");
+      setIsGameActive(true);
+    }
+  };
+
+  const makeAMove = async (move: { from: string; to: string; promotion?: string }) => {
+    if (!isGameActive && room?.game_status === "active") {
+      setIsGameActive(true);
+    }
+
+    // Check if it's the player's turn
+    const isWhiteTurn = game.turn() === "w";
+    if ((isWhiteTurn && playerColor !== "white") || (!isWhiteTurn && playerColor !== "black")) {
+      toast.error("Not your turn!");
+      return null;
+    }
+
     try {
       const gameCopy = new Chess(game.fen());
       const result = gameCopy.move(move);
-      
-      if (result) {
-        setGame(gameCopy);
-        setMoveHistory([...moveHistory, result.san]);
-        
-        if (gameCopy.isCheckmate()) {
-          toast.success("Checkmate! You won!");
-          return;
-        }
-        
-        if (gameCopy.isCheck()) {
-          toast("Check!");
-        }
-        
-        // Make random AI move after a delay
-        setTimeout(() => makeRandomMove(gameCopy), 300);
+
+      if (!result) {
+        toast.error("Invalid move!");
+        return null;
       }
+
+      setGame(gameCopy);
+      setMoveHistory([...moveHistory, result.san]);
+
+      // Add time increment
+      const increment = room?.time_increment || 0;
+      if (isWhiteTurn) {
+        setWhiteTime((prev) => prev + increment);
+      } else {
+        setBlackTime((prev) => prev + increment);
+      }
+
+      // Update room in database
+      await supabase
+        .from("rooms")
+        .update({
+          current_fen: gameCopy.fen(),
+          white_time_remaining: whiteTime + (isWhiteTurn ? increment : 0),
+          black_time_remaining: blackTime + (!isWhiteTurn ? increment : 0),
+          last_move_at: new Date().toISOString(),
+        })
+        .eq("id", roomId);
+
+      if (gameCopy.isCheckmate()) {
+        toast.success(`Checkmate! ${isWhiteTurn ? "White" : "Black"} wins!`);
+        setIsGameActive(false);
+        await supabase
+          .from("rooms")
+          .update({ game_status: "completed" })
+          .eq("id", roomId);
+      } else if (gameCopy.isCheck()) {
+        toast("Check!");
+      } else if (gameCopy.isDraw()) {
+        toast("Game drawn!");
+        setIsGameActive(false);
+        await supabase
+          .from("rooms")
+          .update({ game_status: "completed" })
+          .eq("id", roomId);
+      }
+
       return result;
     } catch (error) {
       toast.error("Invalid move!");
       return null;
-    }
-  };
-
-  const makeRandomMove = (currentGame: Chess) => {
-    const possibleMoves = currentGame.moves();
-    
-    if (possibleMoves.length === 0) return;
-
-    const randomIndex = Math.floor(Math.random() * possibleMoves.length);
-    const move = possibleMoves[randomIndex];
-    
-    currentGame.move(move);
-    setGame(new Chess(currentGame.fen()));
-    setMoveHistory([...moveHistory, move]);
-
-    if (currentGame.isCheckmate()) {
-      toast.error("Checkmate! AI won!");
-    } else if (currentGame.isCheck()) {
-      toast("Check!");
     }
   };
 
@@ -69,77 +228,77 @@ const Play = () => {
     return move !== null;
   };
 
-  const resetGame = () => {
-    setGame(new Chess());
-    setMoveHistory([]);
-    toast("Game reset!");
-  };
+  if (!room) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="gradient-card p-6">
+          <p className="text-muted-foreground">Loading game...</p>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="container mx-auto max-w-7xl">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <Button 
-            variant="secondary" 
-            onClick={() => navigate("/")}
-            className="gap-2"
-          >
+          <Button variant="secondary" onClick={() => navigate("/lobby")} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
-            Back
+            Back to Lobby
           </Button>
-          <h1 className="text-3xl font-bold">Play vs AI</h1>
-          <div className="w-24"></div>
+          <div className="text-center">
+            <h1 className="text-3xl font-bold">{room.name}</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Playing as {playerColor || "spectator"}
+            </p>
+          </div>
+          <div className="w-32 text-right text-sm">
+            <div className="flex items-center gap-2 justify-end">
+              <Users className="w-4 h-4" />
+              <span>{room.member_count || 1}/2 players</span>
+            </div>
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
-          {/* Chess Board */}
           <div className="lg:col-span-2">
             <Card className="gradient-card p-6 glow-primary">
               <div className="aspect-square max-w-2xl mx-auto">
                 <Chessboard
                   boardWidth={600}
-                  {...({position: game.fen()} as any)}
-                  {...({onPieceDrop: onDrop} as any)}
+                  position={game.fen()}
+                  onPieceDrop={onDrop}
+                  boardOrientation={playerColor || "white"}
                 />
               </div>
               
-              {/* Controls */}
-              <div className="flex gap-3 mt-6 justify-center">
-                <Button 
-                  variant="secondary" 
-                  onClick={resetGame}
-                  className="gap-2"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  Reset
-                </Button>
-                <Button 
-                  variant="secondary" 
-                  className="gap-2"
-                >
-                  <Lightbulb className="w-4 h-4" />
-                  Hint
-                </Button>
-              </div>
+              {room.game_status === "waiting" && (
+                <div className="mt-6 text-center">
+                  <p className="text-muted-foreground">
+                    Waiting for opponent to join...
+                  </p>
+                </div>
+              )}
             </Card>
           </div>
 
-          {/* Sidebar */}
           <div className="space-y-6">
-            {/* Move History */}
+            <ChessClock
+              whiteTime={whiteTime}
+              blackTime={blackTime}
+              isWhiteTurn={game.turn() === "w"}
+              isActive={isGameActive && room.game_status === "active"}
+            />
+
             <Card className="gradient-card p-6">
-              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-primary" />
-                Move History
-              </h3>
-              <div className="space-y-2 max-h-[300px] overflow-y-auto">
+              <h3 className="text-xl font-bold mb-4">Move History</h3>
+              <div className="space-y-2 max-h-[200px] overflow-y-auto">
                 {moveHistory.length === 0 ? (
                   <p className="text-muted-foreground text-sm">No moves yet</p>
                 ) : (
                   moveHistory.map((move, index) => (
-                    <div 
-                      key={index} 
+                    <div
+                      key={index}
                       className="flex items-center gap-3 text-sm py-2 px-3 rounded bg-muted/30"
                     >
                       <span className="text-muted-foreground font-mono">
@@ -152,25 +311,22 @@ const Play = () => {
               </div>
             </Card>
 
-            {/* Game Info */}
             <Card className="gradient-card p-6">
               <h3 className="text-xl font-bold mb-4">Game Status</h3>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
+                  <span className="text-muted-foreground">Status</span>
+                  <span className="font-medium capitalize">{room.game_status}</span>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-muted-foreground">Turn</span>
                   <span className="font-medium">
-                    {game.turn() === 'w' ? 'White (You)' : 'Black (AI)'}
+                    {game.turn() === "w" ? "White" : "Black"}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Moves</span>
                   <span className="font-medium">{moveHistory.length}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Check</span>
-                  <span className="font-medium">
-                    {game.isCheck() ? '✓ Yes' : '✗ No'}
-                  </span>
                 </div>
               </div>
             </Card>

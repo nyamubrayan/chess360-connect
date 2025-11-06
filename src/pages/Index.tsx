@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Trophy, Zap, Brain, Users, Target, Sparkles, User as UserIcon } from "lucide-react";
+import { Trophy, Zap, Brain, Users, Target, Sparkles, User as UserIcon, Play } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/chess-hero.jpg";
 import { supabase } from "@/integrations/supabase/client";
@@ -100,10 +100,11 @@ const Index = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               <Button 
                 size="lg" 
-                className="gradient-hero glow-primary text-lg px-8 hover:scale-105 transition-transform"
-                onClick={() => navigate("/play")}
+                className="gradient-hero glow-primary text-lg px-8 hover:scale-105 transition-transform gap-2"
+                onClick={() => navigate("/lobby")}
               >
-                Start Playing
+                <Play className="w-5 h-5" />
+                Find Game
               </Button>
               <Button 
                 size="lg" 
