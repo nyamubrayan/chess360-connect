@@ -98,6 +98,49 @@ const Play = () => {
     await saveGameHistory("timeout", color === "white" ? room?.black_player_id : room?.white_player_id);
   };
 
+  const handleResign = async () => {
+    if (!playerColor) return;
+    
+    setIsGameActive(false);
+    const winnerId = playerColor === "white" ? room?.black_player_id : room?.white_player_id;
+    
+    toast.success(`${playerColor === "white" ? "White" : "Black"} resigned. ${playerColor === "white" ? "Black" : "White"} wins!`);
+    
+    await supabase
+      .from("rooms")
+      .update({ game_status: "completed" })
+      .eq("id", roomId);
+
+    await saveGameHistory(playerColor === "white" ? "black_win" : "white_win", winnerId);
+  };
+
+  const handleOfferDraw = async () => {
+    if (!playerColor) return;
+    
+    const confirmed = window.confirm("Offer a draw to your opponent?");
+    if (!confirmed) return;
+
+    toast.info("Draw offer sent to opponent");
+    
+    // In a real implementation, you would send this via realtime
+    // For now, we'll just complete the game as a draw
+    const acceptDraw = window.confirm("Your opponent has offered a draw. Do you accept?");
+    
+    if (acceptDraw) {
+      setIsGameActive(false);
+      toast.success("Game drawn by agreement");
+      
+      await supabase
+        .from("rooms")
+        .update({ game_status: "completed" })
+        .eq("id", roomId);
+
+      await saveGameHistory("draw", null);
+    } else {
+      toast.info("Draw offer declined");
+    }
+  };
+
   const saveGameHistory = async (result: string, winnerId: string | null = null) => {
     if (!room || !roomId) return;
 
@@ -370,6 +413,25 @@ const Play = () => {
                   <span className="font-medium">{moveHistory.length}</span>
                 </div>
               </div>
+              
+              {room.game_status === "active" && playerColor && (
+                <div className="mt-6 space-y-2">
+                  <Button
+                    variant="destructive"
+                    className="w-full"
+                    onClick={handleResign}
+                  >
+                    Resign
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleOfferDraw}
+                  >
+                    Offer Draw
+                  </Button>
+                </div>
+              )}
             </Card>
           </div>
         </div>

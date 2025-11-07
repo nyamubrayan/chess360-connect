@@ -127,6 +127,30 @@ export type Database = {
           },
         ]
       }
+      friends: {
+        Row: {
+          created_at: string
+          friend_id: string
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          friend_id: string
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          friend_id?: string
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       game_analysis: {
         Row: {
           created_at: string | null
@@ -584,6 +608,7 @@ export type Database = {
           game_status: string | null
           id: string
           is_active: boolean | null
+          is_private: boolean | null
           last_move_at: string | null
           member_count: number | null
           name: string
@@ -603,6 +628,7 @@ export type Database = {
           game_status?: string | null
           id?: string
           is_active?: boolean | null
+          is_private?: boolean | null
           last_move_at?: string | null
           member_count?: number | null
           name: string
@@ -622,6 +648,7 @@ export type Database = {
           game_status?: string | null
           id?: string
           is_active?: boolean | null
+          is_private?: boolean | null
           last_move_at?: string | null
           member_count?: number | null
           name?: string

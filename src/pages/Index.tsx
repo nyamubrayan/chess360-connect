@@ -112,10 +112,12 @@ const Index = () => {
               </Button>
               <Button 
                 size="lg" 
-                variant="secondary" 
+                variant="outline" 
                 className="text-lg px-8 hover:scale-105 transition-transform"
+                onClick={() => navigate("/leaderboard")}
               >
-                Watch Demo
+                <Trophy className="w-5 h-5 mr-2" />
+                Leaderboard
               </Button>
             </div>
           </div>

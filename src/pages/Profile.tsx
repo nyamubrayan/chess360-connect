@@ -26,6 +26,14 @@ interface LeaderboardStats {
   helpful_answers_count: number | null;
 }
 
+interface PlayerStats {
+  total_games: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  win_rate: number;
+}
+
 const Profile = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
@@ -33,6 +41,7 @@ const Profile = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [stats, setStats] = useState<LeaderboardStats | null>(null);
+  const [playerStats, setPlayerStats] = useState<PlayerStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -76,7 +85,14 @@ const Profile = () => {
       .eq("user_id", profileId)
       .single();
 
+    const { data: playerStatsData } = await supabase
+      .from("player_stats")
+      .select("*")
+      .eq("user_id", profileId)
+      .single();
+
     setStats(statsData);
+    setPlayerStats(playerStatsData);
     setLoading(false);
   };
 
@@ -153,7 +169,35 @@ const Profile = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card>
             <CardHeader>
-              <CardTitle>Statistics</CardTitle>
+              <CardTitle>Game Statistics</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Total Games</span>
+                <span className="font-semibold">{playerStats?.total_games || 0}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Wins</span>
+                <span className="font-semibold text-green-500">{playerStats?.wins || 0}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Losses</span>
+                <span className="font-semibold text-red-500">{playerStats?.losses || 0}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Draws</span>
+                <span className="font-semibold">{playerStats?.draws || 0}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Win Rate</span>
+                <span className="font-semibold">{playerStats?.win_rate || 0}%</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Achievements</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="flex justify-between">

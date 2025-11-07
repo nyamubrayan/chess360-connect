@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Heart, MessageCircle, Send } from "lucide-react";
 import { User, Session } from "@supabase/supabase-js";
+import { CommentsSection } from "@/components/CommentsSection";
 
 interface Post {
   id: string;
@@ -37,6 +38,7 @@ const Community = () => {
   const [content, setContent] = useState("");
   const [category, setCategory] = useState("");
   const [loading, setLoading] = useState(false);
+  const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -229,11 +231,20 @@ const Community = () => {
                     <Heart className="w-4 h-4" />
                     {post.likes_count}
                   </Button>
-                  <Button variant="ghost" size="sm" className="gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => setExpandedPostId(expandedPostId === post.id ? null : post.id)}
+                  >
                     <MessageCircle className="w-4 h-4" />
                     {post.comments_count}
                   </Button>
                 </div>
+                
+                {expandedPostId === post.id && (
+                  <CommentsSection postId={post.id} user={user} />
+                )}
               </CardContent>
             </Card>
           ))}
