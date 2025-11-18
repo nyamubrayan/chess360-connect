@@ -41,12 +41,13 @@ serve(async (req) => {
       if (activeGames && activeGames.length > 0) {
         return new Response(
           JSON.stringify({ 
-            error: 'You already have an active game',
-            gameId: activeGames[0].id 
+            hasActiveGame: true,
+            gameId: activeGames[0].id,
+            message: 'You already have an active game'
           }),
           { 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 400
+            status: 200
           }
         );
       }
