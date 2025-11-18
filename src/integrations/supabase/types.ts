@@ -478,6 +478,38 @@ export type Database = {
           },
         ]
       }
+      matchmaking_queue: {
+        Row: {
+          created_at: string
+          id: string
+          time_control: number
+          time_increment: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          time_control: number
+          time_increment: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          time_control?: number
+          time_increment?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matchmaking_queue_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string | null

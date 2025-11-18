@@ -60,19 +60,37 @@ serve(async (req) => {
 
     console.log('Game created:', game.id);
 
+    // Get usernames for notifications
+    const { data: whiteProfile } = await supabaseClient
+      .from('profiles')
+      .select('username, display_name')
+      .eq('id', whitePlayerId)
+      .single();
+
+    const { data: blackProfile } = await supabaseClient
+      .from('profiles')
+      .select('username, display_name')
+      .eq('id', blackPlayerId)
+      .single();
+
+    const whiteName = whiteProfile?.display_name || whiteProfile?.username || 'Opponent';
+    const blackName = blackProfile?.display_name || blackProfile?.username || 'Opponent';
+
     // Send notifications to both players
     await supabaseClient.from('notifications').insert([
       {
         user_id: whitePlayerId,
-        type: 'game_started',
-        title: 'Game Started',
-        message: `Your game has started. You are playing as White.`,
+        type: 'game_invite',
+        title: 'Game Invitation',
+        message: `${blackName} invited you to a game. You are playing as White.`,
+        room_id: game.id,
       },
       {
         user_id: blackPlayerId,
         type: 'game_started',
         title: 'Game Started',
-        message: `Your game has started. You are playing as Black.`,
+        message: `Your game with ${whiteName} has started. You are playing as Black.`,
+        room_id: game.id,
       },
     ]);
 

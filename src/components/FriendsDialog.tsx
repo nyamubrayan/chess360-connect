@@ -45,45 +45,53 @@ export const FriendsDialog = ({ userId }: FriendsDialogProps) => {
 
   const fetchFriends = async () => {
     // Fetch accepted friends
-    const { data: friendsData } = await supabase
+    const { data: friendsData, error: friendsError } = await supabase
       .from("friends")
-      .select(
-        `
-        id,
-        user_id,
-        friend_id,
-        status,
-        profiles:friend_id (
-          username,
-          display_name,
-          avatar_url
-        )
-      `
-      )
+      .select('id, user_id, friend_id, status')
       .eq("user_id", userId)
       .eq("status", "accepted");
 
+    if (friendsError) {
+      console.error('Error fetching friends:', friendsError);
+    }
+
     // Fetch pending requests (received)
-    const { data: requestsData } = await supabase
+    const { data: requestsData, error: requestsError } = await supabase
       .from("friends")
-      .select(
-        `
-        id,
-        user_id,
-        friend_id,
-        status,
-        profiles:user_id (
-          username,
-          display_name,
-          avatar_url
-        )
-      `
-      )
+      .select('id, user_id, friend_id, status')
       .eq("friend_id", userId)
       .eq("status", "pending");
 
-    setFriends((friendsData as any) || []);
-    setRequests((requestsData as any) || []);
+    if (requestsError) {
+      console.error('Error fetching requests:', requestsError);
+    }
+
+    // Fetch profiles separately
+    const friendIds = [...(friendsData || []).map(f => f.friend_id), ...(requestsData || []).map(r => r.user_id)];
+    
+    if (friendIds.length > 0) {
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, username, display_name, avatar_url')
+        .in('id', friendIds);
+
+      // Combine friends with profiles
+      const friendsWithProfiles = (friendsData || []).map(friend => ({
+        ...friend,
+        profiles: profilesData?.find(p => p.id === friend.friend_id) || {}
+      }));
+
+      const requestsWithProfiles = (requestsData || []).map(request => ({
+        ...request,
+        profiles: profilesData?.find(p => p.id === request.user_id) || {}
+      }));
+
+      setFriends(friendsWithProfiles as any);
+      setRequests(requestsWithProfiles as any);
+    } else {
+      setFriends([]);
+      setRequests([]);
+    }
   };
 
   const sendFriendRequest = async () => {
