@@ -44,7 +44,7 @@ export default function ChessGame() {
     fetchGame();
 
     // Subscribe to game updates
-    const channel = supabase
+    const gameChannel = supabase
       .channel(`game-${gameId}`)
       .on(
         'postgres_changes',
@@ -63,8 +63,27 @@ export default function ChessGame() {
       )
       .subscribe();
 
+    // Subscribe to move updates
+    const movesChannel = supabase
+      .channel(`moves-${gameId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'game_moves',
+          filter: `game_id=eq.${gameId}`,
+        },
+        (payload) => {
+          console.log('Move update:', payload);
+          fetchMoves();
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(gameChannel);
+      supabase.removeChannel(movesChannel);
     };
   }, [gameId]);
 
