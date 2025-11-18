@@ -118,32 +118,14 @@ export default function GameLobby() {
 
       if (joinError) {
         console.error('Join error:', joinError);
-
-        // If the backend reports an active game, find it and redirect
-        if (user) {
-          const { data: activeGames, error: activeError } = await supabase
-            .from('games')
-            .select('id')
-            .or(`white_player_id.eq.${user.id},black_player_id.eq.${user.id}`)
-            .eq('status', 'active')
-            .limit(1);
-
-          if (!activeError && activeGames && activeGames.length > 0) {
-            toast.info('You already have an active game. Redirecting...');
-            navigate(`/game/${activeGames[0].id}`);
-            setIsSearching(false);
-            return;
-          }
-        }
-
         toast.error(joinError.message || 'Failed to find match');
         setIsSearching(false);
         return;
       }
 
-      // Check if user already has an active game (in case function returns 200 with error payload)
-      if (joinData?.error && joinData.gameId) {
-        toast.info('You already have an active game. Redirecting...');
+      // Check if user already has an active game
+      if (joinData?.hasActiveGame && joinData.gameId) {
+        toast.info(joinData.message || 'You already have an active game. Redirecting...');
         navigate(`/game/${joinData.gameId}`);
         setIsSearching(false);
         return;
