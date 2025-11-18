@@ -118,6 +118,14 @@ export default function GameLobby() {
 
       if (joinError) throw joinError;
 
+      // Check if user already has an active game
+      if (joinData.error && joinData.gameId) {
+        toast.info('You already have an active game. Redirecting...');
+        navigate(`/game/${joinData.gameId}`);
+        setIsSearching(false);
+        return;
+      }
+
       if (joinData.matched) {
         toast.success('Match found!');
         navigate(`/game/${joinData.game.id}`);
