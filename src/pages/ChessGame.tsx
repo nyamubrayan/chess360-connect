@@ -277,6 +277,8 @@ export default function ChessGame() {
     );
   }
 
+  const isWaitingForOpponent = game.status === 'waiting';
+
   return (
     <div className="min-h-screen bg-background p-2 sm:p-4">
       <div className="container mx-auto max-w-7xl">
@@ -291,6 +293,23 @@ export default function ChessGame() {
           <div className="w-20" />
         </div>
 
+        {isWaitingForOpponent && (
+          <Card className="gradient-card glow-primary p-6 mb-4 animate-fade-in">
+            <div className="flex flex-col items-center gap-4">
+              <div className="relative">
+                <div className="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+                <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-b-primary rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1s' }} />
+              </div>
+              <div className="text-center space-y-2">
+                <h3 className="text-xl font-bold">Waiting for Opponent</h3>
+                <p className="text-muted-foreground">
+                  Your opponent will join shortly...
+                </p>
+              </div>
+            </div>
+          </Card>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Left: Move History */}
           <div className="lg:col-span-1 order-2 lg:order-1">
@@ -298,7 +317,16 @@ export default function ChessGame() {
           </div>
 
           {/* Center: Chess Board */}
-          <div className="lg:col-span-1 order-1 lg:order-2">
+          <div className="lg:col-span-1 order-1 lg:order-2 relative">
+            {isWaitingForOpponent && (
+              <div className="absolute inset-0 bg-background/60 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center">
+                <div className="text-center space-y-2 p-6">
+                  <div className="w-12 h-12 mx-auto border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+                  <p className="text-sm font-medium text-muted-foreground">Waiting...</p>
+                </div>
+              </div>
+            )}
+            
             {/* Opponent Name (top) */}
             {playerColor && (
               <Card className="gradient-card p-3 mb-2">
