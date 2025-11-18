@@ -5,20 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Users, Clock, ArrowLeft } from "lucide-react";
+import { Users, Clock, ArrowLeft } from "lucide-react";
 import { FriendsDialog } from "@/components/FriendsDialog";
-import { ShareGameLink } from "@/components/ShareGameLink";
 import { NotificationBell } from "@/components/NotificationBell";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 
 interface Room {
   id: string;
@@ -37,15 +27,6 @@ const Lobby = () => {
   const navigate = useNavigate();
   const [rooms, setRooms] = useState<Room[]>([]);
   const [user, setUser] = useState<any>(null);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [roomName, setRoomName] = useState("");
-  const [timeControl, setTimeControl] = useState("10");
-  const [timeIncrement, setTimeIncrement] = useState("0");
-  const [isPrivate, setIsPrivate] = useState(false);
-  const [selectedFriend, setSelectedFriend] = useState<string>("");
-  const [friends, setFriends] = useState<any[]>([]);
-  const [shareDialogOpen, setShareDialogOpen] = useState(false);
-  const [sharedRoomId, setSharedRoomId] = useState<string>("");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
@@ -61,23 +42,6 @@ const Lobby = () => {
     };
   }, []);
 
-  useEffect(() => {
-    if (user) {
-      fetchFriends();
-    }
-  }, [user]);
-
-  const fetchFriends = async () => {
-    if (!user) return;
-
-    const { data } = await supabase
-      .from("friends")
-      .select(`friend_id, profiles!friends_friend_id_fkey (id, username, display_name)`)
-      .eq("user_id", user.id)
-      .eq("status", "accepted");
-
-    setFriends(data || []);
-  };
 
   const fetchRooms = async () => {
     const { data } = await supabase
@@ -89,75 +53,6 @@ const Lobby = () => {
     setRooms(data || []);
   };
 
-  const createRoom = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) {
-      toast.error("Please sign in to create a room");
-      navigate("/auth");
-      return;
-    }
-
-    const { data, error } = await supabase.from("rooms").insert({
-      name: roomName || `${user.email}'s Game`,
-      white_player_id: user.id,
-      time_control: parseInt(timeControl),
-      time_increment: parseInt(timeIncrement),
-      white_time_remaining: parseInt(timeControl) * 60,
-      black_time_remaining: parseInt(timeControl) * 60,
-      is_private: isPrivate,
-      type: 'study',
-    } as any).select().single();
-
-    if (error) {
-      toast.error("Failed to create room");
-      return;
-    }
-
-      await supabase.from("room_members").insert({ room_id: data.id, user_id: user.id });
-      
-      // Send notifications to friends if it's a private game
-      if (isPrivate && selectedFriend) {
-        await supabase.from("notifications").insert({
-          user_id: selectedFriend,
-          type: "game_invite",
-          title: "Chess Game Invitation",
-          message: `${user.email?.split('@')[0] || 'A player'} has invited you to play chess!`,
-          room_id: data.id,
-          sender_id: user.id,
-        });
-      } else if (!isPrivate) {
-        // Broadcast to all friends for public games
-        const { data: friendsList } = await supabase
-          .from("friends")
-          .select("friend_id")
-          .eq("user_id", user.id)
-          .eq("status", "accepted");
-
-        if (friendsList && friendsList.length > 0) {
-          const notifications = friendsList.map((f) => ({
-            user_id: f.friend_id,
-            type: "game_invite",
-            title: "New Game Available",
-            message: `${user.email?.split('@')[0] || 'A player'} created a new chess game!`,
-            room_id: data.id,
-            sender_id: user.id,
-          }));
-
-          await supabase.from("notifications").insert(notifications);
-        }
-      }
-      
-      if (isPrivate) {
-      setSharedRoomId(data.id);
-      setShareDialogOpen(true);
-      toast.success("Room created! Share the link with your friend");
-    } else {
-      toast.success("Room created!");
-      navigate(`/play/${data.id}`);
-    }
-    
-    setIsCreateDialogOpen(false);
-  };
 
   const joinRoom = async (roomId: string) => {
     if (!user) {
@@ -208,75 +103,6 @@ const Lobby = () => {
         </div>
 
 
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2 mb-4 sm:mb-6 w-full sm:w-auto" size="sm">
-              <Plus className="w-4 h-4" />
-              Create Game
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Game</DialogTitle>
-              <DialogDescription>Set up a new game and wait for an opponent to join</DialogDescription>
-            </DialogHeader>
-            <form onSubmit={createRoom} className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="room-name">Room Name</Label>
-                <Input id="room-name" placeholder="My Chess Game" value={roomName} onChange={(e) => setRoomName(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="time-control">Time Control (minutes)</Label>
-                <Select value={timeControl} onValueChange={setTimeControl}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1 minute (Bullet)</SelectItem>
-                    <SelectItem value="3">3 minutes (Blitz)</SelectItem>
-                    <SelectItem value="5">5 minutes (Blitz)</SelectItem>
-                    <SelectItem value="10">10 minutes (Rapid)</SelectItem>
-                    <SelectItem value="15">15 minutes (Rapid)</SelectItem>
-                    <SelectItem value="30">30 minutes (Classical)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="is-private"
-                  checked={isPrivate}
-                  onChange={(e) => setIsPrivate(e.target.checked)}
-                  className="w-4 h-4 rounded border-input"
-                />
-                <Label htmlFor="is-private" className="cursor-pointer">
-                  Private game (share link with friend)
-                </Label>
-              </div>
-
-              {isPrivate && friends.length > 0 && (
-                <div className="space-y-2">
-                  <Label htmlFor="friend-select">Invite Friend (optional)</Label>
-                  <Select value={selectedFriend} onValueChange={setSelectedFriend}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a friend to notify" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {friends.map((friend: any) => (
-                        <SelectItem key={friend.friend_id} value={friend.friend_id}>
-                          {friend.profiles?.username || friend.profiles?.display_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              <Button type="submit" className="w-full" size="lg">
-                <Plus className="w-5 h-5 mr-2" />
-                {isPrivate ? "Create & Get Link" : "Create Game"}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
 
         <div className="grid gap-3 sm:gap-4">
           {rooms.length === 0 ? (
@@ -312,11 +138,6 @@ const Lobby = () => {
         </div>
       </div>
 
-      <ShareGameLink 
-        roomId={sharedRoomId} 
-        open={shareDialogOpen} 
-        onOpenChange={setShareDialogOpen} 
-      />
     </div>
   );
 };
