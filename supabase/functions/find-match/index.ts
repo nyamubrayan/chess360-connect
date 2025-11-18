@@ -30,6 +30,13 @@ serve(async (req) => {
     const { timeControl, timeIncrement, action } = await req.json();
 
     if (action === 'join') {
+      // First, clean up stale queue entries (older than 5 minutes)
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      await supabaseClient
+        .from('matchmaking_queue')
+        .delete()
+        .lt('created_at', fiveMinutesAgo);
+
       // Check if already in queue, if not add them
       const { data: existingEntry, error: existingError } = await supabaseClient
         .from('matchmaking_queue')
@@ -57,13 +64,15 @@ serve(async (req) => {
         }
       }
 
-      // Look for a match with similar time controls
+      // Look for active matches with similar time controls (only recent entries)
+      const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000).toISOString();
       const { data: matches } = await supabaseClient
         .from('matchmaking_queue')
         .select('*')
         .eq('time_control', timeControl)
         .eq('time_increment', timeIncrement)
         .neq('user_id', user.id)
+        .gte('created_at', threeMinutesAgo)
         .order('created_at', { ascending: true })
         .limit(1);
 

@@ -32,10 +32,18 @@ export default function GameLobby() {
       fetchFriends(user.id);
     });
 
+    // Cleanup: remove user from queue when component unmounts
     return () => {
       if (searchInterval) clearInterval(searchInterval);
+      
+      // Remove from queue on unmount if searching
+      if (isSearching) {
+        supabase.functions.invoke('find-match', {
+          body: { action: 'leave' },
+        }).catch(console.error);
+      }
     };
-  }, [searchInterval]);
+  }, [searchInterval, isSearching]);
 
   const fetchFriends = async (userId: string) => {
     const { data, error } = await supabase
