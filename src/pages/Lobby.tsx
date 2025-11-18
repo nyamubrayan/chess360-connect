@@ -246,31 +246,31 @@ const Lobby = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <div className="min-h-screen bg-background p-2 sm:p-4">
       <div className="container mx-auto max-w-6xl">
-        <div className="flex items-center justify-between mb-6">
-          <Button variant="secondary" onClick={() => navigate("/")} className="gap-2">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
+          <Button variant="secondary" size="sm" onClick={() => navigate("/")} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
-            Home
+            <span className="hidden sm:inline">Home</span>
           </Button>
-          <h1 className="text-4xl font-bold">Game Lobby</h1>
+          <h1 className="text-2xl sm:text-4xl font-bold">Game Lobby</h1>
           <div className="flex items-center gap-2">
             <NotificationBell userId={user.id} />
             <FriendsDialog userId={user.id} />
           </div>
         </div>
 
-        <Card className="gradient-card p-6 mb-6 glow-primary">
-          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-            <Zap className="w-6 h-6 text-primary" />
+        <Card className="gradient-card p-4 sm:p-6 mb-4 sm:mb-6 glow-primary">
+          <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 flex items-center gap-2">
+            <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
             Quick Match
           </h2>
-          <p className="text-muted-foreground mb-4">
+          <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">
             Get matched instantly with an opponent of similar skill
           </p>
-          <div className="flex gap-4 items-end">
-            <div className="flex-1 max-w-xs">
-              <Label htmlFor="quick-time">Time Control (minutes)</Label>
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-end">
+            <div className="flex-1 max-w-full sm:max-w-xs">
+              <Label htmlFor="quick-time" className="text-sm">Time Control (minutes)</Label>
               <Input
                 id="quick-time"
                 type="number"
@@ -281,7 +281,7 @@ const Lobby = () => {
                 className="mt-1"
               />
             </div>
-            <Button onClick={handleQuickMatch} className="gap-2" size="lg">
+            <Button onClick={handleQuickMatch} className="gap-2 w-full sm:w-auto" size="lg">
               <Zap className="w-4 h-4" />
               Find Match
             </Button>
@@ -290,7 +290,7 @@ const Lobby = () => {
 
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="gap-2 mb-6">
+            <Button className="gap-2 mb-4 sm:mb-6 w-full sm:w-auto" size="sm">
               <Plus className="w-4 h-4" />
               Create Game
             </Button>
@@ -358,25 +358,33 @@ const Lobby = () => {
           </DialogContent>
         </Dialog>
 
-        <div className="grid gap-4">
+        <div className="grid gap-3 sm:gap-4">
           {rooms.length === 0 ? (
-            <Card className="gradient-card p-12 text-center">
-              <Users className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-xl font-bold mb-2">No games available</h3>
-              <p className="text-muted-foreground mb-4">Be the first to create a game!</p>
+            <Card className="gradient-card p-8 sm:p-12 text-center">
+              <Users className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 text-muted-foreground" />
+              <h3 className="text-lg sm:text-xl font-bold mb-2">No games available</h3>
+              <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">Be the first to create a game!</p>
             </Card>
           ) : (
             rooms.map((room) => (
-              <Card key={room.id} className="gradient-card p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold mb-2">Game Room</h3>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1"><Users className="w-4 h-4" />Host: {room.profiles?.username || "Unknown"}</span>
-                      <span className="flex items-center gap-1"><Clock className="w-4 h-4" />{room.time_control}+{room.time_increment}</span>
+              <Card key={room.id} className="gradient-card p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+                  <div className="flex-1 w-full">
+                    <h3 className="text-lg sm:text-xl font-bold mb-2">Game Room</h3>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+                        Host: {room.profiles?.username || "Unknown"}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+                        {room.time_control}+{room.time_increment}
+                      </span>
                     </div>
                   </div>
-                  <Button onClick={() => joinRoom(room.id)}>Join Game</Button>
+                  <Button onClick={() => joinRoom(room.id)} size="sm" className="w-full sm:w-auto">
+                    Join Game
+                  </Button>
                 </div>
               </Card>
             ))
