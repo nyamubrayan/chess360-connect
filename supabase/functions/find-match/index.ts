@@ -31,14 +31,18 @@ serve(async (req) => {
 
     if (action === 'join') {
       // Check if already in queue, if not add them
-      const { data: existingEntry } = await supabaseClient
+      const { data: existingEntry, error: existingError } = await supabaseClient
         .from('matchmaking_queue')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
+
+      if (existingError) {
+        console.error('Error checking existing queue entry:', existingError);
+      }
 
       if (!existingEntry) {
-        // Join matchmaking queue
+        // Join matchmaking queue (ignore duplicate errors caused by race conditions)
         const { error: insertError } = await supabaseClient
           .from('matchmaking_queue')
           .insert({
@@ -47,7 +51,7 @@ serve(async (req) => {
             time_increment: timeIncrement,
           });
 
-        if (insertError) {
+        if (insertError && (insertError as any).code !== '23505') {
           console.error('Error joining queue:', insertError);
           throw insertError;
         }
