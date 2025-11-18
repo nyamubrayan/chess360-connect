@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/chess-hero.jpg";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
+import { NotificationBell } from "@/components/NotificationBell";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -71,6 +72,7 @@ const Index = () => {
         <div className="absolute top-4 right-4 flex gap-2 z-20">
           {user ? (
             <>
+              <NotificationBell userId={user.id} />
               <Button variant="outline" onClick={() => navigate('/profile')}>
                 <UserIcon className="mr-2 w-4 h-4" />
                 Profile
