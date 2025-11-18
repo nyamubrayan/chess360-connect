@@ -83,6 +83,10 @@ const Index = () => {
                 <Users className="mr-2 w-4 h-4" />
                 Community
               </Button>
+              <Button variant="outline" onClick={() => navigate('/lessons')}>
+                <Brain className="mr-2 w-4 h-4" />
+                Lessons
+              </Button>
             </>
           ) : (
             <Button onClick={() => navigate('/auth')}>

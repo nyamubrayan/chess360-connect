@@ -311,6 +311,65 @@ export type Database = {
           },
         ]
       }
+      lessons: {
+        Row: {
+          coach_id: string
+          content: string | null
+          created_at: string | null
+          description: string | null
+          difficulty_level: string | null
+          file_url: string | null
+          id: string
+          is_published: boolean | null
+          lesson_type: string
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+          video_url: string | null
+          views_count: number | null
+        }
+        Insert: {
+          coach_id: string
+          content?: string | null
+          created_at?: string | null
+          description?: string | null
+          difficulty_level?: string | null
+          file_url?: string | null
+          id?: string
+          is_published?: boolean | null
+          lesson_type: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+          video_url?: string | null
+          views_count?: number | null
+        }
+        Update: {
+          coach_id?: string
+          content?: string | null
+          created_at?: string | null
+          description?: string | null
+          difficulty_level?: string | null
+          file_url?: string | null
+          id?: string
+          is_published?: boolean | null
+          lesson_type?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+          video_url?: string | null
+          views_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lessons_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       player_stats: {
         Row: {
           avg_game_duration: number | null
