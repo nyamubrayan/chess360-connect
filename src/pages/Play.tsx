@@ -387,36 +387,36 @@ const Play = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <div className="min-h-screen bg-background p-2 sm:p-4">
       <div className="container mx-auto max-w-7xl">
-        <div className="flex items-center justify-between mb-6">
-          <Button variant="secondary" onClick={() => navigate("/lobby")} className="gap-2">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
+          <Button variant="secondary" size="sm" onClick={() => navigate("/lobby")} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
-            Back to Lobby
+            <span className="hidden sm:inline">Back to Lobby</span>
           </Button>
-          <div className="text-center">
-            <h1 className="text-3xl font-bold">{room.name}</h1>
-            <p className="text-sm text-muted-foreground mt-1">
+          <div className="text-center flex-1">
+            <h1 className="text-xl sm:text-3xl font-bold truncate">{room.name}</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
               Playing as {playerColor || "spectator"}
             </p>
           </div>
           <div className="flex items-center gap-2">
             {user && <NotificationBell userId={user.id} />}
-            <div className="text-right text-sm">
+            <div className="text-right text-xs sm:text-sm">
               <div className="flex items-center gap-2 justify-end">
-                <Users className="w-4 h-4" />
-                <span>{room.member_count || 1}/2 players</span>
+                <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">{room.member_count || 1}/2 players</span>
+                <span className="sm:hidden">{room.member_count || 1}/2</span>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <Card className="gradient-card p-6 glow-primary">
-              <div className="aspect-square max-w-2xl mx-auto">
+        <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="lg:col-span-2 order-1 lg:order-none">
+            <Card className="gradient-card p-3 sm:p-6 glow-primary">
+              <div className="aspect-square w-full max-w-2xl mx-auto">
                 <Chessboard
-                  boardWidth={600}
                   position={game.fen()}
                   onPieceDrop={onDrop}
                   boardOrientation={playerColor || "white"}
@@ -436,8 +436,8 @@ const Play = () => {
               </div>
               
               {room.game_status === "waiting" && (
-                <div className="mt-6 text-center">
-                  <p className="text-muted-foreground">
+                <div className="mt-4 sm:mt-6 text-center">
+                  <p className="text-sm sm:text-base text-muted-foreground">
                     Waiting for opponent to join...
                   </p>
                 </div>
@@ -445,7 +445,7 @@ const Play = () => {
             </Card>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6 order-2 lg:order-none">
             <ChessClock
               whiteTime={whiteTime}
               blackTime={blackTime}
@@ -453,18 +453,18 @@ const Play = () => {
               isActive={isGameActive && room.game_status === "active"}
             />
 
-            <Card className="gradient-card p-6">
-              <h3 className="text-xl font-bold mb-4">Move History</h3>
-              <div className="space-y-2 max-h-[200px] overflow-y-auto">
+            <Card className="gradient-card p-4 sm:p-6">
+              <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Move History</h3>
+              <div className="space-y-1.5 sm:space-y-2 max-h-[150px] sm:max-h-[200px] overflow-y-auto">
                 {moveHistory.length === 0 ? (
-                  <p className="text-muted-foreground text-sm">No moves yet</p>
+                  <p className="text-muted-foreground text-xs sm:text-sm">No moves yet</p>
                 ) : (
                   moveHistory.map((move, index) => (
                     <div
                       key={index}
-                      className="flex items-center gap-3 text-sm py-2 px-3 rounded bg-muted/30"
+                      className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm py-1.5 sm:py-2 px-2 sm:px-3 rounded bg-muted/30"
                     >
-                      <span className="text-muted-foreground font-mono">
+                      <span className="text-muted-foreground font-mono text-xs">
                         {Math.floor(index / 2) + 1}.
                       </span>
                       <span className="font-medium">{move}</span>
@@ -474,9 +474,9 @@ const Play = () => {
               </div>
             </Card>
 
-            <Card className="gradient-card p-6">
-              <h3 className="text-xl font-bold mb-4">Game Status</h3>
-              <div className="space-y-3 text-sm">
+            <Card className="gradient-card p-4 sm:p-6">
+              <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Game Status</h3>
+              <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Status</span>
                   <span className="font-medium capitalize">{room.game_status}</span>
@@ -494,17 +494,19 @@ const Play = () => {
               </div>
               
               {room.game_status === "active" && playerColor && (
-                <div className="mt-6 space-y-2">
+                <div className="mt-4 sm:mt-6 space-y-2">
                   <Button
                     variant="destructive"
-                    className="w-full"
+                    size="sm"
+                    className="w-full text-xs sm:text-sm"
                     onClick={handleResign}
                   >
                     Resign
                   </Button>
                   <Button
                     variant="outline"
-                    className="w-full"
+                    size="sm"
+                    className="w-full text-xs sm:text-sm"
                     onClick={handleOfferDraw}
                   >
                     Offer Draw
@@ -513,10 +515,10 @@ const Play = () => {
               )}
             </Card>
 
-            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+            <div className="flex items-center justify-between p-3 sm:p-4 bg-muted/50 rounded-lg">
               <div className="flex items-center gap-2">
-                <Brain className="w-5 h-5 text-primary" />
-                <Label htmlFor="ai-mentor" className="cursor-pointer">
+                <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                <Label htmlFor="ai-mentor" className="cursor-pointer text-xs sm:text-sm">
                   AI Mentor Mode
                 </Label>
               </div>

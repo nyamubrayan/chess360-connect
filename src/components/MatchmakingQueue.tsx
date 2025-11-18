@@ -93,15 +93,15 @@ export const MatchmakingQueue = ({ timeControl, userId, onCancel }: MatchmakingQ
   };
 
   return (
-    <Card className="gradient-card p-8 text-center max-w-md mx-auto">
-      <div className="space-y-6">
+    <Card className="gradient-card p-6 sm:p-8 text-center max-w-md mx-auto">
+      <div className="space-y-4 sm:space-y-6">
         <div className="flex justify-center">
-          <Loader2 className="w-16 h-16 animate-spin text-primary" />
+          <Loader2 className="w-12 h-12 sm:w-16 sm:h-16 animate-spin text-primary" />
         </div>
         
         <div>
-          <h2 className="text-2xl font-bold mb-2">Searching for Opponent</h2>
-          <p className="text-muted-foreground">
+          <h2 className="text-xl sm:text-2xl font-bold mb-2">Searching for Opponent</h2>
+          <p className="text-sm sm:text-base text-muted-foreground">
             Time Control: {timeControl} minutes
           </p>
         </div>
@@ -111,20 +111,21 @@ export const MatchmakingQueue = ({ timeControl, userId, onCancel }: MatchmakingQ
             {[...Array(3)].map((_, i) => (
               <div
                 key={i}
-                className="w-3 h-3 rounded-full bg-primary animate-pulse"
+                className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-primary animate-pulse"
                 style={{ animationDelay: `${i * 0.2}s` }}
               />
             ))}
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Searching for {formatTime(searchTime)}
           </p>
         </div>
 
         <Button
           variant="outline"
+          size="sm"
           onClick={handleCancel}
-          className="w-full gap-2"
+          className="w-full gap-2 text-sm"
         >
           <X className="w-4 h-4" />
           Cancel Search
