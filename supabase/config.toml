@@ -6,3 +6,9 @@ verify_jwt = true
 [functions.analyze-move]
 verify_jwt = false
 
+[functions.match-players]
+verify_jwt = false
+
+[functions.validate-move]
+verify_jwt = false
+

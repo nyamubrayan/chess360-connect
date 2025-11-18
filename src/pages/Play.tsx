@@ -29,6 +29,7 @@ const Play = () => {
   const [lastMove, setLastMove] = useState<string | null>(null);
   const [showSummary, setShowSummary] = useState(false);
   const [completedGameId, setCompletedGameId] = useState<string | null>(null);
+  const [lastMoveSquares, setLastMoveSquares] = useState<{ from: string; to: string } | null>(null);
 
   useEffect(() => {
     if (!roomId) {
@@ -297,6 +298,7 @@ const Play = () => {
       setGame(gameCopy);
       setMoveHistory([...moveHistory, result.san]);
       setLastMove(result.san);
+      setLastMoveSquares({ from: move.from, to: move.to });
 
       // Add time increment
       const increment = room?.time_increment || 0;
@@ -412,6 +414,18 @@ const Play = () => {
                   position={game.fen()}
                   onPieceDrop={onDrop}
                   boardOrientation={playerColor || "white"}
+                  customSquareStyles={
+                    lastMoveSquares
+                      ? {
+                          [lastMoveSquares.from]: {
+                            backgroundColor: 'rgba(255, 255, 0, 0.4)',
+                          },
+                          [lastMoveSquares.to]: {
+                            backgroundColor: 'rgba(255, 255, 0, 0.4)',
+                          },
+                        }
+                      : {}
+                  }
                 />
               </div>
               

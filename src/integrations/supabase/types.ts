@@ -370,6 +370,54 @@ export type Database = {
           },
         ]
       }
+      matchmaking_queue: {
+        Row: {
+          created_at: string
+          id: string
+          matched_room_id: string | null
+          rating_range: number | null
+          status: string
+          time_control: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          matched_room_id?: string | null
+          rating_range?: number | null
+          status?: string
+          time_control: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          matched_room_id?: string | null
+          rating_range?: number | null
+          status?: string
+          time_control?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matchmaking_queue_matched_room_id_fkey"
+            columns: ["matched_room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matchmaking_queue_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string | null
@@ -716,6 +764,8 @@ export type Database = {
       }
       rooms: {
         Row: {
+          auto_resign_timeout: number | null
+          black_last_seen: string | null
           black_player_id: string | null
           black_time_remaining: number | null
           created_at: string | null
@@ -732,10 +782,13 @@ export type Database = {
           time_control: number | null
           time_increment: number | null
           type: Database["public"]["Enums"]["room_type"]
+          white_last_seen: string | null
           white_player_id: string | null
           white_time_remaining: number | null
         }
         Insert: {
+          auto_resign_timeout?: number | null
+          black_last_seen?: string | null
           black_player_id?: string | null
           black_time_remaining?: number | null
           created_at?: string | null
@@ -752,10 +805,13 @@ export type Database = {
           time_control?: number | null
           time_increment?: number | null
           type: Database["public"]["Enums"]["room_type"]
+          white_last_seen?: string | null
           white_player_id?: string | null
           white_time_remaining?: number | null
         }
         Update: {
+          auto_resign_timeout?: number | null
+          black_last_seen?: string | null
           black_player_id?: string | null
           black_time_remaining?: number | null
           created_at?: string | null
@@ -772,6 +828,7 @@ export type Database = {
           time_control?: number | null
           time_increment?: number | null
           type?: Database["public"]["Enums"]["room_type"]
+          white_last_seen?: string | null
           white_player_id?: string | null
           white_time_remaining?: number | null
         }
