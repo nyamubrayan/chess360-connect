@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Users, Clock, ArrowLeft } from "lucide-react";
+import { Plus, Users, Clock, ArrowLeft, Share2 } from "lucide-react";
 import { FriendsDialog } from "@/components/FriendsDialog";
+import { ShareGameLink } from "@/components/ShareGameLink";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import {
@@ -42,6 +43,8 @@ const Lobby = () => {
   const [isPrivate, setIsPrivate] = useState(false);
   const [selectedFriend, setSelectedFriend] = useState<string>("");
   const [friends, setFriends] = useState<any[]>([]);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [sharedRoomId, setSharedRoomId] = useState<string>("");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
@@ -94,11 +97,14 @@ const Lobby = () => {
     }
 
     const { data, error } = await supabase.from("rooms").insert({
+      name: roomName || `${user.email}'s Game`,
       white_player_id: user.id,
       time_control: parseInt(timeControl),
       time_increment: parseInt(timeIncrement),
       white_time_remaining: parseInt(timeControl) * 60,
       black_time_remaining: parseInt(timeControl) * 60,
+      is_private: isPrivate,
+      type: 'study',
     } as any).select().single();
 
     if (error) {
@@ -107,9 +113,17 @@ const Lobby = () => {
     }
 
     await supabase.from("room_members").insert({ room_id: data.id, user_id: user.id });
-    toast.success("Room created!");
+    
+    if (isPrivate) {
+      setSharedRoomId(data.id);
+      setShareDialogOpen(true);
+      toast.success("Room created! Share the link with your friend");
+    } else {
+      toast.success("Room created!");
+      navigate(`/play/${data.id}`);
+    }
+    
     setIsCreateDialogOpen(false);
-    navigate(`/play/${data.id}`);
   };
 
   const joinRoom = async (roomId: string) => {
@@ -160,7 +174,7 @@ const Lobby = () => {
             <form onSubmit={createRoom} className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="room-name">Room Name</Label>
-                <Input id="room-name" placeholder="My Chess Game" value={roomName} onChange={(e) => setRoomName(e.target.value)} required />
+                <Input id="room-name" placeholder="My Chess Game" value={roomName} onChange={(e) => setRoomName(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="time-control">Time Control (minutes)</Label>
@@ -176,7 +190,22 @@ const Lobby = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <Button type="submit" className="w-full" size="lg"><Plus className="w-5 h-5 mr-2" />Create Game</Button>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="is-private"
+                  checked={isPrivate}
+                  onChange={(e) => setIsPrivate(e.target.checked)}
+                  className="w-4 h-4 rounded border-input"
+                />
+                <Label htmlFor="is-private" className="cursor-pointer">
+                  Private game (share link with friend)
+                </Label>
+              </div>
+              <Button type="submit" className="w-full" size="lg">
+                <Plus className="w-5 h-5 mr-2" />
+                {isPrivate ? "Create & Get Link" : "Create Game"}
+              </Button>
             </form>
           </DialogContent>
         </Dialog>
@@ -206,6 +235,12 @@ const Lobby = () => {
           )}
         </div>
       </div>
+
+      <ShareGameLink 
+        roomId={sharedRoomId} 
+        open={shareDialogOpen} 
+        onOpenChange={setShareDialogOpen} 
+      />
     </div>
   );
 };

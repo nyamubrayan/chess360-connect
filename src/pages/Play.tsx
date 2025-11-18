@@ -226,8 +226,15 @@ const Play = () => {
           last_move_at: new Date().toISOString()
         })
         .eq("id", roomId);
+      
+      // Add to room members
+      await supabase
+        .from("room_members")
+        .insert({ room_id: roomId, user_id: user.id });
+      
       setPlayerColor("black");
       setIsGameActive(true);
+      toast.success("Joined as black player! Game starting...");
     }
   };
 
