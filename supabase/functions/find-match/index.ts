@@ -30,6 +30,27 @@ serve(async (req) => {
     const { timeControl, timeIncrement, action } = await req.json();
 
     if (action === 'join') {
+      // Check if user already has an active game
+      const { data: activeGames } = await supabaseClient
+        .from('games')
+        .select('id')
+        .or(`white_player_id.eq.${user.id},black_player_id.eq.${user.id}`)
+        .eq('status', 'active')
+        .limit(1);
+
+      if (activeGames && activeGames.length > 0) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'You already have an active game',
+            gameId: activeGames[0].id 
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400
+          }
+        );
+      }
+
       // First, clean up stale queue entries (older than 5 minutes)
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       await supabaseClient
