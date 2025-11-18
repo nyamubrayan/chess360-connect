@@ -154,6 +154,15 @@ export default function GameLobby() {
           return;
         }
 
+        // Check if user already has an active game during polling
+        if (pollData?.hasActiveGame && pollData.gameId) {
+          clearInterval(interval);
+          setIsSearching(false);
+          toast.info('Redirecting to your active game...');
+          navigate(`/game/${pollData.gameId}`);
+          return;
+        }
+
         if (pollData.matched) {
           clearInterval(interval);
           setIsSearching(false);

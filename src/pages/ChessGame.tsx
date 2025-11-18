@@ -11,6 +11,7 @@ import { PromotionDialog } from '@/components/chess/PromotionDialog';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { useChessSounds } from '@/hooks/useChessSounds';
 
 export default function ChessGame() {
   const { gameId } = useParams();
@@ -27,6 +28,9 @@ export default function ChessGame() {
   const [whitePlayer, setWhitePlayer] = useState<any>(null);
   const [blackPlayer, setBlackPlayer] = useState<any>(null);
   const [opponentOnline, setOpponentOnline] = useState(false);
+  const [gameStarted, setGameStarted] = useState(false);
+  
+  const sounds = useChessSounds();
 
   useEffect(() => {
     if (!gameId) {
@@ -148,9 +152,18 @@ export default function ChessGame() {
   };
 
   const handleGameUpdate = async (gameData: any) => {
+    const wasWaiting = game?.status === 'waiting';
+    const nowActive = gameData.status === 'active';
+    
     setGame(gameData);
     chess.load(gameData.current_fen);
     setPosition(gameData.current_fen);
+    
+    // Play game start sound when game becomes active
+    if (wasWaiting && nowActive && !gameStarted) {
+      sounds.playGameStart();
+      setGameStarted(true);
+    }
     
     // Fetch player profiles
     const { data: profiles } = await supabase
@@ -243,14 +256,23 @@ export default function ChessGame() {
 
       fetchMoves();
 
+      // Play appropriate sound based on move result
       if (validation.isCheckmate) {
+        sounds.playCheckmate();
         toast.success('Checkmate!');
       } else if (validation.isCheck) {
+        sounds.playCheck();
         toast.info('Check!');
       } else if (validation.isStalemate) {
         toast.info('Stalemate');
       } else if (validation.isDraw) {
         toast.info('Draw');
+      } else if (validation.isCastling) {
+        sounds.playCastle();
+      } else if (validation.isCapture) {
+        sounds.playCapture();
+      } else {
+        sounds.playMove();
       }
 
     } catch (error: any) {
