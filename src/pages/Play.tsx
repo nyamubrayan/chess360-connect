@@ -33,7 +33,7 @@ const Play = () => {
 
   useEffect(() => {
     if (!roomId) {
-      navigate("/lobby");
+      navigate("/");
       return;
     }
 
@@ -211,7 +211,7 @@ const Play = () => {
     if (error) {
       console.error("Error fetching room:", error);
       toast.error("Failed to load game");
-      navigate("/lobby");
+      navigate("/");
       return;
     }
 
@@ -390,9 +390,9 @@ const Play = () => {
     <div className="min-h-screen bg-background p-2 sm:p-4">
       <div className="container mx-auto max-w-7xl">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
-          <Button variant="secondary" size="sm" onClick={() => navigate("/lobby")} className="gap-2">
+          <Button variant="secondary" size="sm" onClick={() => navigate("/")} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">Back to Lobby</span>
+            <span className="hidden sm:inline">Back to Home</span>
           </Button>
           <div className="text-center flex-1">
             <h1 className="text-xl sm:text-3xl font-bold truncate">{room.name}</h1>
