@@ -1,25 +1,84 @@
 import { Chessboard } from 'react-chessboard';
-import { Square } from 'chess.js';
+import { Square, Chess } from 'chess.js';
+import { useState, useEffect } from 'react';
 
 interface ChessBoardProps {
   position: string;
   onMove: (from: string, to: string) => void;
   playerColor: 'white' | 'black' | null;
   disabled?: boolean;
+  chess: Chess;
 }
 
-export const ChessBoardComponent = ({ position, onMove, playerColor, disabled }: ChessBoardProps) => {
+export const ChessBoardComponent = ({ position, onMove, playerColor, disabled, chess }: ChessBoardProps) => {
+  const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
+  const [legalMoves, setLegalMoves] = useState<Square[]>([]);
+
+  useEffect(() => {
+    // Clear highlights when position changes
+    setSelectedSquare(null);
+    setLegalMoves([]);
+  }, [position]);
+
+  const handleSquareClick = (square: Square) => {
+    if (disabled) return;
+
+    // If clicking the same square, deselect
+    if (selectedSquare === square) {
+      setSelectedSquare(null);
+      setLegalMoves([]);
+      return;
+    }
+
+    // If a square is already selected, try to move
+    if (selectedSquare) {
+      onMove(selectedSquare, square);
+      setSelectedSquare(null);
+      setLegalMoves([]);
+      return;
+    }
+
+    // Select a new piece and show legal moves
+    const piece = chess.get(square);
+    if (piece && piece.color === (playerColor === 'white' ? 'w' : 'b')) {
+      setSelectedSquare(square);
+      const moves = chess.moves({ square, verbose: true });
+      setLegalMoves(moves.map(move => move.to as Square));
+    }
+  };
+
   const handleDrop = (sourceSquare: Square, targetSquare: Square) => {
     if (disabled) return false;
     onMove(sourceSquare, targetSquare);
+    setSelectedSquare(null);
+    setLegalMoves([]);
     return true;
   };
+
+  const customSquareStyles: Record<string, React.CSSProperties> = {};
+  
+  // Highlight selected square
+  if (selectedSquare) {
+    customSquareStyles[selectedSquare] = {
+      backgroundColor: 'rgba(255, 255, 0, 0.4)',
+      boxShadow: 'inset 0 0 0 3px rgba(255, 255, 0, 0.8)',
+    };
+  }
+
+  // Highlight legal move squares
+  legalMoves.forEach(square => {
+    customSquareStyles[square] = {
+      background: 'radial-gradient(circle, rgba(0, 255, 0, 0.3) 25%, transparent 25%)',
+      borderRadius: '50%',
+    };
+  });
 
   return (
     <div className="w-full max-w-[600px] mx-auto">
       <Chessboard
         position={position}
         onPieceDrop={handleDrop}
+        onSquareClick={handleSquareClick}
         boardOrientation={playerColor || 'white'}
         customBoardStyle={{
           borderRadius: '8px',
@@ -27,6 +86,7 @@ export const ChessBoardComponent = ({ position, onMove, playerColor, disabled }:
         }}
         customDarkSquareStyle={{ backgroundColor: 'hsl(var(--primary))' }}
         customLightSquareStyle={{ backgroundColor: 'hsl(var(--card))' }}
+        customSquareStyles={customSquareStyles}
         arePiecesDraggable={!disabled}
       />
     </div>
