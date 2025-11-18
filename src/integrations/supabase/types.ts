@@ -195,6 +195,192 @@ export type Database = {
           },
         ]
       }
+      game_moves: {
+        Row: {
+          created_at: string
+          fen_after: string
+          fen_before: string
+          game_id: string
+          id: string
+          is_capture: boolean | null
+          is_castling: boolean | null
+          is_check: boolean | null
+          is_checkmate: boolean | null
+          is_en_passant: boolean | null
+          move_number: number
+          move_san: string
+          move_uci: string
+          player_id: string
+          promotion_piece: string | null
+          time_remaining: number | null
+          time_spent: number | null
+        }
+        Insert: {
+          created_at?: string
+          fen_after: string
+          fen_before: string
+          game_id: string
+          id?: string
+          is_capture?: boolean | null
+          is_castling?: boolean | null
+          is_check?: boolean | null
+          is_checkmate?: boolean | null
+          is_en_passant?: boolean | null
+          move_number: number
+          move_san: string
+          move_uci: string
+          player_id: string
+          promotion_piece?: string | null
+          time_remaining?: number | null
+          time_spent?: number | null
+        }
+        Update: {
+          created_at?: string
+          fen_after?: string
+          fen_before?: string
+          game_id?: string
+          id?: string
+          is_capture?: boolean | null
+          is_castling?: boolean | null
+          is_check?: boolean | null
+          is_checkmate?: boolean | null
+          is_en_passant?: boolean | null
+          move_number?: number
+          move_san?: string
+          move_uci?: string
+          player_id?: string
+          promotion_piece?: string | null
+          time_remaining?: number | null
+          time_spent?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_moves_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_moves_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      games: {
+        Row: {
+          black_player_id: string
+          black_time_remaining: number
+          completed_at: string | null
+          created_at: string
+          current_fen: string
+          current_turn: string
+          draw_offered_by: string | null
+          fifty_move_counter: number
+          id: string
+          last_move_at: string | null
+          move_count: number
+          pgn: string | null
+          position_history: Json | null
+          result: string | null
+          status: string
+          time_control: number
+          time_increment: number
+          undo_requested_by: string | null
+          updated_at: string
+          white_player_id: string
+          white_time_remaining: number
+          winner_id: string | null
+        }
+        Insert: {
+          black_player_id: string
+          black_time_remaining: number
+          completed_at?: string | null
+          created_at?: string
+          current_fen?: string
+          current_turn?: string
+          draw_offered_by?: string | null
+          fifty_move_counter?: number
+          id?: string
+          last_move_at?: string | null
+          move_count?: number
+          pgn?: string | null
+          position_history?: Json | null
+          result?: string | null
+          status?: string
+          time_control?: number
+          time_increment?: number
+          undo_requested_by?: string | null
+          updated_at?: string
+          white_player_id: string
+          white_time_remaining: number
+          winner_id?: string | null
+        }
+        Update: {
+          black_player_id?: string
+          black_time_remaining?: number
+          completed_at?: string | null
+          created_at?: string
+          current_fen?: string
+          current_turn?: string
+          draw_offered_by?: string | null
+          fifty_move_counter?: number
+          id?: string
+          last_move_at?: string | null
+          move_count?: number
+          pgn?: string | null
+          position_history?: Json | null
+          result?: string | null
+          status?: string
+          time_control?: number
+          time_increment?: number
+          undo_requested_by?: string | null
+          updated_at?: string
+          white_player_id?: string
+          white_time_remaining?: number
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "games_black_player_id_fkey"
+            columns: ["black_player_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_draw_offered_by_fkey"
+            columns: ["draw_offered_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_undo_requested_by_fkey"
+            columns: ["undo_requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_white_player_id_fkey"
+            columns: ["white_player_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leaderboard_stats: {
         Row: {
           annotations_count: number | null

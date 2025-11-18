@@ -112,6 +112,14 @@ const Index = () => {
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center pt-4">
               <Button 
                 size="lg" 
+                className="gradient-hero glow-primary text-base sm:text-lg px-6 sm:px-8 hover:scale-105 transition-transform gap-2"
+                onClick={() => navigate("/lobby")}
+              >
+                <Play className="w-5 h-5" />
+                Play Chess
+              </Button>
+              <Button 
+                size="lg" 
                 variant="outline" 
                 className="text-base sm:text-lg px-6 sm:px-8 hover:scale-105 transition-transform"
                 onClick={() => navigate("/leaderboard")}

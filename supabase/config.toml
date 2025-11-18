@@ -6,9 +6,15 @@ verify_jwt = true
 [functions.analyze-move]
 verify_jwt = false
 
-[functions.match-players]
-verify_jwt = false
+[functions.validate-chess-move]
+verify_jwt = true
 
-[functions.validate-move]
-verify_jwt = false
+[functions.create-chess-game]
+verify_jwt = true
+
+[functions.make-chess-move]
+verify_jwt = true
+
+[functions.chess-game-action]
+verify_jwt = true
 
