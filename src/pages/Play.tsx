@@ -3,11 +3,15 @@ import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Users } from "lucide-react";
+import { ArrowLeft, Users, Brain } from "lucide-react";
+import ChessClock from "@/components/ChessClock";
+import { AIMentorPanel } from "@/components/AIMentorPanel";
+import { PostGameSummary } from "@/components/PostGameSummary";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import ChessClock from "@/components/ChessClock";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 const Play = () => {
   const navigate = useNavigate();
@@ -20,6 +24,10 @@ const Play = () => {
   const [whiteTime, setWhiteTime] = useState(600);
   const [blackTime, setBlackTime] = useState(600);
   const [isGameActive, setIsGameActive] = useState(false);
+  const [aiMentorEnabled, setAiMentorEnabled] = useState(false);
+  const [lastMove, setLastMove] = useState<string | null>(null);
+  const [showSummary, setShowSummary] = useState(false);
+  const [completedGameId, setCompletedGameId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!roomId) {
@@ -165,6 +173,20 @@ const Play = () => {
         return;
       }
 
+      // Get the saved game ID
+      const { data: savedGame } = await supabase
+        .from("game_history")
+        .select("id")
+        .eq("room_id", roomId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (savedGame) {
+        setCompletedGameId(savedGame.id);
+        setShowSummary(true);
+      }
+
       // Update player stats for both players
       if (room.white_player_id) {
         await supabase.rpc("update_player_stats", { p_user_id: room.white_player_id });
@@ -261,6 +283,7 @@ const Play = () => {
 
       setGame(gameCopy);
       setMoveHistory([...moveHistory, result.san]);
+      setLastMove(result.san);
 
       // Add time increment
       const increment = room?.time_increment || 0;
@@ -440,9 +463,42 @@ const Play = () => {
                 </div>
               )}
             </Card>
+
+            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Brain className="w-5 h-5 text-primary" />
+                <Label htmlFor="ai-mentor" className="cursor-pointer">
+                  AI Mentor Mode
+                </Label>
+              </div>
+              <Switch
+                id="ai-mentor"
+                checked={aiMentorEnabled}
+                onCheckedChange={setAiMentorEnabled}
+              />
+            </div>
+
+            {aiMentorEnabled && (
+              <AIMentorPanel
+                currentFen={game.fen()}
+                lastMove={lastMove}
+                playerColor={playerColor}
+                isActive={aiMentorEnabled && isGameActive}
+              />
+            )}
           </div>
         </div>
       </div>
+
+      {completedGameId && playerColor && (
+        <PostGameSummary
+          open={showSummary}
+          onOpenChange={setShowSummary}
+          gameId={completedGameId}
+          result={room?.game_status === "completed" ? "draw" : "unknown"}
+          playerColor={playerColor}
+        />
+      )}
     </div>
   );
 };
