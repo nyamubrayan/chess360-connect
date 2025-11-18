@@ -370,54 +370,6 @@ export type Database = {
           },
         ]
       }
-      matchmaking_queue: {
-        Row: {
-          created_at: string
-          id: string
-          matched_room_id: string | null
-          rating_range: number | null
-          status: string
-          time_control: number
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          matched_room_id?: string | null
-          rating_range?: number | null
-          status?: string
-          time_control: number
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          matched_room_id?: string | null
-          rating_range?: number | null
-          status?: string
-          time_control?: number
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "matchmaking_queue_matched_room_id_fkey"
-            columns: ["matched_room_id"]
-            isOneToOne: false
-            referencedRelation: "rooms"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "matchmaking_queue_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       notifications: {
         Row: {
           created_at: string | null
