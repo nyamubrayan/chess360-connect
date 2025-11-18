@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Plus, Users, Clock, ArrowLeft, Share2 } from "lucide-react";
 import { FriendsDialog } from "@/components/FriendsDialog";
 import { ShareGameLink } from "@/components/ShareGameLink";
+import { NotificationBell } from "@/components/NotificationBell";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import {
@@ -112,9 +113,41 @@ const Lobby = () => {
       return;
     }
 
-    await supabase.from("room_members").insert({ room_id: data.id, user_id: user.id });
-    
-    if (isPrivate) {
+      await supabase.from("room_members").insert({ room_id: data.id, user_id: user.id });
+      
+      // Send notifications to friends if it's a private game
+      if (isPrivate && selectedFriend) {
+        await supabase.from("notifications").insert({
+          user_id: selectedFriend,
+          type: "game_invite",
+          title: "Chess Game Invitation",
+          message: `${user.email?.split('@')[0] || 'A player'} has invited you to play chess!`,
+          room_id: data.id,
+          sender_id: user.id,
+        });
+      } else if (!isPrivate) {
+        // Broadcast to all friends for public games
+        const { data: friendsList } = await supabase
+          .from("friends")
+          .select("friend_id")
+          .eq("user_id", user.id)
+          .eq("status", "accepted");
+
+        if (friendsList && friendsList.length > 0) {
+          const notifications = friendsList.map((f) => ({
+            user_id: f.friend_id,
+            type: "game_invite",
+            title: "New Game Available",
+            message: `${user.email?.split('@')[0] || 'A player'} created a new chess game!`,
+            room_id: data.id,
+            sender_id: user.id,
+          }));
+
+          await supabase.from("notifications").insert(notifications);
+        }
+      }
+      
+      if (isPrivate) {
       setSharedRoomId(data.id);
       setShareDialogOpen(true);
       toast.success("Room created! Share the link with your friend");
@@ -156,7 +189,10 @@ const Lobby = () => {
             Home
           </Button>
           <h1 className="text-4xl font-bold">Game Lobby</h1>
-          {user && <FriendsDialog userId={user.id} />}
+          <div className="flex items-center gap-2">
+            {user && <NotificationBell userId={user.id} />}
+            {user && <FriendsDialog userId={user.id} />}
+          </div>
         </div>
 
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
@@ -202,6 +238,25 @@ const Lobby = () => {
                   Private game (share link with friend)
                 </Label>
               </div>
+
+              {isPrivate && friends.length > 0 && (
+                <div className="space-y-2">
+                  <Label htmlFor="friend-select">Invite Friend (optional)</Label>
+                  <Select value={selectedFriend} onValueChange={setSelectedFriend}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a friend to notify" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {friends.map((friend: any) => (
+                        <SelectItem key={friend.friend_id} value={friend.friend_id}>
+                          {friend.profiles?.username || friend.profiles?.display_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <Button type="submit" className="w-full" size="lg">
                 <Plus className="w-5 h-5 mr-2" />
                 {isPrivate ? "Create & Get Link" : "Create Game"}

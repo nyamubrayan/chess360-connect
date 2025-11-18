@@ -7,6 +7,7 @@ import { ArrowLeft, Users, Brain } from "lucide-react";
 import ChessClock from "@/components/ChessClock";
 import { AIMentorPanel } from "@/components/AIMentorPanel";
 import { PostGameSummary } from "@/components/PostGameSummary";
+import { NotificationBell } from "@/components/NotificationBell";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -254,6 +255,18 @@ const Play = () => {
         .from("room_members")
         .insert({ room_id: roomId, user_id: user.id });
       
+      // Notify white player that opponent joined
+      if (roomData.white_player_id) {
+        await supabase.from("notifications").insert({
+          user_id: roomData.white_player_id,
+          type: "game_started",
+          title: "Opponent Joined!",
+          message: "Your chess game is starting now!",
+          room_id: roomId,
+          sender_id: user.id,
+        });
+      }
+      
       setPlayerColor("black");
       setIsGameActive(true);
       toast.success("Joined as black player! Game starting...");
@@ -303,6 +316,19 @@ const Play = () => {
           last_move_at: new Date().toISOString(),
         })
         .eq("id", roomId);
+
+      // Notify opponent that it's their turn
+      const opponentId = isWhiteTurn ? room.black_player_id : room.white_player_id;
+      if (opponentId) {
+        await supabase.from("notifications").insert({
+          user_id: opponentId,
+          type: "your_turn",
+          title: "Your Turn!",
+          message: `It's your turn in the chess game. Move: ${result.san}`,
+          room_id: roomId,
+          sender_id: user?.id,
+        });
+      }
 
       if (gameCopy.isCheckmate()) {
         toast.success(`Checkmate! ${isWhiteTurn ? "White" : "Black"} wins!`);
@@ -366,10 +392,13 @@ const Play = () => {
               Playing as {playerColor || "spectator"}
             </p>
           </div>
-          <div className="w-32 text-right text-sm">
-            <div className="flex items-center gap-2 justify-end">
-              <Users className="w-4 h-4" />
-              <span>{room.member_count || 1}/2 players</span>
+          <div className="flex items-center gap-2">
+            {user && <NotificationBell userId={user.id} />}
+            <div className="text-right text-sm">
+              <div className="flex items-center gap-2 justify-end">
+                <Users className="w-4 h-4" />
+                <span>{room.member_count || 1}/2 players</span>
+              </div>
             </div>
           </div>
         </div>
