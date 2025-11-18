@@ -100,15 +100,18 @@ export default function ChessGame() {
     setGame(gameData);
     chess.load(gameData.current_fen);
     setPosition(gameData.current_fen);
+  };
 
-    if (user) {
-      if (gameData.white_player_id === user.id) {
+  // Set player color when both user and game are available
+  useEffect(() => {
+    if (user && game) {
+      if (game.white_player_id === user.id) {
         setPlayerColor('white');
-      } else if (gameData.black_player_id === user.id) {
+      } else if (game.black_player_id === user.id) {
         setPlayerColor('black');
       }
     }
-  };
+  }, [user, game]);
 
   const handleMove = async (from: string, to: string) => {
     if (isProcessing || !user || game.status !== 'active') return;
