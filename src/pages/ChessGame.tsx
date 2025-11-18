@@ -24,6 +24,8 @@ export default function ChessGame() {
   const [showPromotion, setShowPromotion] = useState(false);
   const [pendingMove, setPendingMove] = useState<{ from: string; to: string } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [whitePlayer, setWhitePlayer] = useState<any>(null);
+  const [blackPlayer, setBlackPlayer] = useState<any>(null);
 
   useEffect(() => {
     if (!gameId) {
@@ -96,10 +98,23 @@ export default function ChessGame() {
     }
   };
 
-  const handleGameUpdate = (gameData: any) => {
+  const handleGameUpdate = async (gameData: any) => {
     setGame(gameData);
     chess.load(gameData.current_fen);
     setPosition(gameData.current_fen);
+    
+    // Fetch player profiles
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, username, display_name, avatar_url')
+      .in('id', [gameData.white_player_id, gameData.black_player_id]);
+    
+    if (profiles) {
+      const white = profiles.find(p => p.id === gameData.white_player_id);
+      const black = profiles.find(p => p.id === gameData.black_player_id);
+      setWhitePlayer(white);
+      setBlackPlayer(black);
+    }
   };
 
   // Set player color when both user and game are available
@@ -265,6 +280,20 @@ export default function ChessGame() {
 
           {/* Center: Chess Board */}
           <div className="lg:col-span-1 order-1 lg:order-2">
+            {/* Opponent Name (top) */}
+            {playerColor && (
+              <Card className="gradient-card p-3 mb-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold">
+                    {playerColor === 'white' ? (blackPlayer?.display_name || blackPlayer?.username || 'Opponent') : (whitePlayer?.display_name || whitePlayer?.username || 'Opponent')}
+                  </span>
+                  <span className="text-xs text-muted-foreground capitalize">
+                    {playerColor === 'white' ? 'Black' : 'White'}
+                  </span>
+                </div>
+              </Card>
+            )}
+            
             <ChessTimer
               game={game}
               playerColor={playerColor}
@@ -276,6 +305,21 @@ export default function ChessGame() {
               playerColor={playerColor}
               disabled={isProcessing || game.status !== 'active'}
             />
+            
+            {/* Your Name (bottom) */}
+            {playerColor && (
+              <Card className="gradient-card p-3 mt-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold">
+                    {playerColor === 'white' ? (whitePlayer?.display_name || whitePlayer?.username || 'You') : (blackPlayer?.display_name || blackPlayer?.username || 'You')}
+                  </span>
+                  <span className="text-xs text-muted-foreground capitalize">
+                    {playerColor} (You)
+                  </span>
+                </div>
+              </Card>
+            )}
+            
             <GameControls
               game={game}
               playerColor={playerColor}
