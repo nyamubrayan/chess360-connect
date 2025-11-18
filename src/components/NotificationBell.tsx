@@ -92,8 +92,9 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
   const handleNotificationClick = async (notification: Notification) => {
     await markAsRead(notification.id);
 
-    if (notification.room_id) {
-      navigate(`/play/${notification.room_id}`);
+    // Navigate to the game page if it's a game-related notification
+    if (notification.room_id && (notification.type === 'match_found' || notification.type === 'game_started' || notification.type === 'your_turn')) {
+      navigate(`/game/${notification.room_id}`);
       setOpen(false);
     }
   };
