@@ -26,6 +26,7 @@ export default function ChessGame() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [whitePlayer, setWhitePlayer] = useState<any>(null);
   const [blackPlayer, setBlackPlayer] = useState<any>(null);
+  const [opponentOnline, setOpponentOnline] = useState(false);
 
   useEffect(() => {
     if (!gameId) {
@@ -81,9 +82,38 @@ export default function ChessGame() {
       )
       .subscribe();
 
+    // Track presence - show online status
+    const presenceChannel = supabase.channel(`presence-game-${gameId}`);
+    
+    presenceChannel
+      .on('presence', { event: 'sync' }, () => {
+        const state = presenceChannel.presenceState();
+        console.log('Presence sync:', state);
+        
+        // Check if opponent is online
+        const allUsers = Object.values(state).flat();
+        const hasOpponent = allUsers.some((u: any) => u.user_id !== user?.id);
+        setOpponentOnline(hasOpponent);
+      })
+      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+        console.log('User joined:', key, newPresences);
+      })
+      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+        console.log('User left:', key, leftPresences);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED' && user) {
+          await presenceChannel.track({
+            user_id: user.id,
+            online_at: new Date().toISOString(),
+          });
+        }
+      });
+
     return () => {
       supabase.removeChannel(gameChannel);
       supabase.removeChannel(movesChannel);
+      supabase.removeChannel(presenceChannel);
     };
   }, [gameId]);
 
@@ -331,9 +361,12 @@ export default function ChessGame() {
             {playerColor && (
               <Card className="gradient-card p-3 mb-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold">
-                    {playerColor === 'white' ? (blackPlayer?.display_name || blackPlayer?.username || 'Opponent') : (whitePlayer?.display_name || whitePlayer?.username || 'Opponent')}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${opponentOnline ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
+                    <span className="font-semibold">
+                      {playerColor === 'white' ? (blackPlayer?.display_name || blackPlayer?.username || 'Opponent') : (whitePlayer?.display_name || whitePlayer?.username || 'Opponent')}
+                    </span>
+                  </div>
                   <span className="text-xs text-muted-foreground capitalize">
                     {playerColor === 'white' ? 'Black' : 'White'}
                   </span>
@@ -351,6 +384,7 @@ export default function ChessGame() {
               onMove={handleMove}
               playerColor={playerColor}
               disabled={isProcessing || game.status !== 'active'}
+              chess={chess}
             />
             
             {/* Your Name (bottom) */}
