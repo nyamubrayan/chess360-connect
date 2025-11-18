@@ -5,11 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Users, Clock, ArrowLeft, Share2, Zap } from "lucide-react";
+import { Plus, Users, Clock, ArrowLeft } from "lucide-react";
 import { FriendsDialog } from "@/components/FriendsDialog";
 import { ShareGameLink } from "@/components/ShareGameLink";
 import { NotificationBell } from "@/components/NotificationBell";
-import { MatchmakingQueue } from "@/components/MatchmakingQueue";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import {
@@ -47,8 +46,6 @@ const Lobby = () => {
   const [friends, setFriends] = useState<any[]>([]);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [sharedRoomId, setSharedRoomId] = useState<string>("");
-  const [isSearching, setIsSearching] = useState(false);
-  const [quickMatchTime, setQuickMatchTime] = useState(10);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
@@ -183,39 +180,6 @@ const Lobby = () => {
     navigate(`/play/${roomId}`);
   };
 
-  const handleQuickMatch = async () => {
-    if (!user) {
-      toast.error("Please sign in to play");
-      navigate("/auth");
-      return;
-    }
-
-    try {
-      setIsSearching(true);
-      
-      const { data, error } = await supabase.functions.invoke('match-players', {
-        body: { 
-          timeControl: quickMatchTime,
-          userId: user.id 
-        }
-      });
-
-      if (error) throw error;
-
-      console.log('Match response:', data);
-
-      if (data.matched) {
-        toast.success(`Match found! You are ${data.color}`);
-        navigate(`/play/${data.roomId}`);
-      } else {
-        toast.info('Searching for opponent...');
-      }
-    } catch (error) {
-      console.error('Error starting quick match:', error);
-      toast.error('Failed to start matchmaking');
-      setIsSearching(false);
-    }
-  };
 
   if (!user) {
     return (
@@ -227,23 +191,6 @@ const Lobby = () => {
     );
   }
 
-  if (isSearching) {
-    return (
-      <div className="min-h-screen bg-background p-4">
-        <div className="container mx-auto max-w-7xl">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-3xl font-bold">Quick Match</h1>
-            <NotificationBell userId={user.id} />
-          </div>
-          <MatchmakingQueue
-            timeControl={quickMatchTime}
-            userId={user.id}
-            onCancel={() => setIsSearching(false)}
-          />
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background p-2 sm:p-4">
@@ -260,33 +207,6 @@ const Lobby = () => {
           </div>
         </div>
 
-        <Card className="gradient-card p-4 sm:p-6 mb-4 sm:mb-6 glow-primary">
-          <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 flex items-center gap-2">
-            <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
-            Quick Match
-          </h2>
-          <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">
-            Get matched instantly with an opponent of similar skill
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-end">
-            <div className="flex-1 max-w-full sm:max-w-xs">
-              <Label htmlFor="quick-time" className="text-sm">Time Control (minutes)</Label>
-              <Input
-                id="quick-time"
-                type="number"
-                min="1"
-                max="60"
-                value={quickMatchTime}
-                onChange={(e) => setQuickMatchTime(parseInt(e.target.value) || 10)}
-                className="mt-1"
-              />
-            </div>
-            <Button onClick={handleQuickMatch} className="gap-2 w-full sm:w-auto" size="lg">
-              <Zap className="w-4 h-4" />
-              Find Match
-            </Button>
-          </div>
-        </Card>
 
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
