@@ -30,18 +30,27 @@ serve(async (req) => {
     const { timeControl, timeIncrement, action } = await req.json();
 
     if (action === 'join') {
-      // Join matchmaking queue
-      const { error: insertError } = await supabaseClient
+      // Check if already in queue, if not add them
+      const { data: existingEntry } = await supabaseClient
         .from('matchmaking_queue')
-        .insert({
-          user_id: user.id,
-          time_control: timeControl,
-          time_increment: timeIncrement,
-        });
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
 
-      if (insertError) {
-        console.error('Error joining queue:', insertError);
-        throw insertError;
+      if (!existingEntry) {
+        // Join matchmaking queue
+        const { error: insertError } = await supabaseClient
+          .from('matchmaking_queue')
+          .insert({
+            user_id: user.id,
+            time_control: timeControl,
+            time_increment: timeIncrement,
+          });
+
+        if (insertError) {
+          console.error('Error joining queue:', insertError);
+          throw insertError;
+        }
       }
 
       // Look for a match with similar time controls
