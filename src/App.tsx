@@ -11,6 +11,8 @@ import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import Community from "./pages/Community";
 import Leaderboard from "./pages/Leaderboard";
+import Lessons from "./pages/Lessons";
+import LessonView from "./pages/LessonView";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +33,8 @@ const App = () => (
           <Route path="/profile/:userId" element={<Profile />} />
           <Route path="/community" element={<Community />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/lessons" element={<Lessons />} />
+          <Route path="/lessons/:id" element={<LessonView />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

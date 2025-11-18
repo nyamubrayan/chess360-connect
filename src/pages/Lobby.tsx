@@ -78,7 +78,7 @@ const Lobby = () => {
   const fetchRooms = async () => {
     const { data } = await supabase
       .from("rooms")
-      .select(`id, creator_id, time_control, time_increment, member_count, game_status, profiles!rooms_creator_id_fkey(username)`)
+      .select(`id, name, creator_id, time_control, time_increment, member_count, game_status, profiles!rooms_creator_id_fkey(username)`)
       .eq("game_status", "waiting")
       .order("created_at", { ascending: false });
 
