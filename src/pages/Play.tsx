@@ -230,11 +230,17 @@ const Play = () => {
 
     if (!user) return;
 
-    // Assign colors
+    // Assign colors and activate game when both players present
     if (roomData.white_player_id === user.id) {
       setPlayerColor("white");
+      if (roomData.game_status === "active" && roomData.black_player_id) {
+        setIsGameActive(true);
+      }
     } else if (roomData.black_player_id === user.id) {
       setPlayerColor("black");
+      if (roomData.game_status === "active") {
+        setIsGameActive(true);
+      }
     } else if (!roomData.white_player_id) {
       await supabase
         .from("rooms")
