@@ -30,7 +30,7 @@ export const GameChat = ({
   blackPlayer,
   className,
 }: GameChatProps) => {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -49,7 +49,7 @@ export const GameChat = ({
           filter: `game_id=eq.${gameId}`,
         },
         (payload) => {
-          setMessages((prev) => [...prev, payload.new as ChatMessage]);
+          setMessages((prev) => [...prev, payload.new as any]);
         }
       )
       .subscribe();
@@ -68,7 +68,7 @@ export const GameChat = ({
 
   const fetchMessages = async () => {
     const { data, error } = await supabase
-      .from('game_chat_messages')
+      .from('game_chat_messages' as any)
       .select('*')
       .eq('game_id', gameId)
       .order('created_at', { ascending: true });
@@ -85,7 +85,7 @@ export const GameChat = ({
     if (!newMessage.trim()) return;
 
     const { error } = await supabase
-      .from('game_chat_messages')
+      .from('game_chat_messages' as any)
       .insert({
         game_id: gameId,
         user_id: currentUserId,

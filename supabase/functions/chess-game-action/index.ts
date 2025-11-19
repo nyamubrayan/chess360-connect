@@ -219,11 +219,77 @@ serve(async (req) => {
         await supabaseClient.from('notifications').insert({
           user_id: isWhitePlayer ? game.black_player_id : game.white_player_id,
           type: 'undo_requested',
-          title: 'Undo Requested',
+          title: 'Takeback Requested',
           message: 'Your opponent has requested to undo the last move.',
         });
 
         console.log('Undo requested');
+        break;
+
+      case 'accept_undo':
+        if (game.undo_requested_by === user.id) {
+          throw new Error('Cannot accept your own undo request');
+        }
+
+        if (!game.undo_requested_by) {
+          throw new Error('No undo request pending');
+        }
+
+        // Get the last two moves and delete them
+        const { data: lastMoves } = await supabaseClient
+          .from('game_moves')
+          .select('*')
+          .eq('game_id', gameId)
+          .order('move_number', { ascending: false })
+          .limit(2);
+
+        if (lastMoves && lastMoves.length > 0) {
+          // Delete the last moves
+          await supabaseClient
+            .from('game_moves')
+            .delete()
+            .eq('game_id', gameId)
+            .gte('move_number', lastMoves[lastMoves.length - 1].move_number);
+
+          // Get the FEN before the moves
+          const fenBefore = lastMoves[lastMoves.length - 1].fen_before;
+          
+          // Update game state
+          await supabaseClient
+            .from('games')
+            .update({
+              current_fen: fenBefore,
+              undo_requested_by: null,
+              move_count: game.move_count - lastMoves.length,
+              current_turn: lastMoves.length === 2 ? game.current_turn : (game.current_turn === 'w' ? 'b' : 'w'),
+            })
+            .eq('id', gameId);
+        }
+
+        // Notify requester
+        await supabaseClient.from('notifications').insert({
+          user_id: game.undo_requested_by,
+          type: 'undo_accepted',
+          title: 'Takeback Accepted',
+          message: 'Your takeback request was accepted.',
+        });
+
+        console.log('Undo accepted');
+        break;
+
+      case 'decline_undo':
+        if (game.undo_requested_by === user.id) {
+          throw new Error('Cannot decline your own undo request');
+        }
+
+        await supabaseClient
+          .from('games')
+          .update({
+            undo_requested_by: null,
+          })
+          .eq('id', gameId);
+
+        console.log('Undo declined');
         break;
 
       default:
