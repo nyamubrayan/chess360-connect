@@ -195,6 +195,67 @@ export type Database = {
           },
         ]
       }
+      game_highlights: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          duration: number | null
+          game_id: string
+          id: string
+          key_moments: Json
+          likes_count: number | null
+          title: string
+          user_id: string
+          views_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          duration?: number | null
+          game_id: string
+          id?: string
+          key_moments: Json
+          likes_count?: number | null
+          title: string
+          user_id: string
+          views_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          duration?: number | null
+          game_id?: string
+          id?: string
+          key_moments?: Json
+          likes_count?: number | null
+          title?: string
+          user_id?: string
+          views_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_highlights_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "game_history"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_highlights_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_highlights_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       game_moves: {
         Row: {
           created_at: string
