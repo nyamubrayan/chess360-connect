@@ -387,6 +387,7 @@ export type Database = {
       games: {
         Row: {
           black_player_id: string
+          black_rating_change: number | null
           black_time_remaining: number
           completed_at: string | null
           created_at: string
@@ -406,11 +407,13 @@ export type Database = {
           undo_requested_by: string | null
           updated_at: string
           white_player_id: string
+          white_rating_change: number | null
           white_time_remaining: number
           winner_id: string | null
         }
         Insert: {
           black_player_id: string
+          black_rating_change?: number | null
           black_time_remaining: number
           completed_at?: string | null
           created_at?: string
@@ -430,11 +433,13 @@ export type Database = {
           undo_requested_by?: string | null
           updated_at?: string
           white_player_id: string
+          white_rating_change?: number | null
           white_time_remaining: number
           winner_id?: string | null
         }
         Update: {
           black_player_id?: string
+          black_rating_change?: number | null
           black_time_remaining?: number
           completed_at?: string | null
           created_at?: string
@@ -454,6 +459,7 @@ export type Database = {
           undo_requested_by?: string | null
           updated_at?: string
           white_player_id?: string
+          white_rating_change?: number | null
           white_time_remaining?: number
           winner_id?: string | null
         }
