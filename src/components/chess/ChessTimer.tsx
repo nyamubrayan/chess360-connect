@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Clock } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ChessTimerProps {
   game: any;
@@ -27,14 +28,41 @@ export const ChessTimer = ({ game, playerColor, className }: ChessTimerProps) =>
         : 0;
 
       if (currentTurn === 'w') {
-        setWhiteTime(Math.max(0, game.white_time_remaining - timeSinceLastMove));
+        const newTime = Math.max(0, game.white_time_remaining - timeSinceLastMove);
+        setWhiteTime(newTime);
+        
+        // Check if time ran out for white player
+        if (newTime === 0 && game.white_time_remaining > 0) {
+          handleTimeout('white');
+        }
       } else {
-        setBlackTime(Math.max(0, game.black_time_remaining - timeSinceLastMove));
+        const newTime = Math.max(0, game.black_time_remaining - timeSinceLastMove);
+        setBlackTime(newTime);
+        
+        // Check if time ran out for black player
+        if (newTime === 0 && game.black_time_remaining > 0) {
+          handleTimeout('black');
+        }
       }
     }, 100);
 
     return () => clearInterval(interval);
   }, [game]);
+
+  const handleTimeout = async (color: 'white' | 'black') => {
+    // End game due to timeout
+    const winnerId = color === 'white' ? game.black_player_id : game.white_player_id;
+    
+    await supabase
+      .from('games')
+      .update({
+        status: 'completed',
+        result: color === 'white' ? '0-1' : '1-0',
+        winner_id: winnerId,
+        completed_at: new Date().toISOString()
+      })
+      .eq('id', game.id);
+  };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

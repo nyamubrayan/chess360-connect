@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Flag, HandshakeIcon, CheckCircle, XCircle } from 'lucide-react';
+import { Flag, HandshakeIcon, CheckCircle, XCircle, Undo2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,6 +20,9 @@ interface GameControlsProps {
   onOfferDraw: () => void;
   onAcceptDraw: () => void;
   onDeclineDraw: () => void;
+  onRequestTakeback: () => void;
+  onAcceptTakeback: () => void;
+  onDeclineTakeback: () => void;
   className?: string;
 }
 
@@ -30,12 +33,19 @@ export const GameControls = ({
   onOfferDraw,
   onAcceptDraw,
   onDeclineDraw,
+  onRequestTakeback,
+  onAcceptTakeback,
+  onDeclineTakeback,
   className,
 }: GameControlsProps) => {
   const isActive = game.status === 'active';
   const drawOfferedByOpponent = game.draw_offered_by && 
     ((playerColor === 'white' && game.draw_offered_by === game.black_player_id) ||
      (playerColor === 'black' && game.draw_offered_by === game.white_player_id));
+  
+  const takebackRequestedByOpponent = game.undo_requested_by && 
+    ((playerColor === 'white' && game.undo_requested_by === game.black_player_id) ||
+     (playerColor === 'black' && game.undo_requested_by === game.white_player_id));
 
   return (
     <Card className={`gradient-card p-4 ${className}`}>
@@ -99,6 +109,41 @@ export const GameControls = ({
           >
             <HandshakeIcon className="w-4 h-4" />
             {game.draw_offered_by ? 'Draw Offered' : 'Offer Draw'}
+          </Button>
+        )}
+
+        {/* Takeback Request/Response */}
+        {takebackRequestedByOpponent ? (
+          <>
+            <Button
+              variant="default"
+              size="sm"
+              className="flex-1 gap-2"
+              onClick={onAcceptTakeback}
+            >
+              <CheckCircle className="w-4 h-4" />
+              Accept Takeback
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 gap-2"
+              onClick={onDeclineTakeback}
+            >
+              <XCircle className="w-4 h-4" />
+              Decline
+            </Button>
+          </>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 gap-2"
+            onClick={onRequestTakeback}
+            disabled={!isActive || !!game.undo_requested_by || game.move_count === 0}
+          >
+            <Undo2 className="w-4 h-4" />
+            {game.undo_requested_by ? 'Takeback Requested' : 'Request Takeback'}
           </Button>
         )}
       </div>
