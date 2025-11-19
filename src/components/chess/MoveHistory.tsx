@@ -16,6 +16,9 @@ export const MoveHistory = ({ moves }: MoveHistoryProps) => {
     });
   }
 
+  // Get the last move for highlighting
+  const lastMove = moves.length > 0 ? moves[moves.length - 1] : null;
+
   return (
     <Card className="gradient-card p-4 h-full">
       <h3 className="text-lg font-bold mb-4">Move History</h3>
@@ -35,11 +38,23 @@ export const MoveHistory = ({ moves }: MoveHistoryProps) => {
                   {pair.number}.
                 </span>
                 <div className="flex-1 flex gap-4">
-                  <span className="flex-1 font-mono">
+                  <span 
+                    className={`flex-1 font-mono ${
+                      pair.white?.id === lastMove?.id 
+                        ? 'bg-primary/20 px-2 py-1 rounded font-bold' 
+                        : ''
+                    }`}
+                  >
                     {pair.white?.move_san}
                   </span>
                   {pair.black && (
-                    <span className="flex-1 font-mono">
+                    <span 
+                      className={`flex-1 font-mono ${
+                        pair.black?.id === lastMove?.id 
+                          ? 'bg-primary/20 px-2 py-1 rounded font-bold' 
+                          : ''
+                      }`}
+                    >
                       {pair.black.move_san}
                     </span>
                   )}
