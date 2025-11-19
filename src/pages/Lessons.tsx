@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Video, Puzzle, Eye, ArrowLeft, Plus } from "lucide-react";
+import { BookOpen, Video, Puzzle, Eye, ArrowLeft, Plus, Sparkles, Target, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { LessonUploadDialog } from "@/components/LessonUploadDialog";
@@ -33,11 +33,16 @@ const Lessons = () => {
   const [isCoach, setIsCoach] = useState(false);
   const [selectedType, setSelectedType] = useState<string>("all");
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [recommendations, setRecommendations] = useState<any>(null);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
-      if (user) checkCoachRole(user.id);
+      if (user) {
+        checkCoachRole(user.id);
+        fetchRecommendations();
+      }
     });
     fetchLessons();
   }, []);
@@ -51,6 +56,24 @@ const Lessons = () => {
       .single();
     
     setIsCoach(!!data);
+  };
+
+  const fetchRecommendations = async () => {
+    setLoadingRecommendations(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('recommend-lessons');
+      
+      if (error) {
+        console.error('Error fetching recommendations:', error);
+        return;
+      }
+
+      setRecommendations(data);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoadingRecommendations(false);
+    }
   };
 
   const fetchLessons = async () => {
@@ -127,83 +150,214 @@ const Lessons = () => {
           )}
         </div>
 
-        <Tabs value={selectedType} onValueChange={setSelectedType} className="mb-8">
-          <TabsList className="grid w-full max-w-md grid-cols-4">
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="video">Videos</TabsTrigger>
-            <TabsTrigger value="guide">Guides</TabsTrigger>
-            <TabsTrigger value="puzzle_set">Puzzles</TabsTrigger>
-          </TabsList>
+        <Tabs defaultValue="all" className="w-full">
+          <div className="flex items-center justify-between mb-6">
+            <TabsList>
+              <TabsTrigger value="all">All Lessons</TabsTrigger>
+              <TabsTrigger value="for-you" className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4" />
+                For You
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsList>
+              <TabsTrigger 
+                value="all"
+                onClick={() => setSelectedType("all")}
+              >
+                All
+              </TabsTrigger>
+              <TabsTrigger 
+                value="video"
+                onClick={() => setSelectedType("video")}
+              >
+                Videos
+              </TabsTrigger>
+              <TabsTrigger 
+                value="guide"
+                onClick={() => setSelectedType("guide")}
+              >
+                Guides
+              </TabsTrigger>
+              <TabsTrigger 
+                value="puzzle_set"
+                onClick={() => setSelectedType("puzzle_set")}
+              >
+                Puzzles
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="all">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {lessons.map((lesson) => (
+                <Card key={lesson.id} className="hover:border-primary transition-colors">
+                  <CardHeader>
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        {getLessonIcon(lesson.lesson_type)}
+                        <Badge variant="secondary" className="capitalize">
+                          {lesson.lesson_type.replace("_", " ")}
+                        </Badge>
+                      </div>
+                      <Badge className={getDifficultyColor(lesson.difficulty_level)}>
+                        {lesson.difficulty_level}
+                      </Badge>
+                    </div>
+                    <CardTitle className="line-clamp-2">{lesson.title}</CardTitle>
+                    <CardDescription className="line-clamp-2">
+                      {lesson.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span>By {lesson.profiles.display_name || lesson.profiles.username}</span>
+                      <div className="flex items-center gap-1">
+                        <Eye className="w-4 h-4" />
+                        {lesson.views_count}
+                      </div>
+                    </div>
+                    {lesson.tags && lesson.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-3">
+                        {lesson.tags.slice(0, 3).map((tag, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                  <CardFooter>
+                    <Button 
+                      className="w-full" 
+                      onClick={() => viewLesson(lesson.id)}
+                    >
+                      View Lesson
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+
+            {lessons.length === 0 && (
+              <div className="text-center py-12">
+                <BookOpen className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No lessons found</h3>
+                <p className="text-muted-foreground">
+                  {selectedType !== "all" 
+                    ? "Try selecting a different category" 
+                    : "Check back later for new content"}
+                </p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="for-you">
+            {loadingRecommendations ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">Loading personalized recommendations...</p>
+              </div>
+            ) : !recommendations ? (
+              <Card className="p-12 text-center">
+                <Sparkles className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-xl font-bold mb-2">Get Personalized Recommendations</h3>
+                <p className="text-muted-foreground mb-4">
+                  Play some games to receive AI-powered lesson recommendations tailored to your skill level and playing style!
+                </p>
+                <Button onClick={() => navigate("/lobby")}>Start Playing</Button>
+              </Card>
+            ) : (
+              <div className="space-y-6">
+                {/* Learning Path Summary */}
+                <Card className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-primary/10 rounded-lg">
+                      <Target className="h-6 w-6 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold mb-2">Your Learning Path</h3>
+                      <p className="text-muted-foreground">{recommendations.learning_path_summary}</p>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Recommended Lessons */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {recommendations.recommendations
+                    ?.sort((a: any, b: any) => a.priority - b.priority)
+                    .map((rec: any, index: number) => (
+                      <Card 
+                        key={index}
+                        className="hover:shadow-lg transition-shadow p-6 relative overflow-hidden"
+                      >
+                        {rec.priority === 1 && (
+                          <div className="absolute top-2 right-2">
+                            <Badge className="bg-primary text-primary-foreground">
+                              <Star className="h-3 w-3 mr-1" />
+                              Priority
+                            </Badge>
+                          </div>
+                        )}
+
+                        <div className="space-y-4">
+                          <div>
+                            <h3 className="text-xl font-bold mb-2">{rec.title}</h3>
+                            <p className="text-sm text-muted-foreground line-clamp-2">
+                              {rec.description}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge variant="secondary" className="text-xs">
+                              {rec.difficulty}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {rec.category}
+                            </Badge>
+                          </div>
+
+                          <div className="p-3 bg-accent/20 rounded-lg">
+                            <p className="text-xs text-muted-foreground">
+                              <span className="font-medium text-foreground">Why this? </span>
+                              {rec.reasoning}
+                            </p>
+                          </div>
+
+                          <Button 
+                            className="w-full"
+                            variant="outline"
+                            onClick={() => {
+                              const matchingLesson = lessons.find(
+                                l => l.title.toLowerCase().includes(rec.title.toLowerCase().split(' ')[0])
+                              );
+                              if (matchingLesson) {
+                                navigate(`/lessons/${matchingLesson.id}`);
+                              } else {
+                                toast.info("This lesson is coming soon! We're creating content based on your needs.");
+                              }
+                            }}
+                          >
+                            <BookOpen className="mr-2 h-4 w-4" />
+                            Start Learning
+                          </Button>
+                        </div>
+                      </Card>
+                    ))}
+                </div>
+              </div>
+            )}
+          </TabsContent>
         </Tabs>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {lessons.map((lesson) => (
-            <Card key={lesson.id} className="hover:border-primary transition-colors">
-              <CardHeader>
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    {getLessonIcon(lesson.lesson_type)}
-                    <Badge variant="secondary" className="capitalize">
-                      {lesson.lesson_type.replace("_", " ")}
-                    </Badge>
-                  </div>
-                  <Badge className={getDifficultyColor(lesson.difficulty_level)}>
-                    {lesson.difficulty_level}
-                  </Badge>
-                </div>
-                <CardTitle className="line-clamp-2">{lesson.title}</CardTitle>
-                <CardDescription className="line-clamp-2">
-                  {lesson.description}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <span>By {lesson.profiles.display_name || lesson.profiles.username}</span>
-                  <div className="flex items-center gap-1">
-                    <Eye className="w-4 h-4" />
-                    {lesson.views_count}
-                  </div>
-                </div>
-                {lesson.tags && lesson.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-3">
-                    {lesson.tags.slice(0, 3).map((tag, idx) => (
-                      <Badge key={idx} variant="outline" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  className="w-full" 
-                  onClick={() => viewLesson(lesson.id)}
-                >
-                  View Lesson
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-
-        {lessons.length === 0 && (
-          <div className="text-center py-12">
-            <BookOpen className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-xl font-semibold mb-2">No lessons available</h3>
-            <p className="text-muted-foreground">
-              {isCoach ? "Start by uploading your first lesson!" : "Check back soon for new content"}
-            </p>
-          </div>
-        )}
-      </div>
-
-      {isCoach && (
         <LessonUploadDialog 
           open={isUploadOpen} 
           onOpenChange={setIsUploadOpen}
-          onSuccess={fetchLessons}
+          onSuccess={() => {
+            fetchLessons();
+            setIsUploadOpen(false);
+          }}
         />
-      )}
+      </div>
     </div>
   );
 };
