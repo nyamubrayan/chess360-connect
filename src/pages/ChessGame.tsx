@@ -547,6 +547,9 @@ export default function ChessGame() {
                     <span className="font-semibold">
                       {playerColor === 'white' ? (blackPlayer?.display_name || blackPlayer?.username || 'Opponent') : (whitePlayer?.display_name || whitePlayer?.username || 'Opponent')}
                     </span>
+                    <span className="text-sm text-muted-foreground">
+                      ({playerColor === 'white' ? (blackPlayer?.rating || 1200) : (whitePlayer?.rating || 1200)})
+                    </span>
                   </div>
                   <span className="text-xs text-muted-foreground capitalize">
                     {playerColor === 'white' ? 'Black' : 'White'}
@@ -572,9 +575,14 @@ export default function ChessGame() {
             {playerColor && (
               <Card className="gradient-card p-3 mt-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold">
-                    {playerColor === 'white' ? (whitePlayer?.display_name || whitePlayer?.username || 'You') : (blackPlayer?.display_name || blackPlayer?.username || 'You')}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold">
+                      {playerColor === 'white' ? (whitePlayer?.display_name || whitePlayer?.username || 'You') : (blackPlayer?.display_name || blackPlayer?.username || 'You')}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      ({playerColor === 'white' ? (whitePlayer?.rating || 1200) : (blackPlayer?.rating || 1200)})
+                    </span>
+                  </div>
                   <span className="text-xs text-muted-foreground capitalize">
                     {playerColor} (You)
                   </span>
