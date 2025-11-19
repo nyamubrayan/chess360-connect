@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Video, Puzzle, Eye, ArrowLeft, Plus, Sparkles, Target, Star } from "lucide-react";
+import { BookOpen, Video, Puzzle, Eye, ArrowLeft, Plus, Sparkles, Target, Star, CheckCircle2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { LessonUploadDialog } from "@/components/LessonUploadDialog";
@@ -35,6 +35,7 @@ const Lessons = () => {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [recommendations, setRecommendations] = useState<any>(null);
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
+  const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -42,10 +43,27 @@ const Lessons = () => {
       if (user) {
         checkCoachRole(user.id);
         fetchRecommendations();
+        fetchCompletedLessons(user.id);
       }
     });
     fetchLessons();
   }, []);
+
+  const fetchCompletedLessons = async (userId: string) => {
+    try {
+      const { data } = await supabase
+        .from("lesson_progress")
+        .select("lesson_id")
+        .eq("user_id", userId)
+        .eq("progress", 100);
+
+      if (data) {
+        setCompletedLessons(new Set(data.map(l => l.lesson_id).filter(Boolean)));
+      }
+    } catch (error) {
+      console.error('Error fetching completed lessons:', error);
+    }
+  };
 
   const checkCoachRole = async (userId: string) => {
     const { data } = await supabase
@@ -69,6 +87,12 @@ const Lessons = () => {
       }
 
       setRecommendations(data);
+      
+      // Refresh completed lessons list
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        fetchCompletedLessons(user.id);
+      }
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -191,7 +215,15 @@ const Lessons = () => {
           <TabsContent value="all">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {lessons.map((lesson) => (
-                <Card key={lesson.id} className="hover:border-primary transition-colors">
+                <Card key={lesson.id} className="hover:border-primary transition-colors relative">
+                  {completedLessons.has(lesson.id) && (
+                    <div className="absolute top-2 right-2 z-10">
+                      <Badge className="bg-green-500 text-white">
+                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                        Completed
+                      </Badge>
+                    </div>
+                  )}
                   <CardHeader>
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2">
@@ -276,7 +308,26 @@ const Lessons = () => {
                     </div>
                     <div className="flex-1">
                       <h3 className="text-xl font-bold mb-2">Your Learning Path</h3>
-                      <p className="text-muted-foreground">{recommendations.learning_path_summary}</p>
+                      <p className="text-muted-foreground mb-4">{recommendations.learning_path_summary}</p>
+                      
+                      {/* Progress Overview */}
+                      <div className="mt-4 p-3 bg-accent/20 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium">Learning Progress</span>
+                          <span className="text-sm text-primary font-bold">
+                            {completedLessons.size} lessons completed
+                          </span>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={fetchRecommendations}
+                          className="w-full mt-2"
+                        >
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          Refresh Recommendations
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </Card>
