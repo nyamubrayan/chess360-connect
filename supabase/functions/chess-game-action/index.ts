@@ -47,12 +47,19 @@ async function updateEloRatings(
       await supabaseClient.from('profiles').update({ rating: newWhiteRating }).eq('id', whitePlayerId);
       await supabaseClient.from('profiles').update({ rating: newBlackRating }).eq('id', blackPlayerId);
 
+      const whiteChange = newWhiteRating - whiteRating;
+      const blackChange = newBlackRating - blackRating;
+
       console.log('Ratings updated:', {
-        white: { old: whiteRating, new: newWhiteRating, change: newWhiteRating - whiteRating },
-        black: { old: blackRating, new: newBlackRating, change: newBlackRating - blackRating }
+        white: { old: whiteRating, new: newWhiteRating, change: whiteChange },
+        black: { old: blackRating, new: newBlackRating, change: blackChange }
       });
+      
+      return { whiteChange, blackChange };
     }
   }
+  
+  return { whiteChange: 0, blackChange: 0 };
 }
 
 serve(async (req) => {
@@ -112,12 +119,21 @@ serve(async (req) => {
           })
           .eq('id', gameId);
 
-        await updateEloRatings(
+        const resignRatingChanges = await updateEloRatings(
           supabaseClient,
           game.white_player_id,
           game.black_player_id,
           isWhitePlayer ? 'black_win' : 'white_win'
         );
+        
+        // Store rating changes
+        await supabaseClient
+          .from('games')
+          .update({
+            white_rating_change: resignRatingChanges.whiteChange,
+            black_rating_change: resignRatingChanges.blackChange
+          })
+          .eq('id', gameId);
 
         await supabaseClient.from('notifications').insert({
           user_id: winnerId,
@@ -167,12 +183,21 @@ serve(async (req) => {
           })
           .eq('id', gameId);
 
-        await updateEloRatings(
+        const drawRatingChanges = await updateEloRatings(
           supabaseClient,
           game.white_player_id,
           game.black_player_id,
           'draw'
         );
+        
+        // Store rating changes
+        await supabaseClient
+          .from('games')
+          .update({
+            white_rating_change: drawRatingChanges.whiteChange,
+            black_rating_change: drawRatingChanges.blackChange
+          })
+          .eq('id', gameId);
 
         await supabaseClient.from('notifications').insert([
           {

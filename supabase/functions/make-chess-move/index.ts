@@ -47,12 +47,19 @@ async function updateEloRatings(
       await supabaseClient.from('profiles').update({ rating: newWhiteRating }).eq('id', whitePlayerId);
       await supabaseClient.from('profiles').update({ rating: newBlackRating }).eq('id', blackPlayerId);
 
+      const whiteChange = newWhiteRating - whiteRating;
+      const blackChange = newBlackRating - blackRating;
+
       console.log('Ratings updated:', {
-        white: { old: whiteRating, new: newWhiteRating, change: newWhiteRating - whiteRating },
-        black: { old: blackRating, new: newBlackRating, change: newBlackRating - blackRating }
+        white: { old: whiteRating, new: newWhiteRating, change: whiteChange },
+        black: { old: blackRating, new: newBlackRating, change: blackChange }
       });
+      
+      return { whiteChange, blackChange };
     }
   }
+  
+  return { whiteChange: 0, blackChange: 0 };
 }
 
 serve(async (req) => {
@@ -116,12 +123,21 @@ serve(async (req) => {
         })
         .eq('id', gameId);
 
-      await updateEloRatings(
+      const ratingChanges = await updateEloRatings(
         supabaseClient,
         game.white_player_id,
         game.black_player_id,
         isWhitePlayer ? 'black_win' : 'white_win'
       );
+      
+      // Store rating changes
+      await supabaseClient
+        .from('games')
+        .update({
+          white_rating_change: ratingChanges.whiteChange,
+          black_rating_change: ratingChanges.blackChange
+        })
+        .eq('id', gameId);
 
       return new Response(
         JSON.stringify({ error: 'Time expired', timeout: true }),
@@ -179,12 +195,21 @@ serve(async (req) => {
         eloResult = 'draw';
       }
 
-      await updateEloRatings(
+      const ratingChanges = await updateEloRatings(
         supabaseClient,
         game.white_player_id,
         game.black_player_id,
         eloResult
       );
+      
+      // Store rating changes
+      await supabaseClient
+        .from('games')
+        .update({
+          white_rating_change: ratingChanges.whiteChange,
+          black_rating_change: ratingChanges.blackChange
+        })
+        .eq('id', gameId);
 
       const notifications = [];
       

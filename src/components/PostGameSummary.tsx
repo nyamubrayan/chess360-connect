@@ -29,12 +29,48 @@ interface GameSummary {
 export const PostGameSummary = ({ open, onOpenChange, gameId, result, playerColor }: PostGameSummaryProps) => {
   const [summary, setSummary] = useState<GameSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [ratingChange, setRatingChange] = useState<number | null>(null);
+  const [newRating, setNewRating] = useState<number | null>(null);
 
   useEffect(() => {
     if (open && gameId) {
       fetchOrGenerateSummary();
+      fetchRatingChange();
     }
   }, [open, gameId]);
+
+  const fetchRatingChange = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Fetch game data to get rating changes
+      const { data: game, error: gameError } = await supabase
+        .from('games')
+        .select('white_player_id, black_player_id, white_rating_change, black_rating_change')
+        .eq('id', gameId)
+        .single();
+
+      if (gameError) throw gameError;
+
+      // Determine player's rating change
+      const isWhite = game.white_player_id === user.id;
+      const change = isWhite ? game.white_rating_change : game.black_rating_change;
+      setRatingChange(change || 0);
+
+      // Fetch current rating
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('rating')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) throw profileError;
+      setNewRating(profile.rating || 1200);
+    } catch (error) {
+      console.error('Error fetching rating change:', error);
+    }
+  };
 
   const fetchOrGenerateSummary = async () => {
     setIsLoading(true);
@@ -95,13 +131,37 @@ export const PostGameSummary = ({ open, onOpenChange, gameId, result, playerColo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="text-2xl">Game Summary</DialogTitle>
             {getResultBadge()}
           </div>
         </DialogHeader>
+
+        {/* Rating Change Display */}
+        {ratingChange !== null && newRating !== null && (
+          <Card className="gradient-card p-6 mb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Rating Change</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className={`text-3xl font-bold ${ratingChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    {ratingChange >= 0 ? '+' : ''}{ratingChange}
+                  </span>
+                  <TrendingUp className={`w-6 h-6 ${ratingChange >= 0 ? 'text-green-500' : 'text-red-500 rotate-180'}`} />
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-muted-foreground">New Rating</p>
+                <p className="text-3xl font-bold mt-1">{newRating}</p>
+                <p className="text-xs text-muted-foreground">
+                  (was {newRating - ratingChange})
+                </p>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
