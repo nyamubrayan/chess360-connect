@@ -113,6 +113,51 @@ serve(async (req) => {
       throw updateError;
     }
 
+    // Send notifications if game ended
+    if (moveData.status === 'completed') {
+      const notifications = [];
+      
+      if (moveData.result === 'checkmate') {
+        const winnerId = moveData.winner;
+        const loserId = winnerId === game.white_player_id ? game.black_player_id : game.white_player_id;
+        
+        notifications.push(
+          {
+            user_id: winnerId,
+            type: 'game_ended',
+            title: 'Checkmate! You Win!',
+            message: 'You have won the game by checkmate.',
+          },
+          {
+            user_id: loserId,
+            type: 'game_ended',
+            title: 'Checkmate',
+            message: 'You have been checkmated. Game over.',
+          }
+        );
+      } else if (moveData.result === 'stalemate' || moveData.result === 'draw') {
+        notifications.push(
+          {
+            user_id: game.white_player_id,
+            type: 'game_ended',
+            title: 'Game Drawn',
+            message: `The game has ended in a ${moveData.result}.`,
+          },
+          {
+            user_id: game.black_player_id,
+            type: 'game_ended',
+            title: 'Game Drawn',
+            message: `The game has ended in a ${moveData.result}.`,
+          }
+        );
+      }
+
+      if (notifications.length > 0) {
+        await supabaseClient.from('notifications').insert(notifications);
+        console.log('Game ended notifications sent:', moveData.result);
+      }
+    }
+
     // Insert move record
     await supabaseClient.from('game_moves').insert({
       game_id: gameId,
@@ -132,7 +177,7 @@ serve(async (req) => {
       promotion_piece: moveData.promotionPiece,
     });
 
-    console.log('Move completed successfully');
+    console.log('Move completed successfully. Game status:', updates.status || 'active');
 
     return new Response(
       JSON.stringify({ success: true, timeRemaining: newTimeRemaining }),

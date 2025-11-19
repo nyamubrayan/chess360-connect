@@ -30,20 +30,21 @@ serve(async (req) => {
     const { timeControl, timeIncrement, action } = await req.json();
 
     if (action === 'join') {
-      // Check if user already has an active game
+      // Check if user already has an ongoing game (active or waiting)
       const { data: activeGames } = await supabaseClient
         .from('games')
-        .select('id')
+        .select('id, status')
         .or(`white_player_id.eq.${user.id},black_player_id.eq.${user.id}`)
-        .eq('status', 'active')
+        .in('status', ['active', 'waiting'])
         .limit(1);
 
       if (activeGames && activeGames.length > 0) {
+        console.log('User has ongoing game:', activeGames[0]);
         return new Response(
           JSON.stringify({ 
             hasActiveGame: true,
             gameId: activeGames[0].id,
-            message: 'You already have an active game'
+            message: `You already have an ongoing game (${activeGames[0].status})`
           }),
           { 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -51,6 +52,8 @@ serve(async (req) => {
           }
         );
       }
+      
+      console.log('User has no ongoing games, proceeding with matchmaking');
 
       // First, clean up stale queue entries (older than 5 minutes)
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
