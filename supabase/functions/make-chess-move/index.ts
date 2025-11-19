@@ -6,6 +6,55 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helper function to update ELO ratings
+async function updateEloRatings(
+  supabaseClient: any,
+  whitePlayerId: string,
+  blackPlayerId: string,
+  result: 'white_win' | 'black_win' | 'draw'
+) {
+  const { data: profiles } = await supabaseClient
+    .from('profiles')
+    .select('id, rating')
+    .in('id', [whitePlayerId, blackPlayerId]);
+
+  if (profiles && profiles.length === 2) {
+    const whiteProfile = profiles.find((p: any) => p.id === whitePlayerId);
+    const blackProfile = profiles.find((p: any) => p.id === blackPlayerId);
+
+    if (whiteProfile && blackProfile) {
+      const whiteRating = whiteProfile.rating || 1200;
+      const blackRating = blackProfile.rating || 1200;
+
+      const expectedWhite = 1 / (1 + Math.pow(10, (blackRating - whiteRating) / 400));
+      const expectedBlack = 1 / (1 + Math.pow(10, (whiteRating - blackRating) / 400));
+
+      let whiteScore = 0.5;
+      let blackScore = 0.5;
+
+      if (result === 'white_win') {
+        whiteScore = 1;
+        blackScore = 0;
+      } else if (result === 'black_win') {
+        whiteScore = 0;
+        blackScore = 1;
+      }
+
+      const K = 32;
+      const newWhiteRating = Math.round(whiteRating + K * (whiteScore - expectedWhite));
+      const newBlackRating = Math.round(blackRating + K * (blackScore - expectedBlack));
+
+      await supabaseClient.from('profiles').update({ rating: newWhiteRating }).eq('id', whitePlayerId);
+      await supabaseClient.from('profiles').update({ rating: newBlackRating }).eq('id', blackPlayerId);
+
+      console.log('Ratings updated:', {
+        white: { old: whiteRating, new: newWhiteRating, change: newWhiteRating - whiteRating },
+        black: { old: blackRating, new: newBlackRating, change: newBlackRating - blackRating }
+      });
+    }
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -67,6 +116,13 @@ serve(async (req) => {
         })
         .eq('id', gameId);
 
+      await updateEloRatings(
+        supabaseClient,
+        game.white_player_id,
+        game.black_player_id,
+        isWhitePlayer ? 'black_win' : 'white_win'
+      );
+
       return new Response(
         JSON.stringify({ error: 'Time expired', timeout: true }),
         { 
@@ -113,8 +169,23 @@ serve(async (req) => {
       throw updateError;
     }
 
-    // Send notifications if game ended
+    // Update ELO ratings and send notifications if game ended
     if (moveData.status === 'completed') {
+      let eloResult: 'white_win' | 'black_win' | 'draw' = 'draw';
+      
+      if (moveData.result === 'checkmate') {
+        eloResult = moveData.winner === game.white_player_id ? 'white_win' : 'black_win';
+      } else if (moveData.result === 'stalemate' || moveData.result === 'draw') {
+        eloResult = 'draw';
+      }
+
+      await updateEloRatings(
+        supabaseClient,
+        game.white_player_id,
+        game.black_player_id,
+        eloResult
+      );
+
       const notifications = [];
       
       if (moveData.result === 'checkmate') {
@@ -125,8 +196,8 @@ serve(async (req) => {
           {
             user_id: winnerId,
             type: 'game_ended',
-            title: 'Checkmate! You Win!',
-            message: 'You have won the game by checkmate.',
+            title: 'Victory!',
+            message: 'You won by checkmate! Well played.',
           },
           {
             user_id: loserId,
