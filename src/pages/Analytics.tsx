@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { Home, TrendingUp, TrendingDown, Target, Lightbulb, Trophy, AlertCircle } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { GameHistory } from "@/components/GameHistory";
 
 interface PlayerStats {
   total_games: number;
@@ -291,6 +292,9 @@ export default function Analytics() {
             <Button onClick={() => navigate("/lobby")}>Start Playing</Button>
           </Card>
         )}
+
+        {/* Game History with Analysis */}
+        {user && <GameHistory userId={user.id} limit={20} showAnalyzeButton={true} />}
       </div>
     </div>
   );
