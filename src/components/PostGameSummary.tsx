@@ -63,6 +63,16 @@ export const PostGameSummary = ({ open, onOpenChange, gameId, result, playerColo
         if (error) throw error;
         setSummary(data.analysis);
       }
+
+      // Auto-generate highlight after analysis
+      try {
+        await supabase.functions.invoke('generate-game-highlight', {
+          body: { gameId },
+        });
+      } catch (highlightError) {
+        console.error('Error generating highlight:', highlightError);
+        // Don't show error to user - highlights are optional
+      }
     } catch (error) {
       console.error("Error fetching game summary:", error);
     } finally {

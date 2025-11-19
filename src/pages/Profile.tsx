@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { User, Session } from "@supabase/supabase-js";
 import { ProfileEditDialog } from "@/components/ProfileEditDialog";
 import { GameHistory } from "@/components/GameHistory";
+import { ProfileHighlights } from "@/components/ProfileHighlights";
 
 interface Profile {
   id: string;
@@ -234,6 +235,9 @@ const Profile = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Game Highlights */}
+        <ProfileHighlights userId={profile.id} limit={6} />
 
         {/* Game History */}
         <GameHistory userId={profile.id} limit={5} showAnalyzeButton={false} />
