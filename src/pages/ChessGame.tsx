@@ -154,6 +154,8 @@ export default function ChessGame() {
   const handleGameUpdate = async (gameData: any) => {
     const wasWaiting = game?.status === 'waiting';
     const nowActive = gameData.status === 'active';
+    const wasActive = game?.status === 'active';
+    const nowCompleted = gameData.status === 'completed';
     
     setGame(gameData);
     chess.load(gameData.current_fen);
@@ -163,6 +165,28 @@ export default function ChessGame() {
     if (wasWaiting && nowActive && !gameStarted) {
       sounds.playGameStart();
       setGameStarted(true);
+    }
+
+    // Handle game completion
+    if (wasActive && nowCompleted) {
+      console.log('Game completed:', gameData.result, 'Winner:', gameData.winner_id);
+      
+      // Show completion message
+      const resultMessage = gameData.result === 'checkmate' 
+        ? (gameData.winner_id === user?.id ? 'You won by checkmate!' : 'Checkmate! You lost.')
+        : gameData.result === 'resignation'
+        ? (gameData.winner_id === user?.id ? 'Opponent resigned. You win!' : 'You resigned.')
+        : gameData.result === 'timeout'
+        ? (gameData.winner_id === user?.id ? 'Opponent ran out of time. You win!' : 'Time out! You lost.')
+        : `Game drawn by ${gameData.result}`;
+      
+      toast.success(resultMessage, {
+        duration: 8000,
+        action: {
+          label: 'Back to Lobby',
+          onClick: () => navigate('/lobby'),
+        },
+      });
     }
     
     // Fetch player profiles
