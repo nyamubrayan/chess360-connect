@@ -8,10 +8,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 import { NotificationBell } from "@/components/NotificationBell";
 
+interface Stats {
+  activePlayers: number;
+  gamesAnalyzed: number;
+  aiLessons: number;
+}
+
 const Index = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [stats, setStats] = useState<Stats>({
+    activePlayers: 0,
+    gamesAnalyzed: 0,
+    aiLessons: 0,
+  });
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -26,6 +37,73 @@ const Index = () => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      // Fetch active players count
+      const { count: playersCount } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+
+      // Fetch completed games count
+      const { count: gamesCount } = await supabase
+        .from('games')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'completed');
+
+      // Fetch published lessons count
+      const { count: lessonsCount } = await supabase
+        .from('lessons')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_published', true);
+
+      setStats({
+        activePlayers: playersCount || 0,
+        gamesAnalyzed: gamesCount || 0,
+        aiLessons: lessonsCount || 0,
+      });
+    };
+
+    fetchStats();
+
+    // Set up real-time subscriptions for automatic updates
+    const profilesChannel = supabase
+      .channel('profiles-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
+        fetchStats();
+      })
+      .subscribe();
+
+    const gamesChannel = supabase
+      .channel('games-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'games' }, () => {
+        fetchStats();
+      })
+      .subscribe();
+
+    const lessonsChannel = supabase
+      .channel('lessons-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'lessons' }, () => {
+        fetchStats();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(profilesChannel);
+      supabase.removeChannel(gamesChannel);
+      supabase.removeChannel(lessonsChannel);
+    };
+  }, []);
+
+  const formatNumber = (num: number): string => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+    }
+    if (num >= 1000) {
+      return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+    }
+    return num.toString();
+  };
 
   const features = [
     {
@@ -158,15 +236,15 @@ const Index = () => {
         <div className="container mx-auto max-w-6xl">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 text-center">
             <div className="space-y-2">
-              <div className="text-4xl font-bold text-primary">100K+</div>
+              <div className="text-4xl font-bold text-primary">{formatNumber(stats.activePlayers)}+</div>
               <div className="text-muted-foreground">Active Players</div>
             </div>
             <div className="space-y-2">
-              <div className="text-4xl font-bold text-success">1M+</div>
+              <div className="text-4xl font-bold text-success">{formatNumber(stats.gamesAnalyzed)}+</div>
               <div className="text-muted-foreground">Games Analyzed</div>
             </div>
             <div className="space-y-2">
-              <div className="text-4xl font-bold text-accent">500+</div>
+              <div className="text-4xl font-bold text-accent">{formatNumber(stats.aiLessons)}+</div>
               <div className="text-muted-foreground">AI Lessons</div>
             </div>
             <div className="space-y-2">
