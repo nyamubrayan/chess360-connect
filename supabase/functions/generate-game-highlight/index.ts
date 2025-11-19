@@ -143,19 +143,28 @@ serve(async (req) => {
 
     // Determine player color and result
     const playerColor = game.white_player_id === user.id ? "white" : "black";
+    const opponentColor = playerColor === "white" ? "black" : "white";
+    const opponentUsername = playerColor === "white" ? game.black_player_username : game.white_player_username;
+    const opponentRating = playerColor === "white" ? game.black_player_rating : game.white_player_rating;
+    
     const playerWon = 
       (playerColor === "white" && game.result === "1-0") ||
       (playerColor === "black" && game.result === "0-1");
     
+    const opponentWon = 
+      (opponentColor === "white" && game.result === "1-0") ||
+      (opponentColor === "black" && game.result === "0-1");
+    
     const title = playerWon ? "🏆 Victory Highlight" : 
                   game.result?.includes("1/2") ? "⚔️ Epic Battle" : 
-                  "📚 Learning Moment";
+                  opponentWon ? "💪 Learning Experience" : "📚 Learning Moment";
 
+    const opponentInfo = opponentUsername ? ` vs ${opponentUsername} (${opponentRating || "Unrated"})` : "";
     const description = playerWon 
-      ? `Dominated as ${playerColor === "white" ? "White" : "Black"}!`
+      ? `Dominated as ${playerColor === "white" ? "White" : "Black"}${opponentInfo}!`
       : game.result?.includes("1/2")
-      ? `Hard-fought draw as ${playerColor === "white" ? "White" : "Black"}`
-      : `Valuable lessons as ${playerColor === "white" ? "White" : "Black"}`;
+      ? `Hard-fought draw as ${playerColor === "white" ? "White" : "Black"}${opponentInfo}`
+      : `${opponentWon ? `Lost to ${opponentUsername || 'opponent'} as` : 'Played as'} ${playerColor === "white" ? "White" : "Black"}${opponentInfo}`;
 
     // Calculate duration based on key moments (aim for 30-45 seconds)
     const duration = Math.min(45, Math.max(20, keyMoments.length * 8));
