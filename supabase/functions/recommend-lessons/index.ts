@@ -49,6 +49,14 @@ serve(async (req) => {
       .order("created_at", { ascending: false })
       .limit(5);
 
+    // Fetch completed lesson progress
+    const { data: completedLessons } = await supabase
+      .from("lesson_progress")
+      .select("lesson_title, completed_at")
+      .eq("user_id", user.id)
+      .eq("progress", 100)
+      .order("completed_at", { ascending: false });
+
     // Aggregate weaknesses
     const weaknessesMap = new Map<string, number>();
     analyses?.forEach((analysis: any) => {
@@ -76,8 +84,13 @@ Focus on:
 2. Building on existing strengths
 3. Progressive difficulty
 4. Comprehensive skill development
+5. Avoid recommending lessons the user has already completed
+6. Build upon completed lessons to suggest next steps
 
 Return structured recommendations using the provided tool.`;
+
+    const completedLessonTitles = completedLessons?.map(l => l.lesson_title) || [];
+    const completionRate = completedLessons?.length || 0;
 
     const userPrompt = `Analyze this player's profile and recommend personalized lessons:
 
@@ -92,6 +105,11 @@ ${topWeaknesses.length > 0 ? topWeaknesses.join('\n') : 'No weaknesses identifie
 
 Recent Suggestions:
 ${analyses?.map((a: any) => a.suggestions).filter(Boolean).slice(0, 2).join('\n') || 'No suggestions yet'}
+
+Completed Lessons (${completionRate} total):
+${completedLessonTitles.length > 0 ? completedLessonTitles.slice(0, 5).join('\n') : 'No lessons completed yet'}
+
+Important: DO NOT recommend any lessons with titles similar to the completed lessons above. Build upon what they've already learned to suggest the next logical steps in their learning path.
 
 Provide 5-7 personalized lesson recommendations that will help this player improve.`;
 

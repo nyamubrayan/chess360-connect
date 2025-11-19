@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Eye, User } from "lucide-react";
 import { toast } from "sonner";
+import { LessonProgressTracker } from "@/components/LessonProgressTracker";
 
 interface Lesson {
   id: string;
@@ -30,13 +31,35 @@ const LessonView = () => {
   const navigate = useNavigate();
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCompleted, setIsCompleted] = useState(false);
 
   useEffect(() => {
     if (id) {
       fetchLesson(id);
       incrementViewCount(id);
+      checkCompletion(id);
     }
   }, [id]);
+
+  const checkCompletion = async (lessonId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data } = await supabase
+        .from("lesson_progress")
+        .select("progress")
+        .eq("user_id", user.id)
+        .eq("lesson_id", lessonId)
+        .eq("progress", 100)
+        .single();
+
+      setIsCompleted(!!data);
+    } catch (error) {
+      // No progress found
+      setIsCompleted(false);
+    }
+  };
 
   const fetchLesson = async (lessonId: string) => {
     try {
@@ -177,6 +200,14 @@ const LessonView = () => {
             <div className="prose prose-sm max-w-none dark:prose-invert">
               <div className="whitespace-pre-wrap">{lesson.content}</div>
             </div>
+
+            {/* Progress Tracker */}
+            <LessonProgressTracker
+              lessonId={lesson.id}
+              lessonTitle={lesson.title}
+              isCompleted={isCompleted}
+              onProgressUpdate={() => checkCompletion(lesson.id)}
+            />
           </CardContent>
         </Card>
       </div>
