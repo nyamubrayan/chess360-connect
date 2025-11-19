@@ -258,6 +258,13 @@ export type Database = {
             foreignKeyName: "game_moves_game_id_fkey"
             columns: ["game_id"]
             isOneToOne: false
+            referencedRelation: "game_history"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_moves_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
             referencedRelation: "games"
             referencedColumns: ["id"]
           },
@@ -1050,7 +1057,49 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      game_history: {
+        Row: {
+          black_player_id: string | null
+          black_player_rating: number | null
+          black_player_username: string | null
+          completed_at: string | null
+          created_at: string | null
+          id: string | null
+          move_count: number | null
+          pgn: string | null
+          result: string | null
+          status: string | null
+          time_control: number | null
+          time_increment: number | null
+          white_player_id: string | null
+          white_player_rating: number | null
+          white_player_username: string | null
+          winner_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "games_black_player_id_fkey"
+            columns: ["black_player_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_white_player_id_fkey"
+            columns: ["white_player_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       has_role: {
