@@ -195,6 +195,52 @@ export type Database = {
           },
         ]
       }
+      game_chat_messages: {
+        Row: {
+          created_at: string
+          game_id: string
+          id: string
+          message: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          game_id: string
+          id?: string
+          message: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          game_id?: string
+          id?: string
+          message?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_chat_messages_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "game_history"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_chat_messages_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_chat_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       game_highlights: {
         Row: {
           created_at: string | null

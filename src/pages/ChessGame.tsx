@@ -8,6 +8,7 @@ import { GameControls } from '@/components/chess/GameControls';
 import { MoveHistory } from '@/components/chess/MoveHistory';
 import { ChessTimer } from '@/components/chess/ChessTimer';
 import { PromotionDialog } from '@/components/chess/PromotionDialog';
+import { GameChat } from '@/components/chess/GameChat';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -456,6 +457,27 @@ export default function ChessGame() {
     toast.info('Draw declined');
   };
 
+  const handleRequestTakeback = async () => {
+    await supabase.functions.invoke('chess-game-action', {
+      body: { gameId, action: 'request_undo' },
+    });
+    toast.info('Takeback requested');
+  };
+
+  const handleAcceptTakeback = async () => {
+    await supabase.functions.invoke('chess-game-action', {
+      body: { gameId, action: 'accept_undo' },
+    });
+    toast.info('Takeback accepted');
+  };
+
+  const handleDeclineTakeback = async () => {
+    await supabase.functions.invoke('chess-game-action', {
+      body: { gameId, action: 'decline_undo' },
+    });
+    toast.info('Takeback declined');
+  };
+
   if (!game || !user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -567,12 +589,15 @@ export default function ChessGame() {
               onOfferDraw={handleOfferDraw}
               onAcceptDraw={handleAcceptDraw}
               onDeclineDraw={handleDeclineDraw}
+              onRequestTakeback={handleRequestTakeback}
+              onAcceptTakeback={handleAcceptTakeback}
+              onDeclineTakeback={handleDeclineTakeback}
               className="mt-4"
             />
           </div>
 
           {/* Right: Game Info */}
-          <div className="lg:col-span-1 order-3">
+          <div className="lg:col-span-1 order-3 space-y-4">
             <Card className="gradient-card p-4">
               <h3 className="text-lg font-bold mb-4">Game Information</h3>
               <div className="space-y-2 text-sm">
@@ -596,6 +621,16 @@ export default function ChessGame() {
                 )}
               </div>
             </Card>
+
+            {/* Game Chat */}
+            {!isWaitingForOpponent && whitePlayer && blackPlayer && (
+              <GameChat
+                gameId={gameId!}
+                currentUserId={user.id}
+                whitePlayer={whitePlayer}
+                blackPlayer={blackPlayer}
+              />
+            )}
           </div>
         </div>
 
