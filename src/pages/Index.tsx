@@ -7,6 +7,8 @@ import heroImage from "@/assets/chess-hero.jpg";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 import { NotificationBell } from "@/components/NotificationBell";
+import { CommunityBar } from "@/components/CommunityBar";
+import { FeedSection } from "@/components/FeedSection";
 
 interface Stats {
   activePlayers: number;
@@ -140,6 +142,9 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Community Navigation Bar */}
+      <CommunityBar />
+      
       {/* Hero Section */}
       <section className="relative overflow-hidden py-12 sm:py-20 px-4">
         <div className="absolute inset-0 gradient-hero opacity-10"></div>
@@ -255,71 +260,8 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Community Features Section */}
-      <section className="py-12 sm:py-16 px-4 bg-muted/30">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Community & Social</h2>
-            <p className="text-muted-foreground text-lg">Connect, compete, and learn together</p>
-          </div>
-          
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card 
-              className="gradient-card border-border p-6 hover:scale-105 transition-all duration-300 cursor-pointer group"
-              onClick={() => navigate("/study-rooms")}
-            >
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                  <BookOpen className="w-6 h-6 text-primary" />
-                </div>
-                <h3 className="text-xl font-bold">Study Rooms</h3>
-                <p className="text-muted-foreground">
-                  Collaborate in real-time with other players. Share strategies, analyze positions, and learn together.
-                </p>
-                <Button variant="outline" className="w-full">
-                  Browse Rooms
-                </Button>
-              </div>
-            </Card>
-
-            <Card 
-              className="gradient-card border-border p-6 hover:scale-105 transition-all duration-300 cursor-pointer group"
-              onClick={() => navigate("/tournaments")}
-            >
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                  <Sword className="w-6 h-6 text-primary" />
-                </div>
-                <h3 className="text-xl font-bold">Tournaments</h3>
-                <p className="text-muted-foreground">
-                  Join competitive tournaments with custom rules. Chess960, Hand & Brain, Puzzle Battles, and more.
-                </p>
-                <Button variant="outline" className="w-full">
-                  View Tournaments
-                </Button>
-              </div>
-            </Card>
-
-            <Card 
-              className="gradient-card border-border p-6 hover:scale-105 transition-all duration-300 cursor-pointer group"
-              onClick={() => navigate("/coaches")}
-            >
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                  <GraduationCap className="w-6 h-6 text-primary" />
-                </div>
-                <h3 className="text-xl font-bold">Coach Marketplace</h3>
-                <p className="text-muted-foreground">
-                  Find expert coaches to accelerate your improvement. Personalized lessons at your own pace.
-                </p>
-                <Button variant="outline" className="w-full">
-                  Find a Coach
-                </Button>
-              </div>
-            </Card>
-          </div>
-        </div>
-      </section>
+      {/* Community Feed Section */}
+      <FeedSection />
     </div>
   );
 };
