@@ -1,0 +1,214 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Trophy, Clock, Calendar, Brain, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { formatDistanceToNow } from "date-fns";
+
+interface Game {
+  id: string;
+  white_player_id: string;
+  black_player_id: string;
+  winner_id: string | null;
+  result: string | null;
+  status: string;
+  completed_at: string | null;
+  created_at: string;
+  time_control: number;
+  white_player: { username: string; rating: number };
+  black_player: { username: string; rating: number };
+}
+
+interface GameHistoryProps {
+  userId: string;
+  limit?: number;
+  showAnalyzeButton?: boolean;
+}
+
+export const GameHistory = ({ userId, limit = 10, showAnalyzeButton = false }: GameHistoryProps) => {
+  const [games, setGames] = useState<Game[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [analyzingGameId, setAnalyzingGameId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchGames();
+  }, [userId, limit]);
+
+  const fetchGames = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('games')
+        .select(`
+          *,
+          white_player:profiles!games_white_player_id_fkey(username, rating),
+          black_player:profiles!games_black_player_id_fkey(username, rating)
+        `)
+        .or(`white_player_id.eq.${userId},black_player_id.eq.${userId}`)
+        .eq('status', 'completed')
+        .order('completed_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      setGames(data || []);
+    } catch (error) {
+      console.error('Error fetching games:', error);
+      toast.error('Failed to load game history');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const analyzeGame = async (gameId: string) => {
+    setAnalyzingGameId(gameId);
+    try {
+      const { data, error } = await supabase.functions.invoke('analyze-game', {
+        body: { gameId }
+      });
+
+      if (error) throw error;
+      
+      toast.success('Game analysis complete! Check your Analytics page for insights.');
+    } catch (error: any) {
+      console.error('Error analyzing game:', error);
+      toast.error(error.message || 'Failed to analyze game');
+    } finally {
+      setAnalyzingGameId(null);
+    }
+  };
+
+  const getResultBadge = (game: Game) => {
+    if (!game.winner_id) {
+      return <Badge variant="secondary">Draw</Badge>;
+    }
+    
+    const isWinner = game.winner_id === userId;
+    return isWinner ? (
+      <Badge className="bg-green-500 hover:bg-green-600">Win</Badge>
+    ) : (
+      <Badge variant="destructive">Loss</Badge>
+    );
+  };
+
+  const getOpponent = (game: Game) => {
+    if (game.white_player_id === userId) {
+      return {
+        username: game.black_player.username,
+        rating: game.black_player.rating,
+        color: 'black'
+      };
+    }
+    return {
+      username: game.white_player.username,
+      rating: game.white_player.rating,
+      color: 'white'
+    };
+  };
+
+  const getPlayerColor = (game: Game) => {
+    return game.white_player_id === userId ? 'White' : 'Black';
+  };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Game History</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (games.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Game History</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground text-center py-8">No games played yet</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Trophy className="h-5 w-5" />
+          Game History
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {games.map((game) => {
+            const opponent = getOpponent(game);
+            const playerColor = getPlayerColor(game);
+            
+            return (
+              <Card key={game.id} className="p-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {getResultBadge(game)}
+                      <Badge variant="outline">{playerColor}</Badge>
+                      <span className="text-sm text-muted-foreground">vs</span>
+                      <span className="font-semibold">{opponent.username}</span>
+                      <Badge variant="secondary">{opponent.rating}</Badge>
+                    </div>
+                    
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        {Math.floor(game.time_control / 60)}min
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        {game.completed_at 
+                          ? formatDistanceToNow(new Date(game.completed_at), { addSuffix: true })
+                          : 'In progress'}
+                      </div>
+                      {game.result && (
+                        <Badge variant="outline" className="text-xs">
+                          {game.result}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  {showAnalyzeButton && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => analyzeGame(game.id)}
+                      disabled={analyzingGameId === game.id}
+                    >
+                      {analyzingGameId === game.id ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Analyzing...
+                        </>
+                      ) : (
+                        <>
+                          <Brain className="h-4 w-4 mr-2" />
+                          Analyze
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
