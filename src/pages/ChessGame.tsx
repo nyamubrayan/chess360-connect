@@ -29,6 +29,7 @@ export default function ChessGame() {
   const [blackPlayer, setBlackPlayer] = useState<any>(null);
   const [opponentOnline, setOpponentOnline] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
+  const [inactivityTimer, setInactivityTimer] = useState<NodeJS.Timeout | null>(null);
   
   const sounds = useChessSounds();
 
@@ -120,6 +121,118 @@ export default function ChessGame() {
       supabase.removeChannel(presenceChannel);
     };
   }, [gameId]);
+
+  // Monitor inactivity - forfeit opponent after 20 seconds of no move
+  useEffect(() => {
+    // Clear existing timer
+    if (inactivityTimer) {
+      clearTimeout(inactivityTimer);
+      setInactivityTimer(null);
+    }
+
+    // Only monitor if game is active and it's opponent's turn
+    if (!game || !user || game.status !== 'active' || !playerColor) {
+      return;
+    }
+
+    const isMyTurn = (playerColor === 'white' && game.current_turn === 'w') ||
+                     (playerColor === 'black' && game.current_turn === 'b');
+
+    // Don't set timer if it's my turn
+    if (isMyTurn) {
+      return;
+    }
+
+    // Calculate time since last move
+    const lastMoveTime = game.last_move_at ? new Date(game.last_move_at).getTime() : Date.now();
+    const now = Date.now();
+    const timeSinceLastMove = now - lastMoveTime;
+    const remainingTime = 20000 - timeSinceLastMove; // 20 seconds
+
+    console.log('Inactivity check:', {
+      timeSinceLastMove: Math.floor(timeSinceLastMove / 1000),
+      remainingTime: Math.floor(remainingTime / 1000),
+      isMyTurn,
+    });
+
+    // If already past 20 seconds, forfeit immediately
+    if (remainingTime <= 0) {
+      handleInactivityForfeit();
+      return;
+    }
+
+    // Set timer for remaining time
+    const timer = setTimeout(() => {
+      handleInactivityForfeit();
+    }, remainingTime);
+
+    setInactivityTimer(timer);
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [game?.last_move_at, game?.current_turn, game?.status, playerColor, user]);
+
+  const handleInactivityForfeit = async () => {
+    if (!game || !user || game.status !== 'active') return;
+
+    console.log('Opponent inactive for 20 seconds, forfeiting...');
+
+    try {
+      // Determine which player is inactive (the one whose turn it is)
+      const inactivePlayerId = game.current_turn === 'w' 
+        ? game.white_player_id 
+        : game.black_player_id;
+
+      // End game due to inactivity
+      const { error } = await supabase
+        .from('games')
+        .update({
+          status: 'completed',
+          result: 'inactivity',
+          winner_id: inactivePlayerId === user.id ? (playerColor === 'white' ? game.black_player_id : game.white_player_id) : user.id,
+          completed_at: new Date().toISOString(),
+        })
+        .eq('id', game.id);
+
+      if (error) throw error;
+
+      // Send notifications
+      await supabase.from('notifications').insert([
+        {
+          user_id: game.white_player_id,
+          type: 'game_ended',
+          title: 'Game Ended',
+          message: inactivePlayerId === game.white_player_id 
+            ? 'You lost due to inactivity (20 seconds without a move).' 
+            : 'Opponent forfeited due to inactivity. You win!',
+        },
+        {
+          user_id: game.black_player_id,
+          type: 'game_ended',
+          title: 'Game Ended',
+          message: inactivePlayerId === game.black_player_id 
+            ? 'You lost due to inactivity (20 seconds without a move).' 
+            : 'Opponent forfeited due to inactivity. You win!',
+        },
+      ]);
+
+      toast.success(
+        inactivePlayerId === user.id 
+          ? 'You lost due to inactivity.' 
+          : 'Opponent forfeited due to inactivity. You win!',
+        {
+          duration: 5000,
+          action: {
+            label: 'Back to Lobby',
+            onClick: () => navigate('/lobby'),
+          },
+        }
+      );
+    } catch (error) {
+      console.error('Error handling inactivity forfeit:', error);
+    }
+  };
 
   const fetchGame = async () => {
     const { data, error } = await supabase
