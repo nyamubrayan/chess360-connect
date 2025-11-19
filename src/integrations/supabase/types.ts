@@ -769,6 +769,128 @@ export type Database = {
         }
         Relationships: []
       }
+      study_room_messages: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_room_messages_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "study_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "study_room_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_room_participants: {
+        Row: {
+          id: string
+          joined_at: string | null
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string | null
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string | null
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_room_participants_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "study_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "study_room_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_rooms: {
+        Row: {
+          annotations: Json | null
+          created_at: string
+          creator_id: string
+          current_fen: string
+          description: string | null
+          id: string
+          is_public: boolean | null
+          max_participants: number | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          annotations?: Json | null
+          created_at?: string
+          creator_id: string
+          current_fen?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          max_participants?: number | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          annotations?: Json | null
+          created_at?: string
+          creator_id?: string
+          current_fen?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          max_participants?: number | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_rooms_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tournament_participants: {
         Row: {
           id: string

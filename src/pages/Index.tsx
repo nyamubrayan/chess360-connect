@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Trophy, Zap, Brain, Users, Target, Sparkles, User as UserIcon, Play } from "lucide-react";
+import { Trophy, Zap, Brain, Users, Target, Sparkles, User as UserIcon, Play, BookOpen, Sword, GraduationCap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/chess-hero.jpg";
 import { supabase } from "@/integrations/supabase/client";
@@ -173,6 +173,72 @@ const Index = () => {
               <div className="text-4xl font-bold text-gold">24/7</div>
               <div className="text-muted-foreground">AI Support</div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Community Features Section */}
+      <section className="py-12 sm:py-16 px-4 bg-muted/30">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Community & Social</h2>
+            <p className="text-muted-foreground text-lg">Connect, compete, and learn together</p>
+          </div>
+          
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card 
+              className="gradient-card border-border p-6 hover:scale-105 transition-all duration-300 cursor-pointer group"
+              onClick={() => navigate("/study-rooms")}
+            >
+              <div className="space-y-4">
+                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                  <BookOpen className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold">Study Rooms</h3>
+                <p className="text-muted-foreground">
+                  Collaborate in real-time with other players. Share strategies, analyze positions, and learn together.
+                </p>
+                <Button variant="outline" className="w-full">
+                  Browse Rooms
+                </Button>
+              </div>
+            </Card>
+
+            <Card 
+              className="gradient-card border-border p-6 hover:scale-105 transition-all duration-300 cursor-pointer group"
+              onClick={() => navigate("/tournaments")}
+            >
+              <div className="space-y-4">
+                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                  <Sword className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold">Tournaments</h3>
+                <p className="text-muted-foreground">
+                  Join competitive tournaments with custom rules. Chess960, Hand & Brain, Puzzle Battles, and more.
+                </p>
+                <Button variant="outline" className="w-full">
+                  View Tournaments
+                </Button>
+              </div>
+            </Card>
+
+            <Card 
+              className="gradient-card border-border p-6 hover:scale-105 transition-all duration-300 cursor-pointer group"
+              onClick={() => navigate("/coaches")}
+            >
+              <div className="space-y-4">
+                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                  <GraduationCap className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold">Coach Marketplace</h3>
+                <p className="text-muted-foreground">
+                  Find expert coaches to accelerate your improvement. Personalized lessons at your own pace.
+                </p>
+                <Button variant="outline" className="w-full">
+                  Find a Coach
+                </Button>
+              </div>
+            </Card>
           </div>
         </div>
       </section>
