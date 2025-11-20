@@ -126,6 +126,7 @@ export default function ChessGame() {
   // Monitor first move timeout - cancel game if no first move within 30 seconds
   useEffect(() => {
     if (!game || !user || game.status !== 'active' || !playerColor) {
+      setFirstMoveCountdown(null);
       return;
     }
 
@@ -133,34 +134,29 @@ export default function ChessGame() {
     const isFirstMove = game.move_count === 0;
     
     if (!isFirstMove) {
+      setFirstMoveCountdown(null);
       return;
     }
 
-    // Calculate time since game started
-    const gameStartTime = new Date(game.created_at).getTime();
-    const now = Date.now();
-    const timeSinceStart = now - gameStartTime;
-    const remainingTime = 30000 - timeSinceStart; // 30 seconds
+    // Update countdown every 100ms
+    const interval = setInterval(() => {
+      const gameStartTime = new Date(game.created_at).getTime();
+      const now = Date.now();
+      const timeSinceStart = now - gameStartTime;
+      const remainingTime = 30000 - timeSinceStart; // 30 seconds
+      const remainingSeconds = Math.ceil(remainingTime / 1000);
 
-    console.log('First move timeout check:', {
-      timeSinceStart: Math.floor(timeSinceStart / 1000),
-      remainingTime: Math.floor(remainingTime / 1000),
-      currentTurn: game.current_turn,
-    });
-
-    // If already past 30 seconds, cancel immediately
-    if (remainingTime <= 0) {
-      handleFirstMoveTimeout();
-      return;
-    }
-
-    // Set timer for remaining time
-    const timer = setTimeout(() => {
-      handleFirstMoveTimeout();
-    }, remainingTime);
+      if (remainingSeconds <= 0) {
+        setFirstMoveCountdown(0);
+        handleFirstMoveTimeout();
+        clearInterval(interval);
+      } else {
+        setFirstMoveCountdown(remainingSeconds);
+      }
+    }, 100);
 
     return () => {
-      clearTimeout(timer);
+      clearInterval(interval);
     };
   }, [game?.move_count, game?.status, game?.created_at, user, playerColor]);
 
