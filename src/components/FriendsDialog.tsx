@@ -92,15 +92,26 @@ export const FriendsDialog = ({ userId }: FriendsDialogProps) => {
   }, [open, userId]);
 
   const fetchFriends = async () => {
-    // Fetch accepted friends
-    const { data: friendsData, error: friendsError } = await supabase
+    // Fetch friendships where user is the sender
+    const { data: sentFriends, error: sentError } = await supabase
       .from("friends")
       .select('id, user_id, friend_id, status')
       .eq("user_id", userId)
       .eq("status", "accepted");
 
-    if (friendsError) {
-      console.error('Error fetching friends:', friendsError);
+    if (sentError) {
+      console.error('Error fetching sent friends:', sentError);
+    }
+
+    // Fetch friendships where user is the recipient
+    const { data: receivedFriends, error: receivedError } = await supabase
+      .from("friends")
+      .select('id, user_id, friend_id, status')
+      .eq("friend_id", userId)
+      .eq("status", "accepted");
+
+    if (receivedError) {
+      console.error('Error fetching received friends:', receivedError);
     }
 
     // Fetch pending requests (received)
@@ -114,8 +125,15 @@ export const FriendsDialog = ({ userId }: FriendsDialogProps) => {
       console.error('Error fetching requests:', requestsError);
     }
 
-    // Fetch profiles separately
-    const friendIds = [...(friendsData || []).map(f => f.friend_id), ...(requestsData || []).map(r => r.user_id)];
+    // Combine both directions of friendships
+    const allFriends = [...(sentFriends || []), ...(receivedFriends || [])];
+    
+    // Get the friend IDs (opposite side of the relationship for each)
+    const friendIds = [
+      ...(sentFriends || []).map(f => f.friend_id),
+      ...(receivedFriends || []).map(f => f.user_id),
+      ...(requestsData || []).map(r => r.user_id)
+    ];
     
     if (friendIds.length > 0) {
       const { data: profilesData } = await supabase
@@ -123,11 +141,18 @@ export const FriendsDialog = ({ userId }: FriendsDialogProps) => {
         .select('id, username, display_name, avatar_url, rating')
         .in('id', friendIds);
 
-      // Combine friends with profiles
-      const friendsWithProfiles = (friendsData || []).map(friend => ({
-        ...friend,
-        profiles: profilesData?.find(p => p.id === friend.friend_id) || {}
-      }));
+      // Map friends with profiles (adjust friend_id based on direction)
+      const friendsWithProfiles = [
+        ...(sentFriends || []).map(friend => ({
+          ...friend,
+          profiles: profilesData?.find(p => p.id === friend.friend_id) || {}
+        })),
+        ...(receivedFriends || []).map(friend => ({
+          ...friend,
+          friend_id: friend.user_id, // Swap so we always use friend_id for the other person
+          profiles: profilesData?.find(p => p.id === friend.user_id) || {}
+        }))
+      ];
 
       const requestsWithProfiles = (requestsData || []).map(request => ({
         ...request,
