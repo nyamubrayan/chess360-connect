@@ -127,6 +127,45 @@ export type Database = {
           },
         ]
       }
+      event_participants: {
+        Row: {
+          event_id: string
+          id: string
+          joined_at: string | null
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          event_id: string
+          id?: string
+          joined_at?: string | null
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          event_id?: string
+          id?: string
+          joined_at?: string | null
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_participants_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "local_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       friends: {
         Row: {
           created_at: string
@@ -643,6 +682,71 @@ export type Database = {
           },
         ]
       }
+      local_events: {
+        Row: {
+          city: string | null
+          country: string | null
+          created_at: string | null
+          current_participants: number | null
+          description: string | null
+          event_date: string
+          event_type: string
+          id: string
+          latitude: number
+          location_name: string | null
+          longitude: number
+          max_participants: number | null
+          organizer_id: string
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          current_participants?: number | null
+          description?: string | null
+          event_date: string
+          event_type: string
+          id?: string
+          latitude: number
+          location_name?: string | null
+          longitude: number
+          max_participants?: number | null
+          organizer_id: string
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          current_participants?: number | null
+          description?: string | null
+          event_date?: string
+          event_type?: string
+          id?: string
+          latitude?: number
+          location_name?: string | null
+          longitude?: number
+          max_participants?: number | null
+          organizer_id?: string
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "local_events_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       matchmaking_queue: {
         Row: {
           created_at: string
@@ -860,9 +964,14 @@ export type Database = {
         Row: {
           avatar_url: string | null
           bio: string | null
+          city: string | null
+          country: string | null
           created_at: string | null
           display_name: string | null
           id: string
+          latitude: number | null
+          location_enabled: boolean | null
+          longitude: number | null
           rating: number | null
           updated_at: string | null
           username: string
@@ -870,9 +979,14 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           bio?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string | null
           display_name?: string | null
           id: string
+          latitude?: number | null
+          location_enabled?: boolean | null
+          longitude?: number | null
           rating?: number | null
           updated_at?: string | null
           username: string
@@ -880,9 +994,14 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           bio?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string | null
           display_name?: string | null
           id?: string
+          latitude?: number | null
+          location_enabled?: boolean | null
+          longitude?: number | null
           rating?: number | null
           updated_at?: string | null
           username?: string
@@ -1215,6 +1334,10 @@ export type Database = {
       }
     }
     Functions: {
+      calculate_distance: {
+        Args: { lat1: number; lat2: number; lon1: number; lon2: number }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
