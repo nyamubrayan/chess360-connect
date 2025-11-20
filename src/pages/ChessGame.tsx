@@ -31,6 +31,7 @@ export default function ChessGame() {
   const [opponentOnline, setOpponentOnline] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [inactivityTimer, setInactivityTimer] = useState<NodeJS.Timeout | null>(null);
+  const [firstMoveCountdown, setFirstMoveCountdown] = useState<number | null>(null);
   
   const sounds = useChessSounds();
 
@@ -652,6 +653,21 @@ export default function ChessGame() {
               playerColor={playerColor}
               className="mb-4"
             />
+            
+            {/* First Move Countdown Warning */}
+            {firstMoveCountdown !== null && firstMoveCountdown > 0 && (
+              <Card className="mb-4 p-3 border-destructive bg-destructive/10">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-destructive">
+                    Waiting for first move...
+                  </span>
+                  <span className="text-lg font-bold text-destructive">
+                    {firstMoveCountdown}s
+                  </span>
+                </div>
+              </Card>
+            )}
+            
             <ChessBoardComponent
               position={position}
               onMove={handleMove}
