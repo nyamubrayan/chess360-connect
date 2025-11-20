@@ -92,9 +92,24 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
   const handleNotificationClick = async (notification: Notification) => {
     await markAsRead(notification.id);
 
-    // Navigate to the game page if it's a game-related notification
+    // Handle game challenges
+    if (notification.type === 'game_challenge' && notification.room_id) {
+      navigate(`/game/${notification.room_id}`);
+      setOpen(false);
+      return;
+    }
+
+    // Handle other game notifications
     if (notification.room_id && (notification.type === 'match_found' || notification.type === 'game_started' || notification.type === 'your_turn')) {
       navigate(`/game/${notification.room_id}`);
+      setOpen(false);
+      return;
+    }
+
+    // Handle friend requests
+    if (notification.type === 'friend_request') {
+      // Just close the notification - user can manage in Friends dialog
+      toast.info("Check your Friends list to accept the request");
       setOpen(false);
     }
   };
@@ -115,6 +130,8 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
+      case "game_challenge":
+        return "⚔️";
       case "game_invite":
         return "🎮";
       case "game_started":

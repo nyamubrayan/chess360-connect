@@ -227,6 +227,15 @@ export const FriendsDialog = ({ userId }: FriendsDialogProps) => {
         console.error("Friend request error:", error);
         toast.error("Failed to send friend request");
       } else {
+        // Send notification to the friend
+        await supabase.from("notifications").insert({
+          user_id: profile.id,
+          sender_id: userId,
+          type: "friend_request",
+          title: "Friend Request",
+          message: `You have a new friend request!`,
+        });
+
         toast.success(`Friend request sent to @${profile.username}!`);
         setSearchUsername("");
       }
@@ -317,12 +326,13 @@ export const FriendsDialog = ({ userId }: FriendsDialogProps) => {
         return;
       }
 
-      // Send notification to friend
+      // Send notification to friend with game_id in room_id field
       const { error: notifError } = await supabase
         .from("notifications")
         .insert({
           user_id: friendId,
           sender_id: userId,
+          room_id: newGame.id, // Store game ID here
           type: "game_challenge",
           title: "Game Challenge!",
           message: `You've been challenged to a game!`,
