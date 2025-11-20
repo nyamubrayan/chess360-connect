@@ -26,6 +26,7 @@ interface Friend {
     username: string;
     display_name: string | null;
     avatar_url: string | null;
+    rating: number | null;
   };
 }
 
@@ -119,7 +120,7 @@ export const FriendsDialog = ({ userId }: FriendsDialogProps) => {
     if (friendIds.length > 0) {
       const { data: profilesData } = await supabase
         .from('profiles')
-        .select('id, username, display_name, avatar_url')
+        .select('id, username, display_name, avatar_url, rating')
         .in('id', friendIds);
 
       // Combine friends with profiles
@@ -269,12 +270,58 @@ export const FriendsDialog = ({ userId }: FriendsDialogProps) => {
     }
   };
 
+  const challengeFriend = async (friendId: string, friendUsername: string) => {
+    try {
+      // Create a private game for the friend
+      const { data: newGame, error: gameError } = await supabase
+        .from("games")
+        .insert({
+          white_player_id: userId,
+          black_player_id: friendId,
+          status: "waiting",
+          time_control: 600,
+          time_increment: 0,
+          white_time_remaining: 600,
+          black_time_remaining: 600,
+        })
+        .select()
+        .single();
+
+      if (gameError) {
+        toast.error("Failed to create game challenge");
+        return;
+      }
+
+      // Send notification to friend
+      const { error: notifError } = await supabase
+        .from("notifications")
+        .insert({
+          user_id: friendId,
+          sender_id: userId,
+          type: "game_challenge",
+          title: "Game Challenge!",
+          message: `You've been challenged to a game!`,
+        });
+
+      if (notifError) {
+        console.error("Failed to send notification:", notifError);
+      }
+
+      toast.success(`Challenge sent to ${friendUsername}!`);
+      setOpen(false);
+    } catch (error) {
+      console.error("Challenge error:", error);
+      toast.error("Failed to send challenge");
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" className="gap-2">
           <Users className="w-4 h-4" />
-          Friends ({friends.length})
+          Friends
+          <span className="text-muted-foreground">({friends.length})</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
@@ -339,21 +386,30 @@ export const FriendsDialog = ({ userId }: FriendsDialogProps) => {
                         <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-background rounded-full" />
                       )}
                     </div>
-                    <div className="flex-1">
-                      <p className="font-semibold">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold truncate">
                         {friend.profiles.display_name || friend.profiles.username}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        @{friend.profiles.username}
+                        @{friend.profiles.username} • {friend.profiles.rating || 1200} ELO
                       </p>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeFriend(friend.id)}
-                    >
-                      Remove
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => challengeFriend(friend.friend_id, friend.profiles.username)}
+                      >
+                        Challenge
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeFriend(friend.id)}
+                      >
+                        Remove
+                      </Button>
+                    </div>
                   </div>
                 ))
               )}
