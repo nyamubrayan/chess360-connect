@@ -73,16 +73,11 @@ export default function CoachMarketplace() {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    return <div className="flex items-center justify-center py-8">Loading...</div>;
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-6xl">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">Coach Marketplace</h1>
-        <p className="text-muted-foreground">Find expert coaches to improve your game</p>
-      </div>
-
+    <>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {coaches.map((coach) => (
           <Card key={coach.id} className="hover:shadow-lg transition-shadow cursor-pointer"
@@ -151,6 +146,6 @@ export default function CoachMarketplace() {
           <p className="text-muted-foreground">No coaches available yet</p>
         </div>
       )}
-    </div>
+    </>
   );
 }
