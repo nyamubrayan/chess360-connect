@@ -123,7 +123,48 @@ export default function ChessGame() {
     };
   }, [gameId]);
 
-  // Monitor inactivity - forfeit opponent after 20 seconds of no move
+  // Monitor first move timeout - cancel game if no first move within 30 seconds
+  useEffect(() => {
+    if (!game || !user || game.status !== 'active' || !playerColor) {
+      return;
+    }
+
+    // Check if this is the first move (move_count === 0)
+    const isFirstMove = game.move_count === 0;
+    
+    if (!isFirstMove) {
+      return;
+    }
+
+    // Calculate time since game started
+    const gameStartTime = new Date(game.created_at).getTime();
+    const now = Date.now();
+    const timeSinceStart = now - gameStartTime;
+    const remainingTime = 30000 - timeSinceStart; // 30 seconds
+
+    console.log('First move timeout check:', {
+      timeSinceStart: Math.floor(timeSinceStart / 1000),
+      remainingTime: Math.floor(remainingTime / 1000),
+      currentTurn: game.current_turn,
+    });
+
+    // If already past 30 seconds, cancel immediately
+    if (remainingTime <= 0) {
+      handleFirstMoveTimeout();
+      return;
+    }
+
+    // Set timer for remaining time
+    const timer = setTimeout(() => {
+      handleFirstMoveTimeout();
+    }, remainingTime);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [game?.move_count, game?.status, game?.created_at, user, playerColor]);
+
+  // Monitor inactivity - forfeit opponent after 20 seconds of no move (after first move)
   useEffect(() => {
     // Clear existing timer
     if (inactivityTimer) {
@@ -131,8 +172,8 @@ export default function ChessGame() {
       setInactivityTimer(null);
     }
 
-    // Only monitor if game is active and it's opponent's turn
-    if (!game || !user || game.status !== 'active' || !playerColor) {
+    // Only monitor if game is active and it's opponent's turn and game has started (move_count > 0)
+    if (!game || !user || game.status !== 'active' || !playerColor || game.move_count === 0) {
       return;
     }
 
@@ -172,7 +213,61 @@ export default function ChessGame() {
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [game?.last_move_at, game?.current_turn, game?.status, playerColor, user]);
+  }, [game?.last_move_at, game?.current_turn, game?.status, game?.move_count, playerColor, user]);
+
+  const handleFirstMoveTimeout = async () => {
+    if (!game || !user || game.status !== 'active') return;
+
+    console.log('First move timeout - canceling game after 30 seconds...');
+
+    try {
+      // Determine which player should have moved first (white always starts)
+      const inactivePlayerId = game.white_player_id;
+
+      // Cancel the game
+      const { error } = await supabase
+        .from('games')
+        .update({
+          status: 'completed',
+          result: 'cancelled',
+          completed_at: new Date().toISOString(),
+        })
+        .eq('id', game.id);
+
+      if (error) throw error;
+
+      // Send warning notification to inactive player and info to active player
+      await supabase.from('notifications').insert([
+        {
+          user_id: inactivePlayerId,
+          type: 'game_warning',
+          title: 'Game Cancelled - Warning',
+          message: 'Your game was cancelled because you did not make the first move within 30 seconds. Please make your first move promptly in future games.',
+        },
+        {
+          user_id: game.black_player_id,
+          type: 'game_cancelled',
+          title: 'Game Cancelled',
+          message: 'The game was cancelled because your opponent did not make the first move within 30 seconds.',
+        },
+      ]);
+
+      toast.warning(
+        inactivePlayerId === user.id 
+          ? 'Game cancelled. You must make your first move within 30 seconds.' 
+          : 'Game cancelled. Opponent did not make the first move.',
+        {
+          duration: 5000,
+          action: {
+            label: 'Back to Lobby',
+            onClick: () => navigate('/lobby'),
+          },
+        }
+      );
+    } catch (error) {
+      console.error('Error handling first move timeout:', error);
+    }
+  };
 
   const handleInactivityForfeit = async () => {
     if (!game || !user || game.status !== 'active') return;
