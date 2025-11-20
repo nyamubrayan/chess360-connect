@@ -47,12 +47,48 @@ export const FriendsDialog = ({ userId }: FriendsDialogProps) => {
   const [searchUsername, setSearchUsername] = useState("");
   const [sendingRequest, setSendingRequest] = useState(false);
   const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);
+  const [onlineFriends, setOnlineFriends] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (open) {
       fetchFriends();
     }
   }, [open]);
+
+  // Track online presence
+  useEffect(() => {
+    if (!open || !userId) return;
+
+    const channel = supabase.channel('online-users');
+
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        const onlineUserIds = new Set<string>();
+        
+        Object.values(state).forEach((presences: any) => {
+          presences.forEach((presence: any) => {
+            if (presence.user_id) {
+              onlineUserIds.add(presence.user_id);
+            }
+          });
+        });
+        
+        setOnlineFriends(onlineUserIds);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({
+            user_id: userId,
+            online_at: new Date().toISOString(),
+          });
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [open, userId]);
 
   const fetchFriends = async () => {
     // Fetch accepted friends
@@ -292,12 +328,17 @@ export const FriendsDialog = ({ userId }: FriendsDialogProps) => {
                     key={friend.id}
                     className="flex items-center gap-3 p-3 rounded bg-muted/30"
                   >
-                    <Avatar>
-                      <AvatarImage src={friend.profiles.avatar_url || undefined} />
-                      <AvatarFallback>
-                        {friend.profiles.username.substring(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                    <div className="relative">
+                      <Avatar>
+                        <AvatarImage src={friend.profiles.avatar_url || undefined} />
+                        <AvatarFallback>
+                          {friend.profiles.username.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      {onlineFriends.has(friend.friend_id) && (
+                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-background rounded-full" />
+                      )}
+                    </div>
                     <div className="flex-1">
                       <p className="font-semibold">
                         {friend.profiles.display_name || friend.profiles.username}
