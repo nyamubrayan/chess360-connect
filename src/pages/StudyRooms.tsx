@@ -124,16 +124,12 @@ export default function StudyRooms() {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    return <div className="flex items-center justify-center py-8">Loading...</div>;
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-6xl">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-4xl font-bold mb-2">Study Rooms</h1>
-          <p className="text-muted-foreground">Collaborate with others in real-time chess analysis</p>
-        </div>
+    <>
+      <div className="flex justify-end items-center mb-6">
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
             <Button>
@@ -234,6 +230,6 @@ export default function StudyRooms() {
           <Button onClick={() => setIsCreateOpen(true)}>Create the first room</Button>
         </div>
       )}
-    </div>
+    </>
   );
 }

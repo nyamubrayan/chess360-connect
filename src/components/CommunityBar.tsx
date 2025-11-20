@@ -1,8 +1,14 @@
 import { Button } from './ui/button';
-import { BookOpen, Sword, GraduationCap, MessageSquare, Trophy, Target, Users, Brain, UserIcon } from 'lucide-react';
+import { BookOpen, Sword, GraduationCap, MessageSquare, Trophy, Target, Users, Brain, UserIcon, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { NotificationBell } from './NotificationBell';
 import { User } from '@supabase/supabase-js';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface CommunityBarProps {
   user: User | null;
@@ -11,27 +17,30 @@ interface CommunityBarProps {
 export const CommunityBar = ({ user }: CommunityBarProps) => {
   const navigate = useNavigate();
 
-  const mainLinks = [
+  const communitySubLinks = [
     {
       icon: MessageSquare,
-      label: 'Community',
-      path: '/community'
+      label: 'Posts',
+      path: '/community?tab=posts'
     },
     {
       icon: BookOpen,
       label: 'Study Rooms',
-      path: '/study-rooms'
+      path: '/community?tab=study-rooms'
     },
     {
       icon: Sword,
       label: 'Tournaments',
-      path: '/tournaments'
+      path: '/community?tab=tournaments'
     },
     {
       icon: GraduationCap,
       label: 'Coaches',
-      path: '/coaches'
-    },
+      path: '/community?tab=coaches'
+    }
+  ];
+
+  const mainLinks = [
     {
       icon: Trophy,
       label: 'Leaderboard',
@@ -69,6 +78,31 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
 
           {/* Main Navigation */}
           <div className="hidden lg:flex items-center gap-1">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex items-center gap-2 hover:bg-accent transition-colors"
+                >
+                  <Users className="w-4 h-4" />
+                  <span className="text-sm font-medium">Community</span>
+                  <ChevronDown className="w-3 h-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {communitySubLinks.map((link) => (
+                  <DropdownMenuItem
+                    key={link.path}
+                    onClick={() => navigate(link.path)}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <link.icon className="w-4 h-4" />
+                    <span>{link.label}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
             {mainLinks.map((link) => (
               <Button
                 key={link.path}
@@ -114,6 +148,31 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
         {/* Mobile Navigation */}
         <div className="lg:hidden border-t border-border py-2">
           <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex items-center gap-2 min-w-fit"
+                >
+                  <Users className="w-4 h-4" />
+                  <span className="text-xs">Community</span>
+                  <ChevronDown className="w-3 h-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {communitySubLinks.map((link) => (
+                  <DropdownMenuItem
+                    key={link.path}
+                    onClick={() => navigate(link.path)}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <link.icon className="w-4 h-4" />
+                    <span>{link.label}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
             {mainLinks.map((link) => (
               <Button
                 key={link.path}
