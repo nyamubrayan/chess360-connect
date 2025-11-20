@@ -12,8 +12,9 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Users, UserPlus, Check, X } from "lucide-react";
+import { Users, UserPlus, Check, X, Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { z } from "zod";
 
 interface Friend {
   id: string;
@@ -31,11 +32,20 @@ interface FriendsDialogProps {
   userId: string;
 }
 
+// Validation schema for username
+const usernameSchema = z.string()
+  .trim()
+  .min(1, "Username is required")
+  .max(50, "Username must be less than 50 characters")
+  .regex(/^[a-zA-Z0-9_-]+$/, "Username can only contain letters, numbers, underscores, and hyphens");
+
 export const FriendsDialog = ({ userId }: FriendsDialogProps) => {
   const [open, setOpen] = useState(false);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [requests, setRequests] = useState<Friend[]>([]);
   const [searchUsername, setSearchUsername] = useState("");
+  const [sendingRequest, setSendingRequest] = useState(false);
+  const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -95,67 +105,119 @@ export const FriendsDialog = ({ userId }: FriendsDialogProps) => {
   };
 
   const sendFriendRequest = async () => {
-    if (!searchUsername.trim()) {
-      toast.error("Please enter a username");
+    // Validate username input
+    const validation = usernameSchema.safeParse(searchUsername);
+    if (!validation.success) {
+      toast.error(validation.error.errors[0].message);
       return;
     }
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("username", searchUsername.trim())
-      .single();
+    setSendingRequest(true);
 
-    if (!profile) {
-      toast.error("User not found");
-      return;
-    }
+    try {
+      // Check if user exists
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("id, username")
+        .eq("username", validation.data)
+        .maybeSingle();
 
-    if (profile.id === userId) {
-      toast.error("You cannot add yourself as a friend");
-      return;
-    }
-
-    const { error } = await supabase.from("friends").insert({
-      user_id: userId,
-      friend_id: profile.id,
-      status: "pending",
-    });
-
-    if (error) {
-      if (error.code === "23505") {
-        toast.error("Friend request already sent");
-      } else {
-        toast.error("Failed to send friend request");
+      if (profileError) {
+        toast.error("Error searching for user");
+        return;
       }
-    } else {
-      toast.success("Friend request sent!");
-      setSearchUsername("");
+
+      if (!profile) {
+        toast.error("User not found");
+        return;
+      }
+
+      if (profile.id === userId) {
+        toast.error("You cannot add yourself as a friend");
+        return;
+      }
+
+      // Check if already friends or request exists
+      const { data: existing } = await supabase
+        .from("friends")
+        .select("id, status")
+        .or(`and(user_id.eq.${userId},friend_id.eq.${profile.id}),and(user_id.eq.${profile.id},friend_id.eq.${userId})`)
+        .maybeSingle();
+
+      if (existing) {
+        if (existing.status === "accepted") {
+          toast.error("You are already friends with this user");
+        } else {
+          toast.error("Friend request already exists");
+        }
+        return;
+      }
+
+      // Send friend request
+      const { error } = await supabase.from("friends").insert({
+        user_id: userId,
+        friend_id: profile.id,
+        status: "pending",
+      });
+
+      if (error) {
+        console.error("Friend request error:", error);
+        toast.error("Failed to send friend request");
+      } else {
+        toast.success(`Friend request sent to @${profile.username}!`);
+        setSearchUsername("");
+      }
+    } catch (error) {
+      console.error("Unexpected error:", error);
+      toast.error("An unexpected error occurred");
+    } finally {
+      setSendingRequest(false);
     }
   };
 
   const acceptRequest = async (requestId: string) => {
-    const { error } = await supabase
-      .from("friends")
-      .update({ status: "accepted" })
-      .eq("id", requestId);
+    setProcessingRequestId(requestId);
+    try {
+      const { error } = await supabase
+        .from("friends")
+        .update({ status: "accepted" })
+        .eq("id", requestId);
 
-    if (error) {
-      toast.error("Failed to accept request");
-    } else {
-      toast.success("Friend request accepted!");
-      fetchFriends();
+      if (error) {
+        console.error("Accept request error:", error);
+        toast.error("Failed to accept request");
+      } else {
+        toast.success("Friend request accepted!");
+        await fetchFriends();
+      }
+    } catch (error) {
+      console.error("Unexpected error:", error);
+      toast.error("An unexpected error occurred");
+    } finally {
+      setProcessingRequestId(null);
     }
   };
 
   const rejectRequest = async (requestId: string) => {
-    const { error } = await supabase.from("friends").delete().eq("id", requestId);
+    setProcessingRequestId(requestId);
+    try {
+      const { error } = await supabase
+        .from("friends")
+        .delete()
+        .eq("id", requestId);
 
-    if (error) {
-      toast.error("Failed to reject request");
-    } else {
-      toast.success("Friend request rejected");
-      fetchFriends();
+      if (error) {
+        console.error("Reject request error:", error);
+        toast.error("Failed to reject request");
+      } else {
+        toast.success("Friend request declined");
+        await fetchFriends();
+      }
+    } catch (error) {
+      console.error("Unexpected error:", error);
+      toast.error("An unexpected error occurred");
+    } finally {
+      setProcessingRequestId(null);
     }
   };
 
@@ -199,10 +261,19 @@ export const FriendsDialog = ({ userId }: FriendsDialogProps) => {
                 placeholder="Add friend by username"
                 value={searchUsername}
                 onChange={(e) => setSearchUsername(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && sendFriendRequest()}
+                onKeyDown={(e) => e.key === "Enter" && !sendingRequest && sendFriendRequest()}
+                disabled={sendingRequest}
               />
-              <Button onClick={sendFriendRequest} size="icon">
-                <UserPlus className="w-4 h-4" />
+              <Button 
+                onClick={sendFriendRequest} 
+                size="icon"
+                disabled={sendingRequest}
+              >
+                {sendingRequest ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <UserPlus className="w-4 h-4" />
+                )}
               </Button>
             </div>
 
@@ -275,13 +346,21 @@ export const FriendsDialog = ({ userId }: FriendsDialogProps) => {
                         variant="ghost"
                         size="icon"
                         onClick={() => acceptRequest(request.id)}
+                        disabled={processingRequestId === request.id}
+                        title="Accept friend request"
                       >
-                        <Check className="w-4 h-4 text-green-500" />
+                        {processingRequestId === request.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Check className="w-4 h-4 text-green-500" />
+                        )}
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => rejectRequest(request.id)}
+                        disabled={processingRequestId === request.id}
+                        title="Decline friend request"
                       >
                         <X className="w-4 h-4 text-red-500" />
                       </Button>
