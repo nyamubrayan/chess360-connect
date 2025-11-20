@@ -1,5 +1,5 @@
 import { Button } from './ui/button';
-import { BookOpen, Sword, GraduationCap, MessageSquare, Trophy, Target, Users, Brain, UserIcon, ChevronDown } from 'lucide-react';
+import { BookOpen, Sword, GraduationCap, MessageSquare, Trophy, Target, Users, Brain, UserIcon, ChevronDown, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { NotificationBell } from './NotificationBell';
 import { User } from '@supabase/supabase-js';
@@ -45,6 +45,11 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
       icon: Trophy,
       label: 'Leaderboard',
       path: '/leaderboard'
+    },
+    {
+      icon: MapPin,
+      label: 'Local Players',
+      path: '/local-players'
     }
   ];
 
