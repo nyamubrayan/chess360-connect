@@ -209,27 +209,27 @@ export default function GameLobby() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <div className="min-h-screen bg-background p-2 sm:p-4">
       <div className="container mx-auto max-w-2xl">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
           <Button variant="secondary" size="sm" onClick={() => navigate('/')} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
-            Home
+            <span className="hidden sm:inline">Home</span>
           </Button>
-          <h1 className="text-2xl sm:text-3xl font-bold">Game Lobby</h1>
-          <div className="flex items-center gap-2">
+          <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold">Game Lobby</h1>
+          <div className="flex items-center gap-1 sm:gap-2">
             <NotificationBell userId={user.id} />
             <FriendsDialog userId={user.id} />
           </div>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Quick Match Section */}
-          <Card className="gradient-card p-6 glow-primary">
-            <h2 className="text-xl font-bold mb-6">Quick Match</h2>
+          <Card className="gradient-card p-4 sm:p-6 glow-primary">
+            <h2 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6">Quick Match</h2>
             
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4 sm:space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="quick-time">Time Control (minutes)</Label>
                   <Select value={timeControl} onValueChange={setTimeControl} disabled={isSearching}>
@@ -284,10 +284,10 @@ export default function GameLobby() {
           </Card>
 
           {/* Challenge Friend Section */}
-          <Card className="gradient-card p-6">
-            <h2 className="text-xl font-bold mb-6">Challenge a Friend</h2>
+          <Card className="gradient-card p-4 sm:p-6">
+            <h2 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6">Challenge a Friend</h2>
             
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="opponent">Select Opponent</Label>
                 <Select value={selectedFriend} onValueChange={setSelectedFriend} disabled={isSearching}>

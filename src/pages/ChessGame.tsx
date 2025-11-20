@@ -493,15 +493,13 @@ export default function ChessGame() {
   return (
     <div className="min-h-screen bg-background p-2 sm:p-4">
       <div className="container mx-auto max-w-7xl">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
           <Button variant="secondary" size="sm" onClick={() => navigate('/')} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
-            Home
+            <span className="hidden sm:inline">Home</span>
           </Button>
-          <h1 className="text-xl sm:text-2xl font-bold">
-            Chess Game
-          </h1>
-          <div className="w-20" />
+          <h1 className="text-lg sm:text-xl lg:text-2xl font-bold">Chess Game</h1>
+          <div className="w-12 sm:w-20" />
         </div>
 
         {isWaitingForOpponent && (
@@ -521,14 +519,14 @@ export default function ChessGame() {
           </Card>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Left: Move History */}
-          <div className="lg:col-span-1 order-2 lg:order-1">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 sm:gap-4">
+          {/* Left: Move History - Hidden on mobile, shown on desktop */}
+          <div className="hidden lg:block lg:col-span-1">
             <MoveHistory moves={moves} />
           </div>
 
           {/* Center: Chess Board */}
-          <div className="lg:col-span-1 order-1 lg:order-2 relative">
+          <div className="lg:col-span-1 relative">
             {isWaitingForOpponent && (
               <div className="absolute inset-0 bg-background/60 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center">
                 <div className="text-center space-y-2 p-6">
@@ -540,18 +538,18 @@ export default function ChessGame() {
             
             {/* Opponent Name (top) */}
             {playerColor && (
-              <Card className="gradient-card p-3 mb-2">
+              <Card className="gradient-card p-2 sm:p-3 mb-2">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
                     <div className={`w-2 h-2 rounded-full ${opponentOnline ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
-                    <span className="font-semibold">
+                    <span className="font-semibold text-sm sm:text-base">
                       {playerColor === 'white' ? (blackPlayer?.display_name || blackPlayer?.username || 'Opponent') : (whitePlayer?.display_name || whitePlayer?.username || 'Opponent')}
                     </span>
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-xs sm:text-sm text-muted-foreground">
                       ({playerColor === 'white' ? (blackPlayer?.rating || 1200) : (whitePlayer?.rating || 1200)})
                     </span>
                   </div>
-                  <span className="text-xs text-muted-foreground capitalize">
+                  <span className="text-xs text-muted-foreground capitalize whitespace-nowrap">
                     {playerColor === 'white' ? 'Black' : 'White'}
                   </span>
                 </div>
@@ -573,17 +571,17 @@ export default function ChessGame() {
             
             {/* Your Name (bottom) */}
             {playerColor && (
-              <Card className="gradient-card p-3 mt-2">
+              <Card className="gradient-card p-2 sm:p-3 mt-2">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">
+                  <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                    <span className="font-semibold text-sm sm:text-base">
                       {playerColor === 'white' ? (whitePlayer?.display_name || whitePlayer?.username || 'You') : (blackPlayer?.display_name || blackPlayer?.username || 'You')}
                     </span>
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-xs sm:text-sm text-muted-foreground">
                       ({playerColor === 'white' ? (whitePlayer?.rating || 1200) : (blackPlayer?.rating || 1200)})
                     </span>
                   </div>
-                  <span className="text-xs text-muted-foreground capitalize">
+                  <span className="text-xs text-muted-foreground capitalize whitespace-nowrap">
                     {playerColor} (You)
                   </span>
                 </div>
@@ -604,10 +602,10 @@ export default function ChessGame() {
             />
           </div>
 
-          {/* Right: Game Info */}
-          <div className="lg:col-span-1 order-3 space-y-4">
-            <Card className="gradient-card p-4">
-              <h3 className="text-lg font-bold mb-4">Game Information</h3>
+          {/* Right: Game Info - Compact on mobile */}
+          <div className="lg:col-span-1 space-y-2 sm:space-y-4">
+            <Card className="gradient-card p-3 sm:p-4">
+              <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4">Game Information</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Your Color:</span>
