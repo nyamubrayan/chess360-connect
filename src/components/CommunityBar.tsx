@@ -1,71 +1,134 @@
 import { Button } from './ui/button';
-import { BookOpen, Sword, GraduationCap, Users, MessageSquare, Trophy } from 'lucide-react';
+import { BookOpen, Sword, GraduationCap, MessageSquare, Trophy, Target, Users, Brain, UserIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { NotificationBell } from './NotificationBell';
+import { User } from '@supabase/supabase-js';
 
-export const CommunityBar = () => {
+interface CommunityBarProps {
+  user: User | null;
+}
+
+export const CommunityBar = ({ user }: CommunityBarProps) => {
   const navigate = useNavigate();
 
-  const communityLinks = [
+  const mainLinks = [
     {
       icon: MessageSquare,
       label: 'Community',
-      path: '/community',
-      description: 'Join discussions'
+      path: '/community'
     },
     {
       icon: BookOpen,
       label: 'Study Rooms',
-      path: '/study-rooms',
-      description: 'Learn together'
+      path: '/study-rooms'
     },
     {
       icon: Sword,
       label: 'Tournaments',
-      path: '/tournaments',
-      description: 'Compete'
+      path: '/tournaments'
     },
     {
       icon: GraduationCap,
       label: 'Coaches',
-      path: '/coaches',
-      description: 'Get training'
+      path: '/coaches'
     },
     {
       icon: Trophy,
       label: 'Leaderboard',
-      path: '/leaderboard',
-      description: 'Rankings'
+      path: '/leaderboard'
+    }
+  ];
+
+  const userLinks = [
+    {
+      icon: UserIcon,
+      label: 'Profile',
+      path: '/profile'
+    },
+    {
+      icon: Target,
+      label: 'Analytics',
+      path: '/analytics'
+    },
+    {
+      icon: Brain,
+      label: 'Lessons',
+      path: '/lessons'
     }
   ];
 
   return (
-    <div className="border-b border-border bg-muted/30 backdrop-blur-sm sticky top-0 z-50">
+    <nav className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
       <div className="container mx-auto px-4">
-        <div className="flex items-center gap-2 overflow-x-auto py-3 scrollbar-hide">
-          <div className="flex items-center gap-2 mr-4 min-w-fit">
-            <Users className="w-5 h-5 text-primary" />
-            <span className="font-semibold">Community</span>
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
+            <Users className="w-6 h-6 text-primary" />
+            <span className="font-bold text-lg hidden sm:inline">ChessMaster</span>
           </div>
-          <div className="flex gap-2">
-            {communityLinks.map((link) => (
+
+          {/* Main Navigation */}
+          <div className="hidden lg:flex items-center gap-1">
+            {mainLinks.map((link) => (
               <Button
                 key={link.path}
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate(link.path)}
-                className="flex items-center gap-2 min-w-fit hover:bg-primary/10 transition-colors"
+                className="flex items-center gap-2 hover:bg-accent transition-colors"
               >
                 <link.icon className="w-4 h-4" />
-                <div className="hidden md:flex flex-col items-start">
-                  <span className="text-sm font-medium">{link.label}</span>
-                  <span className="text-xs text-muted-foreground">{link.description}</span>
+                <span className="text-sm font-medium">{link.label}</span>
+              </Button>
+            ))}
+          </div>
+
+          {/* User Actions */}
+          <div className="flex items-center gap-2">
+            {user ? (
+              <>
+                <NotificationBell userId={user.id} />
+                <div className="hidden md:flex items-center gap-1">
+                  {userLinks.map((link) => (
+                    <Button
+                      key={link.path}
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => navigate(link.path)}
+                      className="flex items-center gap-2"
+                    >
+                      <link.icon className="w-4 h-4" />
+                      <span className="text-sm">{link.label}</span>
+                    </Button>
+                  ))}
                 </div>
-                <span className="md:hidden text-sm">{link.label}</span>
+              </>
+            ) : (
+              <Button size="sm" onClick={() => navigate('/auth')}>
+                Sign In
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile Navigation */}
+        <div className="lg:hidden border-t border-border py-2">
+          <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
+            {mainLinks.map((link) => (
+              <Button
+                key={link.path}
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate(link.path)}
+                className="flex items-center gap-2 min-w-fit"
+              >
+                <link.icon className="w-4 h-4" />
+                <span className="text-xs">{link.label}</span>
               </Button>
             ))}
           </div>
         </div>
       </div>
-    </div>
+    </nav>
   );
 };

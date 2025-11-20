@@ -6,7 +6,6 @@ import { FeedSection } from "@/components/FeedSection";
 import { HeroSection } from "@/components/home/HeroSection";
 import { FeaturesSection } from "@/components/home/FeaturesSection";
 import { StatsSection } from "@/components/home/StatsSection";
-import { HeaderActions } from "@/components/home/HeaderActions";
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -28,10 +27,9 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <CommunityBar />
+      <CommunityBar user={user} />
       
       <div className="relative">
-        <HeaderActions user={user} />
         <HeroSection />
       </div>
 
