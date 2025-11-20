@@ -17,6 +17,7 @@ import StudyRooms from "./pages/StudyRooms";
 import StudyRoom from "./pages/StudyRoom";
 import Tournaments from "./pages/Tournaments";
 import CoachMarketplace from "./pages/CoachMarketplace";
+import LocalPlayers from "./pages/LocalPlayers";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ const App = () => (
           <Route path="/study-room/:roomId" element={<StudyRoom />} />
           <Route path="/tournaments" element={<Tournaments />} />
           <Route path="/coaches" element={<CoachMarketplace />} />
+          <Route path="/local-players" element={<LocalPlayers />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
