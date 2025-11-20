@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -243,6 +244,9 @@ export const FriendsDialog = ({ userId }: FriendsDialogProps) => {
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Friends</DialogTitle>
+          <DialogDescription>
+            Manage your friend list and friend requests
+          </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="friends" className="w-full">
