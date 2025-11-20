@@ -1,10 +1,8 @@
 import { Button } from './ui/button';
-import { BookOpen, Sword, GraduationCap, MessageSquare, Trophy, Target, Users, Brain, UserIcon, ChevronDown, MapPin } from 'lucide-react';
+import { BookOpen, Sword, GraduationCap, MessageSquare, Trophy, Target, Users, Brain, UserIcon, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { NotificationBell } from './NotificationBell';
 import { User } from '@supabase/supabase-js';
-import { Badge } from './ui/badge';
-import { useNearbyPlayersCount } from '@/hooks/useNearbyPlayersCount';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,7 +16,6 @@ interface CommunityBarProps {
 
 export const CommunityBar = ({ user }: CommunityBarProps) => {
   const navigate = useNavigate();
-  const nearbyCount = useNearbyPlayersCount(user?.id);
 
   const communitySubLinks = [
     {
@@ -48,11 +45,6 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
       icon: Trophy,
       label: 'Leaderboard',
       path: '/leaderboard'
-    },
-    {
-      icon: MapPin,
-      label: 'Local Players',
-      path: '/local-players'
     }
   ];
 
@@ -115,15 +107,10 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
                 key={link.path}
                 variant="ghost"
                 onClick={() => navigate(link.path)}
-                className="flex items-center gap-2 h-10 px-4 hover:bg-accent/80 transition-all relative"
+                className="flex items-center gap-2 h-10 px-4 hover:bg-accent/80 transition-all"
               >
                 <link.icon className="w-4 h-4" />
                 <span className="font-medium">{link.label}</span>
-                {link.path === '/local-players' && nearbyCount > 0 && (
-                  <Badge variant="secondary" className="ml-1 h-5 min-w-5 flex items-center justify-center px-1.5">
-                    {nearbyCount}
-                  </Badge>
-                )}
               </Button>
             ))}
           </div>
@@ -189,15 +176,10 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate(link.path)}
-                className="flex items-center gap-2 min-w-fit h-9 px-3 relative"
+                className="flex items-center gap-2 min-w-fit h-9 px-3"
               >
                 <link.icon className="w-4 h-4" />
                 <span className="text-sm font-medium">{link.label}</span>
-                {link.path === '/local-players' && nearbyCount > 0 && (
-                  <Badge variant="secondary" className="ml-1 h-5 min-w-5 flex items-center justify-center px-1.5 text-xs">
-                    {nearbyCount}
-                  </Badge>
-                )}
               </Button>
             ))}
           </div>
