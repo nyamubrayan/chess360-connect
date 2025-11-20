@@ -67,38 +67,37 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
   ];
 
   return (
-    <nav className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-      <div className="container mx-auto px-4">
+    <nav className="border-b border-border/40 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 shadow-sm">
+      <div className="container mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-            <Users className="w-6 h-6 text-primary" />
-            <span className="font-bold text-lg hidden sm:inline">ChessMaster</span>
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
+            <Users className="w-7 h-7 text-primary" />
+            <span className="font-bold text-xl tracking-tight">ChessMaster</span>
           </div>
 
           {/* Main Navigation */}
-          <div className="hidden lg:flex items-center gap-1">
+          <div className="hidden lg:flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  size="sm"
-                  className="flex items-center gap-2 hover:bg-accent transition-colors"
+                  className="flex items-center gap-2 h-10 px-4 hover:bg-accent/80 transition-all"
                 >
                   <Users className="w-4 h-4" />
-                  <span className="text-sm font-medium">Community</span>
-                  <ChevronDown className="w-3 h-3" />
+                  <span className="font-medium">Community</span>
+                  <ChevronDown className="w-4 h-4 transition-transform" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
+              <DropdownMenuContent align="start" className="w-56 bg-background/95 backdrop-blur-sm z-50 border shadow-lg">
                 {communitySubLinks.map((link) => (
                   <DropdownMenuItem
                     key={link.path}
                     onClick={() => navigate(link.path)}
-                    className="flex items-center gap-2 cursor-pointer"
+                    className="flex items-center gap-3 cursor-pointer py-2.5 px-3 hover:bg-accent transition-colors"
                   >
-                    <link.icon className="w-4 h-4" />
-                    <span>{link.label}</span>
+                    <link.icon className="w-4 h-4 text-muted-foreground" />
+                    <span className="font-medium">{link.label}</span>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -107,38 +106,36 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
               <Button
                 key={link.path}
                 variant="ghost"
-                size="sm"
                 onClick={() => navigate(link.path)}
-                className="flex items-center gap-2 hover:bg-accent transition-colors"
+                className="flex items-center gap-2 h-10 px-4 hover:bg-accent/80 transition-all"
               >
                 <link.icon className="w-4 h-4" />
-                <span className="text-sm font-medium">{link.label}</span>
+                <span className="font-medium">{link.label}</span>
               </Button>
             ))}
           </div>
 
           {/* User Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {user ? (
               <>
                 <NotificationBell userId={user.id} />
-                <div className="hidden md:flex items-center gap-1">
+                <div className="hidden md:flex items-center gap-2">
                   {userLinks.map((link) => (
                     <Button
                       key={link.path}
                       variant="ghost"
-                      size="sm"
                       onClick={() => navigate(link.path)}
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 h-10 px-4 hover:bg-accent/80 transition-all"
                     >
                       <link.icon className="w-4 h-4" />
-                      <span className="text-sm">{link.label}</span>
+                      <span className="font-medium">{link.label}</span>
                     </Button>
                   ))}
                 </div>
               </>
             ) : (
-              <Button size="sm" onClick={() => navigate('/auth')}>
+              <Button onClick={() => navigate('/auth')} className="h-10 px-6 font-medium">
                 Sign In
               </Button>
             )}
@@ -146,29 +143,29 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
         </div>
 
         {/* Mobile Navigation */}
-        <div className="lg:hidden border-t border-border py-2">
-          <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
+        <div className="lg:hidden border-t border-border/40 py-3">
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="flex items-center gap-2 min-w-fit"
+                  className="flex items-center gap-2 min-w-fit h-9 px-3"
                 >
                   <Users className="w-4 h-4" />
-                  <span className="text-xs">Community</span>
+                  <span className="text-sm font-medium">Community</span>
                   <ChevronDown className="w-3 h-3" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
+              <DropdownMenuContent align="start" className="w-48 bg-background/95 backdrop-blur-sm z-50 border shadow-lg">
                 {communitySubLinks.map((link) => (
                   <DropdownMenuItem
                     key={link.path}
                     onClick={() => navigate(link.path)}
-                    className="flex items-center gap-2 cursor-pointer"
+                    className="flex items-center gap-3 cursor-pointer py-2.5 px-3 hover:bg-accent transition-colors"
                   >
-                    <link.icon className="w-4 h-4" />
-                    <span>{link.label}</span>
+                    <link.icon className="w-4 h-4 text-muted-foreground" />
+                    <span className="font-medium">{link.label}</span>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -179,10 +176,10 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate(link.path)}
-                className="flex items-center gap-2 min-w-fit"
+                className="flex items-center gap-2 min-w-fit h-9 px-3"
               >
                 <link.icon className="w-4 h-4" />
-                <span className="text-xs">{link.label}</span>
+                <span className="text-sm font-medium">{link.label}</span>
               </Button>
             ))}
           </div>
