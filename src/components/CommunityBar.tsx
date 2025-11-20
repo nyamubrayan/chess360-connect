@@ -67,9 +67,9 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
   ];
 
   return (
-    <nav className="border-b border-border/40 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 shadow-sm">
-      <div className="w-full px-6">
-        <div className="flex items-center justify-between h-16">
+    <nav className="w-full border-b border-border/40 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 shadow-sm">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 w-full">
           {/* Logo */}
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
             <Users className="w-7 h-7 text-primary" />
