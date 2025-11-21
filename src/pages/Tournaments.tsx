@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Users, Calendar, Plus, UserPlus } from "lucide-react";
+import { Trophy, Users, Calendar, Plus, UserPlus, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { CreateTournamentDialog } from "@/components/tournaments/CreateTournamentDialog";
 import { toast } from "sonner";
 
@@ -31,6 +32,7 @@ export default function Tournaments() {
   const [user, setUser] = useState<any>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [showLiveIndicator, setShowLiveIndicator] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -167,8 +169,11 @@ export default function Tournaments() {
   };
 
   const filteredTournaments = tournaments.filter(t => {
-    if (filterStatus === 'all') return true;
-    return t.status === filterStatus;
+    const matchesStatus = filterStatus === 'all' || t.status === filterStatus;
+    const matchesSearch = searchQuery === '' || 
+      t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (t.description && t.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    return matchesStatus && matchesSearch;
   });
 
   if (loading) {
@@ -204,19 +209,31 @@ export default function Tournaments() {
           </Button>
         </div>
 
-        <Tabs value={filterStatus} onValueChange={setFilterStatus} className="mb-6">
-          <TabsList>
-            <TabsTrigger value="all">All Tournaments</TabsTrigger>
-            <TabsTrigger value="upcoming">
-              Upcoming
-              <Badge variant="secondary" className="ml-2">
-                {tournaments.filter(t => t.status === 'upcoming').length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="active">Active</TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="mb-6 space-y-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search tournaments by name or description..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          <Tabs value={filterStatus} onValueChange={setFilterStatus}>
+            <TabsList>
+              <TabsTrigger value="all">All Tournaments</TabsTrigger>
+              <TabsTrigger value="upcoming">
+                Upcoming
+                <Badge variant="secondary" className="ml-2">
+                  {tournaments.filter(t => t.status === 'upcoming').length}
+                </Badge>
+              </TabsTrigger>
+              <TabsTrigger value="active">Active</TabsTrigger>
+              <TabsTrigger value="completed">Completed</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
 
         {filteredTournaments.length === 0 ? (
           <Card className="p-12 text-center">
