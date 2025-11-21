@@ -34,7 +34,7 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
     },
     {
       icon: Users,
-      label: 'Connect',
+      label: 'ChessMate Networking',
       path: '/connect'
     },
     {
