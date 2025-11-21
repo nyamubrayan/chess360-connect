@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Trophy, Users, Clock, Play } from "lucide-react";
+import { ArrowLeft, Trophy, Users, Clock, Play, Timer } from "lucide-react";
 import { toast } from "sonner";
 import { TournamentBracket } from "@/components/tournaments/TournamentBracket";
 import { TournamentStandings } from "@/components/tournaments/TournamentStandings";
 import { TournamentSchedule } from "@/components/tournaments/TournamentSchedule";
+import { formatDistanceToNow } from "date-fns";
 
 export default function TournamentDetail() {
   const { id } = useParams();
@@ -20,6 +21,7 @@ export default function TournamentDetail() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isParticipant, setIsParticipant] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState<string>("");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -27,6 +29,39 @@ export default function TournamentDetail() {
       if (!user) navigate("/auth");
     });
   }, [navigate]);
+
+  useEffect(() => {
+    if (!tournament?.start_date || tournament.status !== 'upcoming') return;
+
+    const updateCountdown = () => {
+      const startTime = new Date(tournament.start_date).getTime();
+      const now = Date.now();
+      const diff = startTime - now;
+
+      if (diff <= 0) {
+        setTimeRemaining("Tournament starting soon!");
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      let timeString = "";
+      if (days > 0) timeString += `${days}d `;
+      if (hours > 0 || days > 0) timeString += `${hours}h `;
+      if (minutes > 0 || hours > 0 || days > 0) timeString += `${minutes}m `;
+      timeString += `${seconds}s`;
+
+      setTimeRemaining(timeString);
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+
+    return () => clearInterval(interval);
+  }, [tournament]);
 
   useEffect(() => {
     if (!user || !id) return;
@@ -159,6 +194,24 @@ export default function TournamentDetail() {
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Tournaments
         </Button>
+
+        {tournament.status === 'upcoming' && tournament.start_date && (
+          <Card className="p-6 mb-6 border-2 border-primary/50 bg-gradient-to-r from-primary/10 to-accent/10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Timer className="w-8 h-8 text-primary" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Tournament starts in</p>
+                  <p className="text-3xl font-bold text-primary">{timeRemaining}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-muted-foreground">Start time</p>
+                <p className="font-medium">{new Date(tournament.start_date).toLocaleString()}</p>
+              </div>
+            </div>
+          </Card>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <Card className="lg:col-span-2 p-6">
