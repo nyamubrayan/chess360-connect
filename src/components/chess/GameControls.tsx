@@ -23,6 +23,7 @@ interface GameControlsProps {
   onRequestTakeback: () => void;
   onAcceptTakeback: () => void;
   onDeclineTakeback: () => void;
+  onCancelTakeback: () => void;
   className?: string;
 }
 
@@ -36,6 +37,7 @@ export const GameControls = ({
   onRequestTakeback,
   onAcceptTakeback,
   onDeclineTakeback,
+  onCancelTakeback,
   className,
 }: GameControlsProps) => {
   const isActive = game.status === 'active';
@@ -46,6 +48,10 @@ export const GameControls = ({
   const takebackRequestedByOpponent = game.undo_requested_by && 
     ((playerColor === 'white' && game.undo_requested_by === game.black_player_id) ||
      (playerColor === 'black' && game.undo_requested_by === game.white_player_id));
+
+  const takebackRequestedByMe = game.undo_requested_by && 
+    ((playerColor === 'white' && game.undo_requested_by === game.white_player_id) ||
+     (playerColor === 'black' && game.undo_requested_by === game.black_player_id));
 
   return (
     <Card className={`gradient-card p-4 ${className}`}>
@@ -134,6 +140,16 @@ export const GameControls = ({
               Decline
             </Button>
           </>
+        ) : takebackRequestedByMe ? (
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 gap-2"
+            onClick={onCancelTakeback}
+          >
+            <XCircle className="w-4 h-4" />
+            Cancel Takeback
+          </Button>
         ) : (
           <Button
             variant="outline"
@@ -143,7 +159,7 @@ export const GameControls = ({
             disabled={!isActive || !!game.undo_requested_by || game.move_count === 0}
           >
             <Undo2 className="w-4 h-4" />
-            {game.undo_requested_by ? 'Takeback Requested' : 'Request Takeback'}
+            Request Takeback
           </Button>
         )}
       </div>
