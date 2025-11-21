@@ -4,7 +4,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { CommunityBar } from "@/components/CommunityBar";
 import { HeroSection } from "@/components/home/HeroSection";
 import { FeaturesSection } from "@/components/home/FeaturesSection";
-import { StatsSection } from "@/components/home/StatsSection";
+import { Footer } from "@/components/Footer";
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -25,15 +25,18 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <CommunityBar user={user} />
       
-      <div className="relative">
-        <HeroSection />
+      <div className="flex-1">
+        <div className="relative">
+          <HeroSection />
+        </div>
+
+        <FeaturesSection />
       </div>
 
-      <FeaturesSection />
-      <StatsSection />
+      <Footer />
     </div>
   );
 };
