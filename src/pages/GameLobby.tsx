@@ -212,24 +212,29 @@ export default function GameLobby() {
 
         {/* Time Control Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
-          {TIME_CONTROLS.map((tc) => (
+          {TIME_CONTROLS.map((tc, index) => (
             <Card
               key={tc.label}
               onClick={() => handleTimeControlSelect(tc)}
               className={`
-                cursor-pointer p-6 sm:p-8 transition-all hover:scale-105 hover:shadow-lg
+                cursor-pointer p-6 sm:p-8 
+                transition-all duration-300 ease-out
+                hover:scale-105 hover:shadow-xl hover:-translate-y-1
+                hover:border-primary/70 hover:shadow-primary/30
+                animate-fade-in
                 ${selectedTimeControl?.label === tc.label 
-                  ? 'bg-accent border-primary border-2 shadow-lg shadow-primary/20' 
-                  : 'hover:border-primary/50'
+                  ? 'bg-accent border-primary border-2 shadow-xl shadow-primary/30 scale-[1.02] ring-2 ring-primary/20' 
+                  : 'hover:bg-accent/50'
                 }
                 ${isSearching ? 'opacity-50 cursor-not-allowed' : ''}
               `}
+              style={{ animationDelay: `${index * 50}ms` }}
             >
               <div className="text-center space-y-2">
-                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">
+                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground transition-transform duration-300 group-hover:scale-110">
                   {tc.label}
                 </div>
-                <div className="text-sm sm:text-base text-muted-foreground font-medium">
+                <div className="text-sm sm:text-base text-muted-foreground font-medium transition-colors duration-300">
                   {tc.category}
                 </div>
               </div>
@@ -240,28 +245,33 @@ export default function GameLobby() {
           <Card
             onClick={() => !isSearching && setCustomDialogOpen(true)}
             className={`
-              cursor-pointer p-6 sm:p-8 transition-all hover:scale-105 hover:shadow-lg
+              cursor-pointer p-6 sm:p-8 group
+              transition-all duration-300 ease-out
+              hover:scale-105 hover:shadow-xl hover:-translate-y-1
+              hover:border-primary/70 hover:shadow-primary/30
+              animate-fade-in
               ${selectedTimeControl?.category === 'Custom'
-                ? 'bg-accent border-primary border-2 shadow-lg shadow-primary/20'
-                : 'hover:border-primary/50'
+                ? 'bg-accent border-primary border-2 shadow-xl shadow-primary/30 scale-[1.02] ring-2 ring-primary/20'
+                : 'hover:bg-accent/50'
               }
               ${isSearching ? 'opacity-50 cursor-not-allowed' : ''}
             `}
+            style={{ animationDelay: `${TIME_CONTROLS.length * 50}ms` }}
           >
             <div className="text-center space-y-2">
               {selectedTimeControl?.category === 'Custom' ? (
                 <>
-                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">
+                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground transition-transform duration-300">
                     {selectedTimeControl.label}
                   </div>
-                  <div className="text-sm sm:text-base text-muted-foreground font-medium">
+                  <div className="text-sm sm:text-base text-muted-foreground font-medium transition-colors duration-300">
                     Custom
                   </div>
                 </>
               ) : (
                 <>
-                  <Clock className="w-8 h-8 sm:w-10 sm:h-10 mx-auto text-muted-foreground" />
-                  <div className="text-sm sm:text-base text-muted-foreground font-medium">
+                  <Clock className="w-8 h-8 sm:w-10 sm:h-10 mx-auto text-muted-foreground transition-all duration-300 group-hover:scale-110 group-hover:rotate-12 group-hover:text-primary" />
+                  <div className="text-sm sm:text-base text-muted-foreground font-medium transition-colors duration-300 group-hover:text-foreground">
                     Custom
                   </div>
                 </>
@@ -273,9 +283,9 @@ export default function GameLobby() {
         {/* Action Buttons */}
         <div className="max-w-md mx-auto space-y-4">
           {selectedTimeControl && (
-            <div className="bg-card border border-border rounded-lg p-4 text-center">
+            <div className="bg-card border border-border rounded-lg p-4 text-center animate-fade-in shadow-lg">
               <p className="text-sm text-muted-foreground mb-2">Selected Time Control</p>
-              <p className="text-2xl font-bold text-primary">
+              <p className="text-2xl font-bold text-primary animate-scale-in">
                 {selectedTimeControl.label}
               </p>
               <p className="text-sm text-muted-foreground mt-1">
