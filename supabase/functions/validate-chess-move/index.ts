@@ -85,8 +85,8 @@ serve(async (req) => {
 
     if (isCheckmate) {
       status = 'completed';
-      result_status = currentTurn === 'w' ? 'black_won' : 'white_won';
-      winner = currentTurn === 'w' ? game.black_player_id : game.white_player_id;
+      result_status = currentTurn === 'w' ? 'white_won' : 'black_won';
+      winner = currentTurn === 'w' ? game.white_player_id : game.black_player_id;
     } else if (isStalemate) {
       status = 'completed';
       result_status = 'stalemate';
