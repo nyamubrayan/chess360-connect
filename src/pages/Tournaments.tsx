@@ -55,6 +55,15 @@ export default function Tournaments() {
         },
         () => fetchTournaments()
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tournament_participants'
+        },
+        () => fetchTournaments()
+      )
       .subscribe();
 
     return () => {
