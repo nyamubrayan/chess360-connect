@@ -33,3 +33,6 @@ verify_jwt = true
 [functions.validate-move]
 verify_jwt = true
 
+[functions.manage-tournament]
+verify_jwt = true
+
