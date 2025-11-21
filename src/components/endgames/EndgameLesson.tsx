@@ -43,6 +43,7 @@ export const EndgameLesson = ({ scenario }: EndgameLessonProps) => {
   const generateExplanation = async (moveIndex: number) => {
     if (moveIndex < 0 || moveIndex >= scenario.solutionMoves.length) return;
 
+    console.log('Generating explanation for move', moveIndex + 1, scenario.solutionMoves[moveIndex]);
     setLoadingExplanation(true);
     try {
       const { data, error } = await supabase.functions.invoke('explain-opening-move', {
@@ -57,6 +58,7 @@ export const EndgameLesson = ({ scenario }: EndgameLessonProps) => {
       });
 
       if (error) {
+        console.error('Edge function error:', error);
         if (error.message?.includes('429')) {
           toast.error('Rate limit reached. Please wait a moment and try again.');
         } else if (error.message?.includes('402')) {
@@ -69,6 +71,7 @@ export const EndgameLesson = ({ scenario }: EndgameLessonProps) => {
         return;
       }
 
+      console.log('Explanation generated:', data.explanation);
       setCurrentExplanation(data.explanation);
     } catch (err) {
       console.error('Error:', err);
@@ -78,7 +81,7 @@ export const EndgameLesson = ({ scenario }: EndgameLessonProps) => {
     }
   };
 
-  const nextMove = () => {
+  const nextMove = async () => {
     if (currentMoveIndex >= scenario.solutionMoves.length - 1) return;
 
     const newIndex = currentMoveIndex + 1;
@@ -95,10 +98,10 @@ export const EndgameLesson = ({ scenario }: EndgameLessonProps) => {
     setCurrentMoveIndex(newIndex);
     setMoveHistory([...scenario.solutionMoves.slice(0, newIndex + 1)]);
     
-    generateExplanation(newIndex);
+    await generateExplanation(newIndex);
   };
 
-  const previousMove = () => {
+  const previousMove = async () => {
     if (currentMoveIndex < 0) return;
 
     const newIndex = currentMoveIndex - 1;
@@ -119,7 +122,7 @@ export const EndgameLesson = ({ scenario }: EndgameLessonProps) => {
     setCurrentMoveIndex(newIndex);
     setMoveHistory([...scenario.solutionMoves.slice(0, newIndex + 1)]);
     
-    generateExplanation(newIndex);
+    await generateExplanation(newIndex);
   };
 
   const handleMove = (from: string, to: string) => {
@@ -208,14 +211,15 @@ export const EndgameLesson = ({ scenario }: EndgameLessonProps) => {
                       Move {currentMoveIndex + 1}: {scenario.solutionMoves[currentMoveIndex]}
                     </h3>
                     {loadingExplanation ? (
-                      <div className="text-sm text-muted-foreground animate-pulse">
-                        Generating explanation...
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                        Generating AI explanation...
                       </div>
                     ) : currentExplanation ? (
                       <p className="text-sm sm:text-base leading-relaxed">{currentExplanation}</p>
                     ) : (
                       <p className="text-sm text-muted-foreground italic">
-                        Navigate through moves to see AI explanations
+                        Click the arrow buttons to see AI explanations for each move
                       </p>
                     )}
                   </div>

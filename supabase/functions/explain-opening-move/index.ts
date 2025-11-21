@@ -11,16 +11,27 @@ serve(async (req) => {
   }
 
   try {
-    const { openingName, move, moveNumber, previousMoves, keyIdeas } = await req.json();
+    const { openingName, move, moveNumber, previousMoves, keyIdeas, isEndgame } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `You are a chess coach explaining opening moves to students. Provide clear, concise explanations (2-3 sentences) that help students understand WHY this move is played and what it accomplishes. Focus on practical understanding, not just theory.`;
+    const systemPrompt = isEndgame 
+      ? `You are a chess coach explaining endgame techniques to students. Provide clear, concise explanations (2-3 sentences) that help students understand WHY this move is played and what it accomplishes in the endgame. Focus on endgame principles, key squares, winning techniques, and defensive resources.`
+      : `You are a chess coach explaining opening moves to students. Provide clear, concise explanations (2-3 sentences) that help students understand WHY this move is played and what it accomplishes. Focus on practical understanding, not just theory.`;
 
-    const userPrompt = `Opening: ${openingName}
+    const userPrompt = isEndgame
+      ? `Endgame Position: ${openingName}
+Move ${moveNumber}: ${move}
+Previous moves: ${previousMoves.join(", ")}
+
+Key concepts for this endgame:
+${keyIdeas.map((idea: string, i: number) => `${i + 1}. ${idea}`).join("\n")}
+
+Explain why this move (${move}) is the correct technique in this endgame position. What does it accomplish? How does it fit into the winning plan or defensive strategy?`
+      : `Opening: ${openingName}
 Move ${moveNumber}: ${move}
 Previous moves: ${previousMoves.join(", ")}
 
