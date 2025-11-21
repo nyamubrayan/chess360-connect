@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Play, Trophy } from "lucide-react";
+import { Play, Puzzle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/chess-hero.jpg";
 
@@ -43,10 +43,10 @@ export const HeroSection = () => {
               size="lg" 
               variant="outline"
               className="text-lg px-8 h-14 border-2 hover:scale-105 transition-all"
-              onClick={() => navigate("/leaderboard")}
+              onClick={() => navigate("/puzzles")}
             >
-              <Trophy className="w-5 h-5 mr-2" />
-              View Leaderboard
+              <Puzzle className="w-5 h-5 mr-2" />
+              Solve Puzzles
             </Button>
           </div>
         </div>
