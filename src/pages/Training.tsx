@@ -56,7 +56,7 @@ export default function Training() {
       gradient: 'from-green-500/20 to-emerald-500/20',
       iconColor: 'text-green-500',
       path: '/endgames',
-      available: false
+      available: true
     },
     {
       icon: TrendingUp,

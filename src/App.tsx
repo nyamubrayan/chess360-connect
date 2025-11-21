@@ -13,6 +13,7 @@ import Analytics from "./pages/Analytics";
 import Puzzles from "./pages/Puzzles";
 import Training from "./pages/Training";
 import Openings from "./pages/Openings";
+import Endgames from "./pages/Endgames";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/puzzles" element={<Puzzles />} />
           <Route path="/training" element={<Training />} />
           <Route path="/openings" element={<Openings />} />
+          <Route path="/endgames" element={<Endgames />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
