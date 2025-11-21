@@ -13,9 +13,10 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Users, UserPlus, Check, X, Loader2 } from "lucide-react";
+import { Users, UserPlus, Check, X, Loader2, MessageCircle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { z } from "zod";
+import { useNavigate } from "react-router-dom";
 
 interface Friend {
   id: string;
@@ -42,6 +43,7 @@ const usernameSchema = z.string()
   .regex(/^[a-zA-Z0-9_-]+$/, "Username can only contain letters, numbers, underscores, and hyphens");
 
 export const FriendsDialog = ({ userId }: FriendsDialogProps) => {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [requests, setRequests] = useState<Friend[]>([]);
@@ -429,20 +431,24 @@ export const FriendsDialog = ({ userId }: FriendsDialogProps) => {
                         @{friend.profiles.username} • {friend.profiles.rating || 1200} ELO
                       </p>
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex flex-col gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setOpen(false);
+                          navigate(`/chat/${friend.friend_id}`);
+                        }}
+                      >
+                        <MessageCircle className="w-4 h-4 mr-1" />
+                        Chat
+                      </Button>
                       <Button
                         variant="default"
                         size="sm"
                         onClick={() => challengeFriend(friend.friend_id, friend.profiles.username)}
                       >
                         Challenge
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeFriend(friend.id)}
-                      >
-                        Remove
                       </Button>
                     </div>
                   </div>

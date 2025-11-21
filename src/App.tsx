@@ -17,6 +17,7 @@ import Openings from "./pages/Openings";
 import Endgames from "./pages/Endgames";
 import Lessons from "./pages/Lessons";
 import Connect from "./pages/Connect";
+import Chat from "./pages/Chat";
 import Tournaments from "./pages/Tournaments";
 import TournamentDetail from "./pages/TournamentDetail";
 import NotFound from "./pages/NotFound";
@@ -44,6 +45,7 @@ const App = () => (
           <Route path="/endgames" element={<Endgames />} />
           <Route path="/lessons" element={<Lessons />} />
           <Route path="/connect" element={<Connect />} />
+          <Route path="/chat/:friendId" element={<Chat />} />
           <Route path="/tournaments" element={<Tournaments />} />
           <Route path="/tournaments/:id" element={<TournamentDetail />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

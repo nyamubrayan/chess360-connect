@@ -236,6 +236,13 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
       // Just close the notification - user can manage in Friends dialog
       toast.info("Check your Friends list to accept the request");
       setOpen(false);
+      return;
+    }
+
+    // Handle new messages
+    if (notification.type === 'new_message' && notification.sender_id) {
+      navigate(`/chat/${notification.sender_id}`);
+      setOpen(false);
     }
   };
 
@@ -267,6 +274,8 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
         return "⏰";
       case "friend_request":
         return "👤";
+      case "new_message":
+        return "💬";
       case "tournament_invite":
         return "🏆";
       default:
