@@ -5,7 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Trophy, Users, Clock, Play, Timer, Share2, Check } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ArrowLeft, Trophy, Users, Clock, Play, Timer, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { TournamentBracket } from "@/components/tournaments/TournamentBracket";
 import { TournamentStandings } from "@/components/tournaments/TournamentStandings";
@@ -22,7 +25,9 @@ export default function TournamentDetail() {
   const [loading, setLoading] = useState(true);
   const [isParticipant, setIsParticipant] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<string>("");
-  const [linkCopied, setLinkCopied] = useState(false);
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [friends, setFriends] = useState<any[]>([]);
+  const [sendingInvites, setSendingInvites] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -30,6 +35,39 @@ export default function TournamentDetail() {
       if (!user) navigate("/auth");
     });
   }, [navigate]);
+
+  useEffect(() => {
+    if (!user) return;
+    fetchFriends();
+  }, [user]);
+
+  const fetchFriends = async () => {
+    if (!user) return;
+    
+    const { data, error } = await supabase
+      .from('friends')
+      .select('friend_id')
+      .eq('user_id', user.id)
+      .eq('status', 'accepted');
+
+    if (error || !data) return;
+
+    const friendIds = data.map((f: any) => f.friend_id);
+    
+    if (friendIds.length === 0) {
+      setFriends([]);
+      return;
+    }
+
+    const { data: profilesData, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, username, display_name, rating')
+      .in('id', friendIds);
+
+    if (!profilesError && profilesData) {
+      setFriends(profilesData);
+    }
+  };
 
   useEffect(() => {
     if (!tournament?.start_date || tournament.status !== 'upcoming') return;
@@ -203,15 +241,30 @@ export default function TournamentDetail() {
     }
   };
 
-  const handleCopyLink = async () => {
-    const tournamentLink = `${window.location.origin}/tournaments/${id}`;
+  const handleInviteFriends = async (selectedFriendIds: string[]) => {
+    if (!user || !tournament) return;
+    
+    setSendingInvites(true);
     try {
-      await navigator.clipboard.writeText(tournamentLink);
-      setLinkCopied(true);
-      toast.success("Link copied to clipboard!");
-      setTimeout(() => setLinkCopied(false), 2000);
-    } catch (error) {
-      toast.error("Failed to copy link");
+      const invitePromises = selectedFriendIds.map(async (friendId) => {
+        return supabase.from('notifications').insert({
+          user_id: friendId,
+          sender_id: user.id,
+          type: 'tournament_invite',
+          title: 'Tournament Invitation',
+          message: `${user.user_metadata?.display_name || user.user_metadata?.username || 'Someone'} invited you to join "${tournament.name}"`,
+          room_id: tournament.id
+        });
+      });
+
+      await Promise.all(invitePromises);
+      toast.success(`Sent ${selectedFriendIds.length} invite${selectedFriendIds.length > 1 ? 's' : ''}!`);
+      setInviteDialogOpen(false);
+    } catch (error: any) {
+      toast.error("Failed to send invites");
+      console.error(error);
+    } finally {
+      setSendingInvites(false);
     }
   };
 
@@ -274,19 +327,12 @@ export default function TournamentDetail() {
                 </Badge>
               </div>
               <div className="flex gap-2">
-                <Button onClick={handleCopyLink} variant="outline" size="lg">
-                  {linkCopied ? (
-                    <>
-                      <Check className="w-4 h-4 mr-2" />
-                      Copied!
-                    </>
-                  ) : (
-                    <>
-                      <Share2 className="w-4 h-4 mr-2" />
-                      Share
-                    </>
-                  )}
-                </Button>
+                {tournament.status === 'upcoming' && (
+                  <Button onClick={() => setInviteDialogOpen(true)} variant="outline" size="lg">
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Invite Friends
+                  </Button>
+                )}
                 {canJoin && (
                   <Button onClick={handleJoinTournament} size="lg">
                     Join Tournament
@@ -303,17 +349,6 @@ export default function TournamentDetail() {
             {tournament.description && (
               <p className="text-muted-foreground mb-4">{tournament.description}</p>
             )}
-            <div className="mt-4 p-3 bg-muted/50 rounded-lg border border-border">
-              <p className="text-xs text-muted-foreground mb-1">Share this tournament</p>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 text-sm bg-background px-3 py-2 rounded border border-border truncate">
-                  {window.location.origin}/tournaments/{id}
-                </code>
-                <Button onClick={handleCopyLink} size="sm" variant="ghost">
-                  {linkCopied ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
-                </Button>
-              </div>
-            </div>
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
                 <Users className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
@@ -421,6 +456,99 @@ export default function TournamentDetail() {
           </Tabs>
         )}
       </div>
+
+      {/* Invite Friends Dialog */}
+      <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Invite Friends to Tournament</DialogTitle>
+            <DialogDescription>
+              Select friends to invite to "{tournament?.name}"
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="max-h-[400px] pr-4">
+            {friends.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p>No friends to invite</p>
+                <p className="text-sm mt-1">Add friends first to invite them</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {friends.map((friend: any) => {
+                  const isAlreadyParticipant = participants.some(
+                    (p: any) => p.user_id === friend.id
+                  );
+                  
+                  return (
+                    <div
+                      key={friend.id}
+                      className={`flex items-center justify-between p-3 rounded-lg border ${
+                        isAlreadyParticipant ? 'opacity-50 bg-muted' : 'hover:bg-accent'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          id={`friend-${friend.id}`}
+                          disabled={isAlreadyParticipant || sendingInvites}
+                          onCheckedChange={(checked) => {
+                            const checkbox = document.getElementById(`friend-${friend.id}`) as HTMLInputElement;
+                            if (checkbox) checkbox.dataset.checked = checked ? 'true' : 'false';
+                          }}
+                        />
+                        <label
+                          htmlFor={`friend-${friend.id}`}
+                          className="flex flex-col cursor-pointer"
+                        >
+                          <span className="font-medium">
+                            {friend.display_name || friend.username}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            Rating: {friend.rating || 1200}
+                          </span>
+                        </label>
+                      </div>
+                      {isAlreadyParticipant && (
+                        <Badge variant="outline" className="text-xs">
+                          Joined
+                        </Badge>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </ScrollArea>
+          <div className="flex gap-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setInviteDialogOpen(false)}
+              disabled={sendingInvites}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                const selectedIds: string[] = [];
+                friends.forEach((friend: any) => {
+                  const checkbox = document.getElementById(`friend-${friend.id}`) as HTMLInputElement;
+                  if (checkbox?.dataset.checked === 'true') {
+                    selectedIds.push(friend.id);
+                  }
+                });
+                if (selectedIds.length > 0) {
+                  handleInviteFriends(selectedIds);
+                }
+              }}
+              disabled={sendingInvites || friends.length === 0}
+              className="flex-1"
+            >
+              {sendingInvites ? 'Sending...' : 'Send Invites'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
-}
+};

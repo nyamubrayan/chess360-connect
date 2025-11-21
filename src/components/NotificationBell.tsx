@@ -159,6 +159,64 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
       }
     }
 
+    // Handle tournament invites
+    if (notification.type === 'tournament_invite' && notification.room_id) {
+      const tournamentId = notification.room_id;
+      
+      const { data: tournament } = await supabase
+        .from('tournaments')
+        .select('*')
+        .eq('id', tournamentId)
+        .single();
+
+      if (!tournament) {
+        toast.error("Tournament not found");
+        setOpen(false);
+        return;
+      }
+
+      if (tournament.status !== 'upcoming') {
+        toast.error("Tournament has already started or ended");
+        setOpen(false);
+        return;
+      }
+
+      // Check if already joined
+      const { data: existingParticipant } = await supabase
+        .from('tournament_participants')
+        .select('id')
+        .eq('tournament_id', tournamentId)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (existingParticipant) {
+        toast.info("You've already joined this tournament");
+        navigate(`/tournaments/${tournamentId}`);
+        setOpen(false);
+        return;
+      }
+
+      // Join the tournament
+      const { error } = await supabase
+        .from('tournament_participants')
+        .insert({
+          tournament_id: tournamentId,
+          user_id: userId,
+          status: 'registered'
+        });
+
+      if (error) {
+        toast.error("Failed to join tournament");
+        console.error(error);
+      } else {
+        toast.success("Joined tournament successfully!");
+      }
+
+      navigate(`/tournaments/${tournamentId}`);
+      setOpen(false);
+      return;
+    }
+
     // Handle game challenges
     if (notification.type === 'game_challenge' && notification.room_id) {
       navigate(`/game/${notification.room_id}`);
@@ -209,6 +267,8 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
         return "⏰";
       case "friend_request":
         return "👤";
+      case "tournament_invite":
+        return "🏆";
       default:
         return "🔔";
     }
