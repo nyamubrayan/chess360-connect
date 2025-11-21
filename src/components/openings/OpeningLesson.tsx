@@ -4,10 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChessBoardComponent } from '@/components/chess/ChessBoard';
-import { ArrowLeft, ChevronLeft, ChevronRight, RotateCcw, BookOpen, Lightbulb, AlertCircle } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, RotateCcw, BookOpen, Lightbulb, AlertCircle, Sparkles } from 'lucide-react';
 import { Opening } from '@/pages/Openings';
 import { CommunityBar } from '@/components/CommunityBar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface OpeningLessonProps {
   opening: Opening;
@@ -21,6 +23,8 @@ export const OpeningLesson = ({ opening, onBack, user }: OpeningLessonProps) => 
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
   const [selectedVariation, setSelectedVariation] = useState(0);
   const [showingVariation, setShowingVariation] = useState(false);
+  const [currentExplanation, setCurrentExplanation] = useState<string>('');
+  const [loadingExplanation, setLoadingExplanation] = useState(false);
 
   const currentMoves = showingVariation 
     ? opening.variations[selectedVariation].moves 
@@ -36,6 +40,47 @@ export const OpeningLesson = ({ opening, onBack, user }: OpeningLessonProps) => 
     setCurrentMoveIndex(0);
   };
 
+  const generateExplanation = async (moveIndex: number) => {
+    if (moveIndex < 0 || moveIndex >= currentMoves.length) {
+      setCurrentExplanation('');
+      return;
+    }
+
+    setLoadingExplanation(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('explain-opening-move', {
+        body: {
+          openingName: opening.name,
+          move: currentMoves[moveIndex],
+          moveNumber: moveIndex + 1,
+          previousMoves: currentMoves.slice(0, moveIndex),
+          keyIdeas: opening.keyIdeas
+        }
+      });
+
+      if (error) throw error;
+      
+      if (data?.error) {
+        if (data.error.includes('Rate limit')) {
+          toast.error('Rate limit exceeded. Please wait a moment.');
+        } else if (data.error.includes('credits')) {
+          toast.error('AI credits exhausted. Please add credits to continue.');
+        } else {
+          toast.error('Failed to generate explanation');
+        }
+        setCurrentExplanation('Unable to generate explanation at this time.');
+        return;
+      }
+
+      setCurrentExplanation(data.explanation || '');
+    } catch (error) {
+      console.error('Error generating explanation:', error);
+      setCurrentExplanation('Unable to generate explanation at this time.');
+    } finally {
+      setLoadingExplanation(false);
+    }
+  };
+
   const makeMove = (moveIndex: number) => {
     chess.reset();
     for (let i = 0; i <= moveIndex && i < currentMoves.length; i++) {
@@ -48,6 +93,7 @@ export const OpeningLesson = ({ opening, onBack, user }: OpeningLessonProps) => 
     }
     setPosition(chess.fen());
     setCurrentMoveIndex(moveIndex);
+    generateExplanation(moveIndex);
   };
 
   const nextMove = () => {
@@ -165,6 +211,31 @@ export const OpeningLesson = ({ opening, onBack, user }: OpeningLessonProps) => 
                   ))}
                 </div>
               </div>
+
+              {/* AI Explanation */}
+              {currentMoveIndex >= 0 && currentMoves.length > 0 && (
+                <div className="mt-4 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                  <div className="flex items-start gap-2 mb-2">
+                    <Sparkles className="w-5 h-5 text-primary mt-0.5" />
+                    <div className="flex-1">
+                      <h3 className="text-sm font-semibold mb-1">
+                        Move {currentMoveIndex + 1}: {currentMoves[currentMoveIndex]}
+                      </h3>
+                      {loadingExplanation ? (
+                        <div className="text-sm text-muted-foreground">
+                          Generating explanation...
+                        </div>
+                      ) : currentExplanation ? (
+                        <p className="text-sm">{currentExplanation}</p>
+                      ) : (
+                        <p className="text-sm text-muted-foreground italic">
+                          Navigate through moves to see AI explanations
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </Card>
           </div>
 
