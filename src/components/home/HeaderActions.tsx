@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/NotificationBell";
-import { User as UserIcon, Target, Users, Brain } from "lucide-react";
+import { User as UserIcon, Target, Users, Brain, Puzzle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { User } from "@supabase/supabase-js";
 
@@ -38,20 +38,20 @@ export const HeaderActions = ({ user }: HeaderActionsProps) => {
             <Button 
               variant="ghost" 
               size="sm" 
-              className="hidden lg:flex border border-border/50 hover:border-primary/50"
-              onClick={() => navigate('/community')}
+              className="hidden md:flex border border-border/50 hover:border-primary/50"
+              onClick={() => navigate('/puzzles')}
             >
-              <Users className="mr-2 w-4 h-4" />
-              Community
+              <Puzzle className="mr-2 w-4 h-4" />
+              Puzzles
             </Button>
             <Button 
               variant="ghost" 
               size="sm" 
               className="hidden lg:flex border border-border/50 hover:border-primary/50"
-              onClick={() => navigate('/lessons')}
+              onClick={() => navigate('/leaderboard')}
             >
-              <Brain className="mr-2 w-4 h-4" />
-              Lessons
+              <Users className="mr-2 w-4 h-4" />
+              Leaderboard
             </Button>
           </>
         ) : (
