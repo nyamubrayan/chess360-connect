@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from './ui/button';
-import { Trophy, Target, Puzzle, UserIcon, Menu } from 'lucide-react';
+import { Trophy, Target, UserIcon, Menu, GraduationCap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { NotificationBell } from './NotificationBell';
 import { User } from '@supabase/supabase-js';
@@ -23,6 +23,11 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
 
   const mainLinks = [
     {
+      icon: GraduationCap,
+      label: 'Training',
+      path: '/training'
+    },
+    {
       icon: Trophy,
       label: 'Leaderboard',
       path: '/leaderboard'
@@ -39,11 +44,6 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
       icon: Target,
       label: 'Analytics',
       path: '/analytics'
-    },
-    {
-      icon: Puzzle,
-      label: 'Puzzles',
-      path: '/puzzles'
     }
   ];
 
