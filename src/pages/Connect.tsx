@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { UserPlus, Users, Search, Check, Clock, X } from 'lucide-react';
+import { UserPlus, Users, Search, Check, Clock, X, Ban } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface PlayerProfile {
@@ -25,6 +25,8 @@ interface FriendStatus {
   isPending: boolean;
   isRequester: boolean;
   friendshipId?: string;
+  isBlocked: boolean;
+  hasBlockedYou: boolean;
 }
 
 export default function Connect() {
@@ -60,11 +62,27 @@ export default function Connect() {
     try {
       setLoading(true);
 
-      // Fetch all profiles except current user
+      // Fetch blocked users
+      const { data: blockedData, error: blockedError } = await supabase
+        .from('blocked_users')
+        .select('*')
+        .or(`user_id.eq.${currentUserId},blocked_user_id.eq.${currentUserId}`);
+
+      if (blockedError) throw blockedError;
+
+      const blockedByMe = new Set(
+        blockedData?.filter(b => b.user_id === currentUserId).map(b => b.blocked_user_id) || []
+      );
+      const blockedMe = new Set(
+        blockedData?.filter(b => b.blocked_user_id === currentUserId).map(b => b.user_id) || []
+      );
+
+      // Fetch all profiles except current user and those who blocked you
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
         .neq('id', currentUserId)
+        .not('id', 'in', `(${Array.from(blockedMe).join(',') || 'null'})`)
         .order('rating', { ascending: false });
 
       if (profilesError) throw profilesError;
@@ -88,8 +106,23 @@ export default function Connect() {
           isFriend: friendship.status === 'accepted',
           isPending: friendship.status === 'pending',
           isRequester: friendship.user_id === currentUserId,
-          friendshipId: friendship.id
+          friendshipId: friendship.id,
+          isBlocked: blockedByMe.has(otherUserId),
+          hasBlockedYou: blockedMe.has(otherUserId)
         };
+      });
+
+      // Add blocked status for non-friends
+      profilesData?.forEach(profile => {
+        if (!statusMap[profile.id]) {
+          statusMap[profile.id] = {
+            isFriend: false,
+            isPending: false,
+            isRequester: false,
+            isBlocked: blockedByMe.has(profile.id),
+            hasBlockedYou: blockedMe.has(profile.id)
+          };
+        }
       });
 
       setPlayers(profilesData || []);
@@ -184,6 +217,54 @@ export default function Connect() {
     }
   };
 
+  const blockUser = async (userId: string) => {
+    if (!user) return;
+
+    try {
+      // Remove friendship if exists
+      await supabase
+        .from('friends')
+        .delete()
+        .or(`and(user_id.eq.${user.id},friend_id.eq.${userId}),and(user_id.eq.${userId},friend_id.eq.${user.id})`);
+
+      // Add to blocked users
+      const { error } = await supabase
+        .from('blocked_users')
+        .insert({
+          user_id: user.id,
+          blocked_user_id: userId
+        });
+
+      if (error) throw error;
+
+      toast.success('User blocked');
+      loadPlayers(user.id);
+    } catch (error: any) {
+      console.error('Error blocking user:', error);
+      toast.error('Failed to block user');
+    }
+  };
+
+  const unblockUser = async (userId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('blocked_users')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('blocked_user_id', userId);
+
+      if (error) throw error;
+
+      toast.success('User unblocked');
+      loadPlayers(user.id);
+    } catch (error: any) {
+      console.error('Error unblocking user:', error);
+      toast.error('Failed to unblock user');
+    }
+  };
+
   const filteredPlayers = players.filter(player => 
     player.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
     player.display_name?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -249,7 +330,9 @@ export default function Connect() {
               const status = friendStatuses[player.id] || {
                 isFriend: false,
                 isPending: false,
-                isRequester: false
+                isRequester: false,
+                isBlocked: false,
+                hasBlockedYou: false
               };
 
               return (
@@ -293,20 +376,49 @@ export default function Connect() {
                     )}
 
                     <div className="flex gap-2">
-                      {status.isFriend ? (
-                        <Button variant="outline" className="w-full" disabled>
-                          <Check className="w-4 h-4 mr-2" />
-                          Friends
-                        </Button>
-                      ) : status.isPending && status.isRequester ? (
+                      {status.isBlocked ? (
                         <Button
                           variant="outline"
                           className="w-full"
-                          onClick={() => cancelFriendRequest(status.friendshipId!)}
+                          onClick={() => unblockUser(player.id)}
                         >
-                          <Clock className="w-4 h-4 mr-2" />
-                          Cancel Request
+                          <Ban className="w-4 h-4 mr-2" />
+                          Unblock
                         </Button>
+                      ) : status.isFriend ? (
+                        <>
+                          <Button variant="outline" className="flex-1" disabled>
+                            <Check className="w-4 h-4 mr-2" />
+                            ChessMates
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => blockUser(player.id)}
+                            title="Block user"
+                          >
+                            <Ban className="w-4 h-4" />
+                          </Button>
+                        </>
+                      ) : status.isPending && status.isRequester ? (
+                        <>
+                          <Button
+                            variant="outline"
+                            className="flex-1"
+                            onClick={() => cancelFriendRequest(status.friendshipId!)}
+                          >
+                            <Clock className="w-4 h-4 mr-2" />
+                            Cancel Request
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => blockUser(player.id)}
+                            title="Block user"
+                          >
+                            <Ban className="w-4 h-4" />
+                          </Button>
+                        </>
                       ) : status.isPending && !status.isRequester ? (
                         <>
                           <Button
@@ -325,16 +437,34 @@ export default function Connect() {
                             <X className="w-4 h-4 mr-2" />
                             Decline
                           </Button>
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => blockUser(player.id)}
+                            title="Block user"
+                          >
+                            <Ban className="w-4 h-4" />
+                          </Button>
                         </>
                       ) : (
-                        <Button
-                          variant="default"
-                          className="w-full"
-                          onClick={() => sendFriendRequest(player.id)}
-                        >
-                          <UserPlus className="w-4 h-4 mr-2" />
-                          Add ChessMate
-                        </Button>
+                        <>
+                          <Button
+                            variant="default"
+                            className="flex-1"
+                            onClick={() => sendFriendRequest(player.id)}
+                          >
+                            <UserPlus className="w-4 h-4 mr-2" />
+                            Add ChessMate
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => blockUser(player.id)}
+                            title="Block user"
+                          >
+                            <Ban className="w-4 h-4" />
+                          </Button>
+                        </>
                       )}
                     </div>
                   </CardContent>
