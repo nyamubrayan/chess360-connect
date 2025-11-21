@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { Button } from './ui/button';
-import { BookOpen, Sword, GraduationCap, MessageSquare, Trophy, Target, Users, Brain, UserIcon, ChevronDown } from 'lucide-react';
+import { BookOpen, Sword, GraduationCap, MessageSquare, Trophy, Target, Users, Brain, UserIcon, ChevronDown, Menu, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { NotificationBell } from './NotificationBell';
 import { User } from '@supabase/supabase-js';
@@ -9,6 +10,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 interface CommunityBarProps {
   user: User | null;
@@ -16,6 +24,7 @@ interface CommunityBarProps {
 
 export const CommunityBar = ({ user }: CommunityBarProps) => {
   const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const communitySubLinks = [
     {
@@ -133,67 +142,145 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
                     </Button>
                   ))}
                 </div>
+                
+                {/* Mobile Menu Hamburger */}
+                <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon" className="lg:hidden">
+                      <Menu className="h-5 w-5" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="w-full sm:w-[400px] p-0">
+                    <SheetHeader className="p-6 pb-4 border-b">
+                      <SheetTitle className="text-left">Menu</SheetTitle>
+                    </SheetHeader>
+                    <div className="flex flex-col gap-1 p-4">
+                      {/* Community Links */}
+                      <div className="mb-4">
+                        <p className="text-sm font-semibold text-muted-foreground mb-2 px-3">Community</p>
+                        {communitySubLinks.map((link) => (
+                          <Button
+                            key={link.path}
+                            variant="ghost"
+                            onClick={() => {
+                              navigate(link.path);
+                              setMobileMenuOpen(false);
+                            }}
+                            className="w-full justify-start gap-3 h-12"
+                          >
+                            <link.icon className="w-5 h-5" />
+                            <span className="font-medium">{link.label}</span>
+                          </Button>
+                        ))}
+                      </div>
+
+                      {/* Main Links */}
+                      <div className="mb-4">
+                        {mainLinks.map((link) => (
+                          <Button
+                            key={link.path}
+                            variant="ghost"
+                            onClick={() => {
+                              navigate(link.path);
+                              setMobileMenuOpen(false);
+                            }}
+                            className="w-full justify-start gap-3 h-12"
+                          >
+                            <link.icon className="w-5 h-5" />
+                            <span className="font-medium">{link.label}</span>
+                          </Button>
+                        ))}
+                      </div>
+
+                      {/* User Links */}
+                      <div className="border-t pt-4">
+                        <p className="text-sm font-semibold text-muted-foreground mb-2 px-3">My Account</p>
+                        {userLinks.map((link) => (
+                          <Button
+                            key={link.path}
+                            variant="ghost"
+                            onClick={() => {
+                              navigate(link.path);
+                              setMobileMenuOpen(false);
+                            }}
+                            className="w-full justify-start gap-3 h-12"
+                          >
+                            <link.icon className="w-5 h-5" />
+                            <span className="font-medium">{link.label}</span>
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  </SheetContent>
+                </Sheet>
               </>
             ) : (
-              <Button onClick={() => navigate('/auth')} className="h-10 px-6 font-medium">
-                Sign In
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Mobile Navigation */}
-        <div className="lg:hidden border-t border-border/40 py-3">
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex items-center gap-2 min-w-fit h-9 px-3 shrink-0"
-                >
-                  <Users className="w-4 h-4" />
-                  <span className="text-sm font-medium">Community</span>
-                  <ChevronDown className="w-3 h-3" />
+              <>
+                <Button onClick={() => navigate('/auth')} className="h-10 px-6 font-medium hidden lg:flex">
+                  Sign In
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-48 bg-background/95 backdrop-blur-sm z-50 border shadow-lg">
-                {communitySubLinks.map((link) => (
-                  <DropdownMenuItem
-                    key={link.path}
-                    onClick={() => navigate(link.path)}
-                    className="flex items-center gap-3 cursor-pointer py-2.5 px-3 hover:bg-accent transition-colors"
-                  >
-                    <link.icon className="w-4 h-4 text-muted-foreground" />
-                    <span className="font-medium">{link.label}</span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            {mainLinks.map((link) => (
-              <Button
-                key={link.path}
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate(link.path)}
-                className="flex items-center gap-2 min-w-fit h-9 px-3 shrink-0"
-              >
-                <link.icon className="w-4 h-4" />
-                <span className="text-sm font-medium">{link.label}</span>
-              </Button>
-            ))}
-            {user && userLinks.map((link) => (
-              <Button
-                key={link.path}
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate(link.path)}
-                className="flex items-center gap-2 min-w-fit h-9 px-3 shrink-0"
-              >
-                <link.icon className="w-4 h-4" />
-                <span className="text-sm font-medium">{link.label}</span>
-              </Button>
-            ))}
+                
+                {/* Mobile Menu for Non-Authenticated Users */}
+                <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon" className="lg:hidden">
+                      <Menu className="h-5 w-5" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="w-full sm:w-[400px] p-0">
+                    <SheetHeader className="p-6 pb-4 border-b">
+                      <SheetTitle className="text-left">Menu</SheetTitle>
+                    </SheetHeader>
+                    <div className="flex flex-col gap-1 p-4">
+                      <Button 
+                        onClick={() => {
+                          navigate('/auth');
+                          setMobileMenuOpen(false);
+                        }} 
+                        className="w-full h-12 mb-4"
+                      >
+                        Sign In
+                      </Button>
+                      
+                      {/* Community Links */}
+                      <div className="mb-4">
+                        <p className="text-sm font-semibold text-muted-foreground mb-2 px-3">Community</p>
+                        {communitySubLinks.map((link) => (
+                          <Button
+                            key={link.path}
+                            variant="ghost"
+                            onClick={() => {
+                              navigate(link.path);
+                              setMobileMenuOpen(false);
+                            }}
+                            className="w-full justify-start gap-3 h-12"
+                          >
+                            <link.icon className="w-5 h-5" />
+                            <span className="font-medium">{link.label}</span>
+                          </Button>
+                        ))}
+                      </div>
+
+                      {/* Main Links */}
+                      {mainLinks.map((link) => (
+                        <Button
+                          key={link.path}
+                          variant="ghost"
+                          onClick={() => {
+                            navigate(link.path);
+                            setMobileMenuOpen(false);
+                          }}
+                          className="w-full justify-start gap-3 h-12"
+                        >
+                          <link.icon className="w-5 h-5" />
+                          <span className="font-medium">{link.label}</span>
+                        </Button>
+                      ))}
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              </>
+            )}
           </div>
         </div>
       </div>
