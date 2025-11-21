@@ -30,7 +30,6 @@ export default function Analytics() {
   const [stats, setStats] = useState<PlayerStats | null>(null);
   const [analyses, setAnalyses] = useState<GameAnalysis[]>([]);
   const [user, setUser] = useState<any>(null);
-  const [completedLessonsCount, setCompletedLessonsCount] = useState(0);
 
   useEffect(() => {
     fetchUserAndData();
@@ -63,15 +62,6 @@ export default function Analytics() {
         .limit(10);
 
       setAnalyses(analysesData || []);
-      
-      // Fetch completed lessons count
-      const { data: progressData } = await supabase
-        .from("lesson_progress")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("progress", 100);
-
-      setCompletedLessonsCount(progressData?.length || 0);
     } catch (error) {
       console.error("Error fetching analytics:", error);
     } finally {
@@ -178,15 +168,6 @@ export default function Analytics() {
             </div>
           </Card>
 
-          <Card className="gradient-card p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Lessons Done</p>
-                <p className="text-3xl font-bold mt-1 text-purple-500">{completedLessonsCount}</p>
-              </div>
-              <Lightbulb className="h-8 w-8 text-purple-500 opacity-50" />
-            </div>
-          </Card>
         </div>
 
         {/* Performance Trend */}

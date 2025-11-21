@@ -1,15 +1,9 @@
 import { useState } from 'react';
 import { Button } from './ui/button';
-import { BookOpen, Sword, GraduationCap, MessageSquare, Trophy, Target, Users, Brain, UserIcon, ChevronDown, Menu, X } from 'lucide-react';
+import { Trophy, Target, Users, Brain, UserIcon, Menu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { NotificationBell } from './NotificationBell';
 import { User } from '@supabase/supabase-js';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Sheet,
   SheetContent,
@@ -25,29 +19,6 @@ interface CommunityBarProps {
 export const CommunityBar = ({ user }: CommunityBarProps) => {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const communitySubLinks = [
-    {
-      icon: MessageSquare,
-      label: 'Posts',
-      path: '/community?tab=posts'
-    },
-    {
-      icon: BookOpen,
-      label: 'Study Rooms',
-      path: '/community?tab=study-rooms'
-    },
-    {
-      icon: Sword,
-      label: 'Tournaments',
-      path: '/community?tab=tournaments'
-    },
-    {
-      icon: GraduationCap,
-      label: 'Coaches',
-      path: '/community?tab=coaches'
-    }
-  ];
 
   const mainLinks = [
     {
@@ -87,30 +58,6 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
 
           {/* Main Navigation */}
           <div className="hidden lg:flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="flex items-center gap-2 h-10 px-4 hover:bg-accent/80 transition-all"
-                >
-                  <Users className="w-4 h-4" />
-                  <span className="font-medium">Community</span>
-                  <ChevronDown className="w-4 h-4 transition-transform" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56 bg-background/95 backdrop-blur-sm z-50 border shadow-lg">
-                {communitySubLinks.map((link) => (
-                  <DropdownMenuItem
-                    key={link.path}
-                    onClick={() => navigate(link.path)}
-                    className="flex items-center gap-3 cursor-pointer py-2.5 px-3 hover:bg-accent transition-colors"
-                  >
-                    <link.icon className="w-4 h-4 text-muted-foreground" />
-                    <span className="font-medium">{link.label}</span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
             {mainLinks.map((link) => (
               <Button
                 key={link.path}
@@ -155,25 +102,6 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
                       <SheetTitle className="text-left">Menu</SheetTitle>
                     </SheetHeader>
                     <div className="flex flex-col gap-1 p-4">
-                      {/* Community Links */}
-                      <div className="mb-4">
-                        <p className="text-sm font-semibold text-muted-foreground mb-2 px-3">Community</p>
-                        {communitySubLinks.map((link) => (
-                          <Button
-                            key={link.path}
-                            variant="ghost"
-                            onClick={() => {
-                              navigate(link.path);
-                              setMobileMenuOpen(false);
-                            }}
-                            className="w-full justify-start gap-3 h-12"
-                          >
-                            <link.icon className="w-5 h-5" />
-                            <span className="font-medium">{link.label}</span>
-                          </Button>
-                        ))}
-                      </div>
-
                       {/* Main Links */}
                       <div className="mb-4">
                         {mainLinks.map((link) => (
@@ -242,25 +170,6 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
                         Sign In
                       </Button>
                       
-                      {/* Community Links */}
-                      <div className="mb-4">
-                        <p className="text-sm font-semibold text-muted-foreground mb-2 px-3">Community</p>
-                        {communitySubLinks.map((link) => (
-                          <Button
-                            key={link.path}
-                            variant="ghost"
-                            onClick={() => {
-                              navigate(link.path);
-                              setMobileMenuOpen(false);
-                            }}
-                            className="w-full justify-start gap-3 h-12"
-                          >
-                            <link.icon className="w-5 h-5" />
-                            <span className="font-medium">{link.label}</span>
-                          </Button>
-                        ))}
-                      </div>
-
                       {/* Main Links */}
                       {mainLinks.map((link) => (
                         <Button

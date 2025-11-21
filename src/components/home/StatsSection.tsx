@@ -27,15 +27,10 @@ export const StatsSection = () => {
         .select('*', { count: 'exact', head: true })
         .eq('status', 'completed');
 
-      const { count: lessonsCount } = await supabase
-        .from('lessons')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_published', true);
-
       setStats({
         activePlayers: playersCount || 0,
         gamesAnalyzed: gamesCount || 0,
-        aiLessons: lessonsCount || 0,
+        aiLessons: 0,
       });
     };
 
@@ -51,15 +46,9 @@ export const StatsSection = () => {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'games' }, fetchStats)
       .subscribe();
 
-    const lessonsChannel = supabase
-      .channel('lessons-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'lessons' }, fetchStats)
-      .subscribe();
-
     return () => {
       supabase.removeChannel(profilesChannel);
       supabase.removeChannel(gamesChannel);
-      supabase.removeChannel(lessonsChannel);
     };
   }, []);
 

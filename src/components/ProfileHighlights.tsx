@@ -150,33 +150,7 @@ export const ProfileHighlights = ({ userId, limit = 6 }: ProfileHighlightsProps)
   };
 
   const handleShareToCommunity = async (highlight: Highlight) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error('Please sign in to share');
-        return;
-      }
-
-      // Create a post with the highlight
-      const { error } = await supabase.from('posts').insert({
-        user_id: user.id,
-        title: `${highlight.title} 🎬`,
-        content: `${highlight.description}\n\nCheck out this epic game highlight! 🔥\n\n#ChessHighlight #GameReplay`,
-        category: 'highlights',
-      });
-
-      if (error) throw error;
-
-      toast.success('Shared to community!', {
-        action: {
-          label: 'View',
-          onClick: () => navigate('/community'),
-        },
-      });
-    } catch (error) {
-      console.error('Error sharing to community:', error);
-      toast.error('Failed to share highlight');
-    }
+    toast.info('Community sharing is no longer available');
   };
 
   if (loading) {
