@@ -3,7 +3,7 @@ import { Card } from './ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Heart, MessageCircle, Share2, Sparkles } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Sparkles, BookOpen, GraduationCap, PlayCircle, Star, TrendingUp, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -25,6 +25,37 @@ interface Post {
   };
 }
 
+interface Lesson {
+  id: string;
+  title: string;
+  description: string | null;
+  difficulty_level: string | null;
+  tags: string[] | null;
+  views_count: number;
+  lesson_type: string;
+  created_at: string;
+  profiles: {
+    username: string;
+    avatar_url: string | null;
+    display_name: string | null;
+  };
+}
+
+interface Coach {
+  id: string;
+  user_id: string;
+  bio: string | null;
+  rating: number | null;
+  total_students: number | null;
+  specialties: string[] | null;
+  hourly_rate: number | null;
+  profiles: {
+    username: string;
+    avatar_url: string | null;
+    display_name: string | null;
+  };
+}
+
 interface Highlight {
   id: string;
   game_id: string;
@@ -35,6 +66,7 @@ interface Highlight {
   views_count: number;
   likes_count: number;
   user_id: string;
+  created_at: string;
   profiles: {
     username: string;
     avatar_url: string | null;
@@ -42,11 +74,15 @@ interface Highlight {
   };
 }
 
+type FeedTab = 'all' | 'posts' | 'lessons' | 'coaches' | 'reels';
+
 export const FeedSection = () => {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [coaches, setCoaches] = useState<Coach[]>([]);
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'all' | 'posts' | 'highlights'>('all');
+  const [activeTab, setActiveTab] = useState<FeedTab>('all');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -63,9 +99,34 @@ export const FeedSection = () => {
           profiles:user_id (username, avatar_url, display_name)
         `)
         .order('created_at', { ascending: false })
-        .limit(5);
+        .limit(6);
 
       if (postsError) throw postsError;
+
+      // Fetch recent lessons
+      const { data: lessonsData, error: lessonsError } = await supabase
+        .from('lessons')
+        .select(`
+          *,
+          profiles:coach_id (username, avatar_url, display_name)
+        `)
+        .eq('is_published', true)
+        .order('created_at', { ascending: false })
+        .limit(6);
+
+      if (lessonsError) throw lessonsError;
+
+      // Fetch top coaches
+      const { data: coachesData, error: coachesError } = await supabase
+        .from('coach_profiles')
+        .select(`
+          *,
+          profiles:user_id (username, avatar_url, display_name)
+        `)
+        .order('rating', { ascending: false })
+        .limit(6);
+
+      if (coachesError) throw coachesError;
 
       // Fetch recent highlights
       const { data: highlightsData, error: highlightsError } = await supabase
@@ -75,11 +136,13 @@ export const FeedSection = () => {
           profiles:user_id (username, avatar_url, display_name)
         `)
         .order('created_at', { ascending: false })
-        .limit(3);
+        .limit(6);
 
       if (highlightsError) throw highlightsError;
 
       setPosts(postsData || []);
+      setLessons(lessonsData || []);
+      setCoaches(coachesData || []);
       setHighlights(highlightsData || []);
     } catch (error) {
       console.error('Error fetching feed:', error);
@@ -119,145 +182,339 @@ export const FeedSection = () => {
     );
   }
 
-  const displayPosts = activeTab === 'highlights' ? [] : posts;
-  const displayHighlights = activeTab === 'posts' ? [] : highlights;
+  const tabs: { value: FeedTab; label: string; icon: any; count: number }[] = [
+    { value: 'all', label: 'All', icon: Sparkles, count: posts.length + lessons.length + coaches.length + highlights.length },
+    { value: 'posts', label: 'Posts', icon: MessageCircle, count: posts.length },
+    { value: 'lessons', label: 'Lessons', icon: BookOpen, count: lessons.length },
+    { value: 'coaches', label: 'Coaches', icon: GraduationCap, count: coaches.length },
+    { value: 'reels', label: 'Reels', icon: PlayCircle, count: highlights.length },
+  ];
+
+  const shouldShowPosts = activeTab === 'all' || activeTab === 'posts';
+  const shouldShowLessons = activeTab === 'all' || activeTab === 'lessons';
+  const shouldShowCoaches = activeTab === 'all' || activeTab === 'coaches';
+  const shouldShowReels = activeTab === 'all' || activeTab === 'reels';
 
   return (
-    <section className="py-8 px-4 bg-background">
-      <div className="container mx-auto max-w-5xl">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-primary" />
-            Community Feed
-          </h2>
-          <div className="flex gap-2">
-            <Button
-              variant={activeTab === 'all' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setActiveTab('all')}
-            >
-              All
-            </Button>
-            <Button
-              variant={activeTab === 'posts' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setActiveTab('posts')}
-            >
-              Posts
-            </Button>
-            <Button
-              variant={activeTab === 'highlights' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setActiveTab('highlights')}
-            >
-              Highlights
-            </Button>
+    <section className="py-12 px-4 bg-gradient-to-b from-background via-muted/20 to-background">
+      <div className="container mx-auto max-w-7xl">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+          <div>
+            <h2 className="text-3xl font-bold flex items-center gap-3 text-gradient mb-2">
+              <Sparkles className="w-8 h-8 text-primary" />
+              Discover
+            </h2>
+            <p className="text-muted-foreground">Explore posts, lessons, coaches, and epic game moments</p>
           </div>
         </div>
 
-        <div className="space-y-4">
-          {/* Highlights */}
-          {displayHighlights.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-              {displayHighlights.map((highlight) => (
-                <div key={highlight.id}>
-                  <GameHighlightPlayer
-                    highlightId={highlight.id}
-                    title={highlight.title}
-                    description={highlight.description}
-                    keyMoments={Array.isArray(highlight.key_moments) ? highlight.key_moments : []}
-                    duration={highlight.duration}
-                  />
-                  <div className="flex items-center gap-2 mt-2 px-2">
-                    <Avatar className="w-6 h-6">
-                      <AvatarImage src={highlight.profiles?.avatar_url || ''} />
-                      <AvatarFallback>{highlight.profiles?.username?.[0] || 'U'}</AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm text-muted-foreground">
-                      {highlight.profiles?.display_name || highlight.profiles?.username}
-                    </span>
-                  </div>
-                </div>
-              ))}
+        {/* Tabs */}
+        <div className="flex gap-2 mb-8 overflow-x-auto pb-2 scrollbar-hide">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <Button
+                key={tab.value}
+                variant={activeTab === tab.value ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setActiveTab(tab.value)}
+                className="flex items-center gap-2 whitespace-nowrap"
+              >
+                <Icon className="w-4 h-4" />
+                {tab.label}
+                <Badge variant="secondary" className="ml-1">
+                  {tab.count}
+                </Badge>
+              </Button>
+            );
+          })}
+        </div>
+
+        <div className="space-y-8">
+          {/* Reels/Highlights Section */}
+          {shouldShowReels && highlights.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <PlayCircle className="w-5 h-5 text-accent" />
+                <h3 className="text-xl font-bold">Epic Game Moments</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {highlights.map((highlight) => (
+                  <Card key={highlight.id} className="overflow-hidden group hover:border-accent/50 transition-all">
+                    <GameHighlightPlayer
+                      highlightId={highlight.id}
+                      title={highlight.title}
+                      description={highlight.description}
+                      keyMoments={Array.isArray(highlight.key_moments) ? highlight.key_moments : []}
+                      duration={highlight.duration}
+                    />
+                    <div className="p-4 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Avatar className="w-8 h-8 ring-2 ring-primary/20">
+                          <AvatarImage src={highlight.profiles?.avatar_url || ''} />
+                          <AvatarFallback>{highlight.profiles?.username?.[0] || 'U'}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {highlight.profiles?.display_name || highlight.profiles?.username}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(highlight.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Heart className="w-3 h-3" />
+                          {highlight.likes_count || 0}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <TrendingUp className="w-3 h-3" />
+                          {highlight.views_count || 0} views
+                        </span>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
             </div>
           )}
 
-          {/* Posts */}
-          {displayPosts.map((post) => (
-            <Card
-              key={post.id}
-              className="p-6 cursor-pointer hover:border-primary/50 transition-colors"
-              onClick={() => navigate('/community')}
-            >
-              <div className="space-y-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <Avatar>
-                      <AvatarImage src={post.profiles?.avatar_url || ''} />
-                      <AvatarFallback>{post.profiles?.username?.[0] || 'U'}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-semibold">
-                        {post.profiles?.display_name || post.profiles?.username}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(post.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                  {post.category && (
-                    <Badge variant="secondary">{post.category}</Badge>
-                  )}
-                </div>
-
-                <div>
-                  <h3 className="font-bold text-lg mb-2">{post.title}</h3>
-                  <p className="text-muted-foreground line-clamp-3">{post.content}</p>
-                </div>
-
-                <div className="flex items-center gap-4 pt-2 border-t">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleLikePost(post.id);
-                    }}
-                    className="gap-2"
-                  >
-                    <Heart className="w-4 h-4" />
-                    {post.likes_count || 0}
-                  </Button>
-                  <Button variant="ghost" size="sm" className="gap-2">
-                    <MessageCircle className="w-4 h-4" />
-                    {post.comments_count || 0}
-                  </Button>
-                  <Button variant="ghost" size="sm" className="gap-2">
-                    <Share2 className="w-4 h-4" />
-                    Share
-                  </Button>
-                </div>
+          {/* Posts Section */}
+          {shouldShowPosts && posts.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <MessageCircle className="w-5 h-5 text-primary" />
+                <h3 className="text-xl font-bold">Community Posts</h3>
               </div>
-            </Card>
-          ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {posts.map((post) => (
+                  <Card
+                    key={post.id}
+                    className="p-6 cursor-pointer hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/5"
+                    onClick={() => navigate('/community')}
+                  >
+                    <div className="space-y-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="ring-2 ring-primary/20">
+                            <AvatarImage src={post.profiles?.avatar_url || ''} />
+                            <AvatarFallback>{post.profiles?.username?.[0] || 'U'}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-semibold">
+                              {post.profiles?.display_name || post.profiles?.username}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(post.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        {post.category && (
+                          <Badge variant="secondary" className="capitalize">
+                            {post.category}
+                          </Badge>
+                        )}
+                      </div>
 
-          {displayPosts.length === 0 && displayHighlights.length === 0 && (
+                      <div>
+                        <h3 className="font-bold text-lg mb-2">{post.title}</h3>
+                        <p className="text-muted-foreground line-clamp-3">{post.content}</p>
+                      </div>
+
+                      <div className="flex items-center gap-4 pt-2 border-t border-border">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleLikePost(post.id);
+                          }}
+                          className="gap-2"
+                        >
+                          <Heart className="w-4 h-4" />
+                          {post.likes_count || 0}
+                        </Button>
+                        <Button variant="ghost" size="sm" className="gap-2">
+                          <MessageCircle className="w-4 h-4" />
+                          {post.comments_count || 0}
+                        </Button>
+                        <Button variant="ghost" size="sm" className="gap-2">
+                          <Share2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Lessons Section */}
+          {shouldShowLessons && lessons.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <BookOpen className="w-5 h-5 text-success" />
+                <h3 className="text-xl font-bold">Featured Lessons</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {lessons.map((lesson) => (
+                  <Card
+                    key={lesson.id}
+                    className="p-6 cursor-pointer hover:border-success/50 transition-all hover:shadow-lg hover:shadow-success/5 group"
+                    onClick={() => navigate(`/lessons/${lesson.id}`)}
+                  >
+                    <div className="space-y-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-bold text-lg mb-2 group-hover:text-success transition-colors">
+                            {lesson.title}
+                          </h3>
+                          {lesson.difficulty_level && (
+                            <Badge variant="outline" className="capitalize mb-2">
+                              {lesson.difficulty_level}
+                            </Badge>
+                          )}
+                        </div>
+                        <BookOpen className="w-5 h-5 text-success" />
+                      </div>
+
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {lesson.description || 'Master new chess strategies and techniques'}
+                      </p>
+
+                      {lesson.tags && lesson.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {lesson.tags.slice(0, 3).map((tag, idx) => (
+                            <Badge key={idx} variant="secondary" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between pt-2 border-t border-border">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="w-6 h-6">
+                            <AvatarImage src={lesson.profiles?.avatar_url || ''} />
+                            <AvatarFallback>{lesson.profiles?.username?.[0] || 'C'}</AvatarFallback>
+                          </Avatar>
+                          <span className="text-xs text-muted-foreground">
+                            {lesson.profiles?.display_name || lesson.profiles?.username}
+                          </span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {lesson.views_count || 0} views
+                        </span>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Coaches Section */}
+          {shouldShowCoaches && coaches.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <GraduationCap className="w-5 h-5 text-gold" />
+                <h3 className="text-xl font-bold">Top Coaches</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {coaches.map((coach) => (
+                  <Card
+                    key={coach.id}
+                    className="p-6 cursor-pointer hover:border-gold/50 transition-all hover:shadow-lg hover:shadow-gold/5 group"
+                    onClick={() => navigate(`/coach/${coach.user_id}`)}
+                  >
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-4">
+                        <Avatar className="w-16 h-16 ring-2 ring-gold/30">
+                          <AvatarImage src={coach.profiles?.avatar_url || ''} />
+                          <AvatarFallback>{coach.profiles?.username?.[0] || 'C'}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-bold text-lg truncate group-hover:text-gold transition-colors">
+                            {coach.profiles?.display_name || coach.profiles?.username}
+                          </h3>
+                          <div className="flex items-center gap-1 mt-1">
+                            <Star className="w-4 h-4 fill-gold text-gold" />
+                            <span className="text-sm font-medium">{coach.rating?.toFixed(1) || '5.0'}</span>
+                            <span className="text-xs text-muted-foreground">
+                              ({coach.total_students || 0} students)
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {coach.bio || 'Expert chess coach ready to help you improve'}
+                      </p>
+
+                      {coach.specialties && coach.specialties.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {coach.specialties.slice(0, 3).map((specialty, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs">
+                              {specialty}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between pt-2 border-t border-border">
+                        <span className="text-sm font-semibold text-gold">
+                          ${coach.hourly_rate || 25}/hr
+                        </span>
+                        <Button size="sm" variant="outline" className="text-xs">
+                          View Profile
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!shouldShowPosts && !shouldShowLessons && !shouldShowCoaches && !shouldShowReels && (
             <Card className="p-12 text-center">
-              <p className="text-muted-foreground mb-4">No posts yet. Be the first to share!</p>
-              <Button onClick={() => navigate('/community')}>
-                Go to Community
+              <Sparkles className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground mb-4">No content found for this filter</p>
+              <Button onClick={() => setActiveTab('all')}>
+                Show All Content
               </Button>
             </Card>
           )}
         </div>
 
-        <div className="mt-6 text-center">
+        {/* View More */}
+        <div className="mt-12 flex flex-wrap gap-4 justify-center">
           <Button
             variant="outline"
             onClick={() => navigate('/community')}
-            className="w-full sm:w-auto"
+            className="gap-2"
           >
-            View All in Community
+            <Users className="w-4 h-4" />
+            Explore Community
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => navigate('/lessons')}
+            className="gap-2"
+          >
+            <BookOpen className="w-4 h-4" />
+            Browse Lessons
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => navigate('/coach-marketplace')}
+            className="gap-2"
+          >
+            <GraduationCap className="w-4 h-4" />
+            Find Coaches
           </Button>
         </div>
       </div>
