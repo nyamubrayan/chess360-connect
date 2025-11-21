@@ -92,6 +92,73 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
   const handleNotificationClick = async (notification: Notification) => {
     await markAsRead(notification.id);
 
+    // Handle rematch requests
+    if (notification.type === 'rematch_request' && notification.sender_id) {
+      try {
+        // Fetch the original game to get time control settings
+        const { data: originalGame } = await supabase
+          .from('games')
+          .select('time_control, time_increment')
+          .eq('id', notification.room_id!)
+          .single();
+
+        if (!originalGame) {
+          toast.error('Failed to load rematch details');
+          return;
+        }
+
+        // Create new game with the same time control
+        const isWhite = Math.random() < 0.5;
+        const whitePlayerId = isWhite ? userId : notification.sender_id;
+        const blackPlayerId = isWhite ? notification.sender_id : userId;
+        const timeInSeconds = originalGame.time_control * 60;
+
+        const { data: newGame, error: gameError } = await supabase
+          .from('games')
+          .insert({
+            white_player_id: whitePlayerId,
+            black_player_id: blackPlayerId,
+            time_control: originalGame.time_control,
+            time_increment: originalGame.time_increment,
+            white_time_remaining: timeInSeconds,
+            black_time_remaining: timeInSeconds,
+            status: 'active',
+            last_move_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+
+        if (gameError) throw gameError;
+
+        // Send notifications to both players
+        await supabase.from('notifications').insert([
+          {
+            user_id: whitePlayerId,
+            type: 'match_found',
+            title: 'Rematch Started!',
+            message: 'Your rematch has started. You are playing as White.',
+            room_id: newGame.id,
+          },
+          {
+            user_id: blackPlayerId,
+            type: 'match_found',
+            title: 'Rematch Started!',
+            message: 'Your rematch has started. You are playing as Black.',
+            room_id: newGame.id,
+          },
+        ]);
+
+        toast.success('Rematch accepted! Starting game...');
+        navigate(`/game/${newGame.id}`);
+        setOpen(false);
+        return;
+      } catch (error) {
+        console.error('Error creating rematch:', error);
+        toast.error('Failed to start rematch');
+        return;
+      }
+    }
+
     // Handle game challenges
     if (notification.type === 'game_challenge' && notification.room_id) {
       navigate(`/game/${notification.room_id}`);
@@ -130,6 +197,8 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
+      case "rematch_request":
+        return "🔄";
       case "game_challenge":
         return "⚔️";
       case "game_invite":

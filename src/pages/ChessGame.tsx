@@ -9,6 +9,7 @@ import { MoveHistory } from '@/components/chess/MoveHistory';
 import { ChessTimer } from '@/components/chess/ChessTimer';
 import { PromotionDialog } from '@/components/chess/PromotionDialog';
 import { GameChat } from '@/components/chess/GameChat';
+import { PostGameActions } from '@/components/PostGameActions';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -698,6 +699,19 @@ export default function ChessGame() {
                   </span>
                 </div>
               </Card>
+            )}
+
+            {/* Post-Game Actions */}
+            {game.status === 'completed' && playerColor && (
+              <div className="mt-4">
+                <PostGameActions
+                  gameId={gameId!}
+                  opponentId={playerColor === 'white' ? game.black_player_id : game.white_player_id}
+                  opponentName={playerColor === 'white' ? (blackPlayer?.display_name || blackPlayer?.username || 'Opponent') : (whitePlayer?.display_name || whitePlayer?.username || 'Opponent')}
+                  timeControl={game.time_control}
+                  timeIncrement={game.time_increment}
+                />
+              </div>
             )}
             
             <GameControls
