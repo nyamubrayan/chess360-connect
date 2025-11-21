@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Card } from './ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Heart, MessageCircle, Share2, Sparkles, BookOpen, GraduationCap, PlayCircle, Star, TrendingUp, Users } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Sparkles, BookOpen, GraduationCap, PlayCircle, Star, TrendingUp, Users, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -82,16 +82,40 @@ export const FeedSection = () => {
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [activeTab, setActiveTab] = useState<FeedTab>('all');
+  const [hasMore, setHasMore] = useState({
+    posts: true,
+    lessons: true,
+    coaches: true,
+    highlights: true
+  });
+  const [page, setPage] = useState({
+    posts: 0,
+    lessons: 0,
+    coaches: 0,
+    highlights: 0
+  });
+  const loadMoreRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  const ITEMS_PER_PAGE = 6;
 
   useEffect(() => {
     fetchFeed();
   }, []);
 
-  const fetchFeed = async () => {
+  const fetchFeed = async (append = false) => {
+    if (append) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
+
     try {
-      // Fetch recent posts
+      const currentPage = append ? page : { posts: 0, lessons: 0, coaches: 0, highlights: 0 };
+      
+      // Fetch posts
       const { data: postsData, error: postsError } = await supabase
         .from('posts')
         .select(`
@@ -99,11 +123,14 @@ export const FeedSection = () => {
           profiles:user_id (username, avatar_url, display_name)
         `)
         .order('created_at', { ascending: false })
-        .limit(6);
+        .range(
+          currentPage.posts * ITEMS_PER_PAGE,
+          (currentPage.posts + 1) * ITEMS_PER_PAGE - 1
+        );
 
       if (postsError) throw postsError;
 
-      // Fetch recent lessons
+      // Fetch lessons
       const { data: lessonsData, error: lessonsError } = await supabase
         .from('lessons')
         .select(`
@@ -112,11 +139,14 @@ export const FeedSection = () => {
         `)
         .eq('is_published', true)
         .order('created_at', { ascending: false })
-        .limit(6);
+        .range(
+          currentPage.lessons * ITEMS_PER_PAGE,
+          (currentPage.lessons + 1) * ITEMS_PER_PAGE - 1
+        );
 
       if (lessonsError) throw lessonsError;
 
-      // Fetch top coaches
+      // Fetch coaches
       const { data: coachesData, error: coachesError } = await supabase
         .from('coach_profiles')
         .select(`
@@ -124,11 +154,14 @@ export const FeedSection = () => {
           profiles:user_id (username, avatar_url, display_name)
         `)
         .order('rating', { ascending: false })
-        .limit(6);
+        .range(
+          currentPage.coaches * ITEMS_PER_PAGE,
+          (currentPage.coaches + 1) * ITEMS_PER_PAGE - 1
+        );
 
       if (coachesError) throw coachesError;
 
-      // Fetch recent highlights
+      // Fetch highlights
       const { data: highlightsData, error: highlightsError } = await supabase
         .from('game_highlights')
         .select(`
@@ -136,21 +169,81 @@ export const FeedSection = () => {
           profiles:user_id (username, avatar_url, display_name)
         `)
         .order('created_at', { ascending: false })
-        .limit(6);
+        .range(
+          currentPage.highlights * ITEMS_PER_PAGE,
+          (currentPage.highlights + 1) * ITEMS_PER_PAGE - 1
+        );
 
       if (highlightsError) throw highlightsError;
 
-      setPosts(postsData || []);
-      setLessons(lessonsData || []);
-      setCoaches(coachesData || []);
-      setHighlights(highlightsData || []);
+      if (append) {
+        setPosts(prev => [...prev, ...(postsData || [])]);
+        setLessons(prev => [...prev, ...(lessonsData || [])]);
+        setCoaches(prev => [...prev, ...(coachesData || [])]);
+        setHighlights(prev => [...prev, ...(highlightsData || [])]);
+      } else {
+        setPosts(postsData || []);
+        setLessons(lessonsData || []);
+        setCoaches(coachesData || []);
+        setHighlights(highlightsData || []);
+      }
+
+      // Update hasMore state
+      setHasMore({
+        posts: (postsData?.length || 0) === ITEMS_PER_PAGE,
+        lessons: (lessonsData?.length || 0) === ITEMS_PER_PAGE,
+        coaches: (coachesData?.length || 0) === ITEMS_PER_PAGE,
+        highlights: (highlightsData?.length || 0) === ITEMS_PER_PAGE
+      });
+
     } catch (error) {
       console.error('Error fetching feed:', error);
       toast.error('Failed to load feed');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
+
+  const loadMore = useCallback(() => {
+    if (loadingMore) return;
+
+    const hasAnyMore = 
+      (activeTab === 'all' && (hasMore.posts || hasMore.lessons || hasMore.coaches || hasMore.highlights)) ||
+      (activeTab === 'posts' && hasMore.posts) ||
+      (activeTab === 'lessons' && hasMore.lessons) ||
+      (activeTab === 'coaches' && hasMore.coaches) ||
+      (activeTab === 'reels' && hasMore.highlights);
+
+    if (!hasAnyMore) return;
+
+    setPage(prev => ({
+      posts: prev.posts + 1,
+      lessons: prev.lessons + 1,
+      coaches: prev.coaches + 1,
+      highlights: prev.highlights + 1
+    }));
+
+    fetchFeed(true);
+  }, [loadingMore, hasMore, activeTab]);
+
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loading && !loadingMore) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [loading, loadingMore, loadMore]);
 
   const handleLikePost = async (postId: string) => {
     try {
@@ -489,6 +582,17 @@ export const FeedSection = () => {
             </Card>
           )}
         </div>
+
+        {/* Loading More Indicator */}
+        {loadingMore && (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            <span className="ml-2 text-muted-foreground">Loading more content...</span>
+          </div>
+        )}
+
+        {/* Intersection Observer Target */}
+        <div ref={loadMoreRef} className="h-4" />
 
         {/* View More */}
         <div className="mt-12 flex flex-wrap gap-4 justify-center">
