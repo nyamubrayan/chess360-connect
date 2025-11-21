@@ -208,7 +208,7 @@ export default function Connect() {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
             <Users className="w-8 h-8 text-primary" />
-            <h1 className="text-4xl lg:text-5xl font-bold">Connect</h1>
+            <h1 className="text-4xl lg:text-5xl font-bold">Networking Zone</h1>
           </div>
           <p className="text-lg text-muted-foreground max-w-2xl">
             Discover chess players from around the world and build your network
@@ -333,7 +333,7 @@ export default function Connect() {
                           onClick={() => sendFriendRequest(player.id)}
                         >
                           <UserPlus className="w-4 h-4 mr-2" />
-                          Add Friend
+                          Add ChessMate
                         </Button>
                       )}
                     </div>
