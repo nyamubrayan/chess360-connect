@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from './ui/button';
-import { Trophy, Target, UserIcon, Menu, GraduationCap, Swords } from 'lucide-react';
+import { Trophy, Target, UserIcon, Menu, GraduationCap, Swords, Home } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { NotificationBell } from './NotificationBell';
 import { User } from '@supabase/supabase-js';
@@ -22,6 +22,11 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const mainLinks = [
+    {
+      icon: Home,
+      label: 'Home',
+      path: '/'
+    },
     {
       icon: GraduationCap,
       label: 'Training',
