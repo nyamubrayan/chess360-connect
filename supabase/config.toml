@@ -21,3 +21,15 @@ verify_jwt = true
 [functions.find-match]
 verify_jwt = true
 
+[functions.explain-opening-move]
+verify_jwt = false
+
+[functions.generate-game-highlight]
+verify_jwt = true
+
+[functions.recommend-lessons]
+verify_jwt = true
+
+[functions.validate-move]
+verify_jwt = true
+
