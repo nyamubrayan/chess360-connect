@@ -1,73 +1,91 @@
-# Welcome to your Lovable project
+🧠♟️ Chessafari — Learn, Play & Grow in the Journey of Chess
 
-## Project info
+A modern chess platform blending learning, real-time gameplay, and smart coaching.
 
-**URL**: https://lovable.dev/projects/538ea835-3021-4a50-a3fd-2584acf5c773
+🌍 About Chessafari
 
-## How can I edit this code?
+Chessafari is a global chess experience inspired by the word “Safari” — a journey.
+Just like a safari, every player begins a path of discovery: learning, practicing, and mastering the game step by step.
 
-There are several ways of editing your application.
+This project empowers players to:
 
-**Use Lovable**
+Play real-time chess with friends or matched opponents
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/538ea835-3021-4a50-a3fd-2584acf5c773) and start prompting.
+Improve through AI-generated puzzles
 
-Changes made via Lovable will be committed automatically to this repo.
+Analyze games to identify weaknesses
 
-**Use your preferred IDE**
+Train smarter with personalized insights
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Enjoy a modern, smooth, and interactive interface
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+🚀 Features
+♟️ 1. Real-Time Multiplayer Chess
 
-Follow these steps:
+Matchmaking system (auto-match or room code)
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+One player as White, one as Black
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+Real-time board sync via Socket.io
 
-# Step 3: Install the necessary dependencies.
-npm i
+Chess rules enforced (legal moves only)
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+🧩 2. AI Training Mode
 
-**Edit a file directly in GitHub**
+Automatically generates puzzles from your weaknesses
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Progressively harder challenges
 
-**Use GitHub Codespaces**
+Tracks areas of improvement (tactics, openings, blunders)
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+📊 3. Game Analysis Engine
 
-## What technologies are used for this project?
+Move-by-move accuracy score
 
-This project is built with:
+Blunders / mistakes / best moves highlighted
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Recommends training areas based on patterns
 
-## How can I deploy this project?
+📚 4. Learning & Coaching Tools
 
-Simply open [Lovable](https://lovable.dev/projects/538ea835-3021-4a50-a3fd-2584acf5c773) and click on Share -> Publish.
+Opening guides
 
-## Can I connect a custom domain to my Lovable project?
+Tactical drills
 
-Yes, you can!
+Endgame examples
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+“Coach Mode” for guided practice
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+🎨 5. Modern UI/UX
+
+Clean board layout
+
+Smooth animations
+
+Light/Dark themes
+
+Responsive for mobile & desktop
+
+🔗 6. Community & Social Features
+
+In-game chat
+
+Player profiles & ratings
+
+Match history
+
+Achievements & badges
+
+🏗️ Tech Stack (MERN)
+
+PLpgSQL – Stores users, games, sessions, puzzles
+
+Express.js – Backend logic & APIs
+
+React.js – Front-end interface
+
+Node.js – Server runtime
+
+Socket.io – Real-time gameplay communication
+
+Chess.js / Chessboard.js – Move validation & board rendering
