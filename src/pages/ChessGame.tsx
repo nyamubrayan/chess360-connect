@@ -576,6 +576,13 @@ export default function ChessGame() {
     toast.info('Takeback declined');
   };
 
+  const handleCancelTakeback = async () => {
+    await supabase.functions.invoke('chess-game-action', {
+      body: { gameId, action: 'cancel_undo' },
+    });
+    toast.info('Takeback request cancelled');
+  };
+
   if (!game || !user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -724,6 +731,7 @@ export default function ChessGame() {
               onRequestTakeback={handleRequestTakeback}
               onAcceptTakeback={handleAcceptTakeback}
               onDeclineTakeback={handleDeclineTakeback}
+              onCancelTakeback={handleCancelTakeback}
               className="mt-4"
             />
           </div>

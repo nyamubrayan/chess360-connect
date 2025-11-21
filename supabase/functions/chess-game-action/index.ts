@@ -248,7 +248,36 @@ serve(async (req) => {
           message: 'Your opponent has requested to undo the last move.',
         });
 
+        // Add chat message
+        await supabaseClient.from('game_chat_messages').insert({
+          game_id: gameId,
+          user_id: user.id,
+          message: '🔄 Requested to take back the last move',
+        });
+
         console.log('Undo requested');
+        break;
+
+      case 'cancel_undo':
+        if (game.undo_requested_by !== user.id) {
+          throw new Error('Cannot cancel - no active takeback request from you');
+        }
+
+        await supabaseClient
+          .from('games')
+          .update({
+            undo_requested_by: null,
+          })
+          .eq('id', gameId);
+
+        // Add chat message
+        await supabaseClient.from('game_chat_messages').insert({
+          game_id: gameId,
+          user_id: user.id,
+          message: '❌ Cancelled takeback request',
+        });
+
+        console.log('Undo cancelled');
         break;
 
       case 'accept_undo':
@@ -299,6 +328,13 @@ serve(async (req) => {
           message: 'Your takeback request was accepted.',
         });
 
+        // Add chat message
+        await supabaseClient.from('game_chat_messages').insert({
+          game_id: gameId,
+          user_id: user.id,
+          message: '✅ Accepted takeback request',
+        });
+
         console.log('Undo accepted');
         break;
 
@@ -313,6 +349,21 @@ serve(async (req) => {
             undo_requested_by: null,
           })
           .eq('id', gameId);
+
+        // Notify requester
+        await supabaseClient.from('notifications').insert({
+          user_id: game.undo_requested_by,
+          type: 'undo_declined',
+          title: 'Takeback Declined',
+          message: 'Your takeback request was declined.',
+        });
+
+        // Add chat message
+        await supabaseClient.from('game_chat_messages').insert({
+          game_id: gameId,
+          user_id: user.id,
+          message: '❌ Declined takeback request',
+        });
 
         console.log('Undo declined');
         break;
