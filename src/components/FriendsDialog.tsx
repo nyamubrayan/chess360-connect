@@ -13,8 +13,14 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Users, UserPlus, Check, X, Loader2, MessageCircle } from "lucide-react";
+import { Users, UserPlus, Check, X, Loader2, MessageCircle, MoreVertical, UserMinus, Ban } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { z } from "zod";
 import { useNavigate } from "react-router-dom";
 
@@ -301,8 +307,34 @@ export const FriendsDialog = ({ userId }: FriendsDialogProps) => {
     if (error) {
       toast.error("Failed to remove friend");
     } else {
-      toast.success("Friend removed");
+      toast.success("ChessMate removed");
       fetchFriends();
+    }
+  };
+
+  const blockUser = async (friendId: string, friendshipId?: string) => {
+    try {
+      // Remove friendship if exists
+      if (friendshipId) {
+        await supabase.from("friends").delete().eq("id", friendshipId);
+      }
+
+      // Add to blocked users
+      const { error } = await supabase
+        .from('blocked_users')
+        .insert({
+          user_id: userId,
+          blocked_user_id: friendId
+        });
+
+      if (error) throw error;
+
+      toast.success('User blocked');
+      fetchFriends();
+      setOpen(false);
+    } catch (error: any) {
+      console.error('Error blocking user:', error);
+      toast.error('Failed to block user');
     }
   };
 
@@ -431,7 +463,7 @@ export const FriendsDialog = ({ userId }: FriendsDialogProps) => {
                         @{friend.profiles.username} • {friend.profiles.rating || 1200} ELO
                       </p>
                     </div>
-                    <div className="flex flex-col gap-1">
+                    <div className="flex gap-1">
                       <Button
                         variant="outline"
                         size="sm"
@@ -450,6 +482,29 @@ export const FriendsDialog = ({ userId }: FriendsDialogProps) => {
                       >
                         Challenge
                       </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => removeFriend(friend.id)}
+                            className="text-orange-600"
+                          >
+                            <UserMinus className="w-4 h-4 mr-2" />
+                            Unfriend
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => blockUser(friend.friend_id, friend.id)}
+                            className="text-destructive"
+                          >
+                            <Ban className="w-4 h-4 mr-2" />
+                            Block
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                 ))

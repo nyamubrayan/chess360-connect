@@ -62,6 +62,19 @@ export default function Chat() {
     try {
       setLoading(true);
 
+      // Check if blocked
+      const { data: blockData } = await supabase
+        .from('blocked_users')
+        .select('*')
+        .or(`and(user_id.eq.${currentUserId},blocked_user_id.eq.${friendId}),and(user_id.eq.${friendId},blocked_user_id.eq.${currentUserId})`)
+        .maybeSingle();
+
+      if (blockData) {
+        toast.error('Cannot chat with this user');
+        navigate('/connect');
+        return;
+      }
+
       // Load friend profile
       const { data: friendData, error: friendError } = await supabase
         .from('profiles')
