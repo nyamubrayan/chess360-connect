@@ -29,7 +29,7 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
     },
     {
       icon: GraduationCap,
-      label: 'Training',
+      label: 'Smart Training',
       path: '/training'
     },
     {

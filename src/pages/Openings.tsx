@@ -288,7 +288,7 @@ export default function Openings() {
         <div className="flex items-center justify-between mb-6">
           <Button variant="secondary" size="sm" onClick={() => navigate('/training')} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
-            Back to Training
+            Back to Smart Training
           </Button>
         </div>
 

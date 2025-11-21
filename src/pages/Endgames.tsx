@@ -175,7 +175,7 @@ export default function Endgames() {
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="mb-8 text-center">
           <h1 className="text-4xl lg:text-5xl font-bold mb-4">
-            Endgame Training
+            Smart Endgame Training
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Master essential endgame techniques and winning positions. Learn the fundamental patterns that every chess player must know.
