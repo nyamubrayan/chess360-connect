@@ -215,52 +215,55 @@ export default function ChessGame() {
   const handleFirstMoveTimeout = async () => {
     if (!game || !user || game.status !== 'active') return;
 
-    console.log('First move timeout - canceling game after 30 seconds...');
+    console.log('First move timeout - aborting game immediately...');
 
     try {
-      // Determine which player should have moved first (white always starts)
-      const inactivePlayerId = game.white_player_id;
-
-      // Cancel the game
+      // Abort the game immediately
       const { error } = await supabase
         .from('games')
         .update({
           status: 'completed',
-          result: 'cancelled',
+          result: 'aborted',
           completed_at: new Date().toISOString(),
         })
-        .eq('id', game.id);
+        .eq('id', game.id)
+        .eq('status', 'active'); // Only abort if still active
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error aborting game:', error);
+        throw error;
+      }
 
-      // Send warning notification to inactive player and info to active player
+      console.log('Game aborted successfully due to first move timeout');
+
+      // Send notifications to both players
       await supabase.from('notifications').insert([
         {
-          user_id: inactivePlayerId,
-          type: 'game_warning',
-          title: 'Game Cancelled - Warning',
-          message: 'Your game was cancelled because you did not make the first move within 30 seconds. Please make your first move promptly in future games.',
+          user_id: game.white_player_id,
+          type: 'game_aborted',
+          title: 'Game Aborted',
+          message: 'Game was aborted because no move was made within 30 seconds.',
         },
         {
           user_id: game.black_player_id,
-          type: 'game_cancelled',
-          title: 'Game Cancelled',
-          message: 'The game was cancelled because your opponent did not make the first move within 30 seconds.',
+          type: 'game_aborted',
+          title: 'Game Aborted',
+          message: 'Game was aborted because no move was made within 30 seconds.',
         },
       ]);
 
-      toast.warning(
-        inactivePlayerId === user.id 
-          ? 'Game cancelled. You must make your first move within 30 seconds.' 
-          : 'Game cancelled. Opponent did not make the first move.',
-        {
-          duration: 5000,
-          action: {
-            label: 'Back to Lobby',
-            onClick: () => navigate('/lobby'),
-          },
-        }
-      );
+      toast.error('Game aborted - no first move within 30 seconds.', {
+        duration: 5000,
+        action: {
+          label: 'Back to Lobby',
+          onClick: () => navigate('/lobby'),
+        },
+      });
+
+      // Redirect after short delay
+      setTimeout(() => {
+        navigate('/lobby');
+      }, 2000);
     } catch (error) {
       console.error('Error handling first move timeout:', error);
     }
@@ -384,6 +387,8 @@ export default function ChessGame() {
         ? (gameData.winner_id === user?.id ? 'Opponent resigned. You win!' : 'You resigned.')
         : gameData.result === 'timeout'
         ? (gameData.winner_id === user?.id ? 'Opponent ran out of time. You win!' : 'Time out! You lost.')
+        : gameData.result === 'aborted'
+        ? 'Game aborted - no first move within 30 seconds'
         : `Game drawn by ${gameData.result}`;
       
       toast.success(resultMessage, {
