@@ -596,6 +596,39 @@ export type Database = {
         }
         Relationships: []
       }
+      puzzles: {
+        Row: {
+          created_at: string
+          description: string | null
+          difficulty: string
+          fen: string
+          id: string
+          rating: number | null
+          solution_moves: Json
+          theme: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          difficulty: string
+          fen: string
+          id?: string
+          rating?: number | null
+          solution_moves: Json
+          theme: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          difficulty?: string
+          fen?: string
+          id?: string
+          rating?: number | null
+          solution_moves?: Json
+          theme?: string
+        }
+        Relationships: []
+      }
       user_achievements: {
         Row: {
           achievement_id: string
@@ -628,6 +661,47 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_puzzle_attempts: {
+        Row: {
+          attempts: number
+          completed_at: string | null
+          created_at: string
+          id: string
+          puzzle_id: string
+          solved: boolean
+          time_spent: number | null
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          puzzle_id: string
+          solved?: boolean
+          time_spent?: number | null
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          puzzle_id?: string
+          solved?: boolean
+          time_spent?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_puzzle_attempts_puzzle_id_fkey"
+            columns: ["puzzle_id"]
+            isOneToOne: false
+            referencedRelation: "puzzles"
             referencedColumns: ["id"]
           },
         ]
