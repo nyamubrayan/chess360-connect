@@ -8,6 +8,7 @@ import { ArrowLeft, Clock, Loader2 } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell';
 import { FriendsDialog } from '@/components/FriendsDialog';
 import { CustomTimeDialog } from '@/components/CustomTimeDialog';
+import confetti from 'canvas-confetti';
 
 interface TimeControl {
   time: number;
@@ -65,6 +66,40 @@ export default function GameLobby() {
     setSelectedTimeControl(timeControl);
   };
 
+  const triggerMatchFoundCelebration = () => {
+    const duration = 3000;
+    const animationEnd = Date.now() + duration;
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
+
+    function randomInRange(min: number, max: number) {
+      return Math.random() * (max - min) + min;
+    }
+
+    const interval: any = setInterval(function() {
+      const timeLeft = animationEnd - Date.now();
+
+      if (timeLeft <= 0) {
+        return clearInterval(interval);
+      }
+
+      const particleCount = 50 * (timeLeft / duration);
+      
+      // Confetti from left side
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+      });
+      
+      // Confetti from right side
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+      });
+    }, 250);
+  };
+
   const handleCustomTimeConfirm = (timeControl: number, timeIncrement: number) => {
     const category = 
       timeControl < 3 ? 'Bullet' :
@@ -113,8 +148,11 @@ export default function GameLobby() {
       }
 
       if (joinData.matched) {
-        toast.success('Match found!');
-        navigate(`/game/${joinData.game.id}`);
+        triggerMatchFoundCelebration();
+        toast.success('Match found! 🎉');
+        setTimeout(() => {
+          navigate(`/game/${joinData.game.id}`);
+        }, 500);
         return;
       }
 
@@ -147,8 +185,11 @@ export default function GameLobby() {
         if (pollData.matched) {
           clearInterval(interval);
           setIsSearching(false);
-          toast.success('Match found!');
-          navigate(`/game/${pollData.game.id}`);
+          triggerMatchFoundCelebration();
+          toast.success('Match found! 🎉');
+          setTimeout(() => {
+            navigate(`/game/${pollData.game.id}`);
+          }, 500);
         }
       }, 2000);
 
