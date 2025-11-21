@@ -3,9 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { GameHighlightPlayer } from './GameHighlightPlayer';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
-import { Share2, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
 
 interface Highlight {
   id: string;
@@ -29,7 +28,6 @@ export const ProfileHighlights = ({ userId, limit = 6 }: ProfileHighlightsProps)
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [gamesWithoutHighlights, setGamesWithoutHighlights] = useState<number>(0);
-  const navigate = useNavigate();
 
   useEffect(() => {
     fetchHighlights();
@@ -149,9 +147,6 @@ export const ProfileHighlights = ({ userId, limit = 6 }: ProfileHighlightsProps)
     }
   };
 
-  const handleShareToCommunity = async (highlight: Highlight) => {
-    toast.info('Community sharing is no longer available');
-  };
 
   if (loading) {
     return (
@@ -218,7 +213,6 @@ export const ProfileHighlights = ({ userId, limit = 6 }: ProfileHighlightsProps)
               description={highlight.description}
               keyMoments={Array.isArray(highlight.key_moments) ? highlight.key_moments : []}
               duration={highlight.duration}
-              onShare={() => handleShareToCommunity(highlight)}
             />
           </div>
         ))}
