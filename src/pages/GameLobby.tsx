@@ -3,22 +3,38 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { ArrowLeft, Play } from 'lucide-react';
+import { ArrowLeft, Clock, Loader2 } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell';
 import { FriendsDialog } from '@/components/FriendsDialog';
+import { CustomTimeDialog } from '@/components/CustomTimeDialog';
+
+interface TimeControl {
+  time: number;
+  increment: number;
+  category: string;
+  label: string;
+}
+
+const TIME_CONTROLS: TimeControl[] = [
+  { time: 1, increment: 0, category: 'Bullet', label: '1+0' },
+  { time: 2, increment: 1, category: 'Bullet', label: '2+1' },
+  { time: 3, increment: 0, category: 'Blitz', label: '3+0' },
+  { time: 3, increment: 2, category: 'Blitz', label: '3+2' },
+  { time: 5, increment: 0, category: 'Blitz', label: '5+0' },
+  { time: 5, increment: 3, category: 'Blitz', label: '5+3' },
+  { time: 10, increment: 0, category: 'Rapid', label: '10+0' },
+  { time: 10, increment: 5, category: 'Rapid', label: '10+5' },
+  { time: 15, increment: 10, category: 'Rapid', label: '15+10' },
+  { time: 30, increment: 0, category: 'Classical', label: '30+0' },
+  { time: 30, increment: 20, category: 'Classical', label: '30+20' },
+];
 
 export default function GameLobby() {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
-  const [friends, setFriends] = useState<any[]>([]);
-  const [selectedFriend, setSelectedFriend] = useState<string>('');
-  const [timeControl, setTimeControl] = useState('10');
-  const [timeIncrement, setTimeIncrement] = useState('0');
-  const [isCreating, setIsCreating] = useState(false);
+  const [selectedTimeControl, setSelectedTimeControl] = useState<TimeControl | null>(null);
+  const [customDialogOpen, setCustomDialogOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [searchInterval, setSearchInterval] = useState<any>(null);
 
@@ -29,7 +45,6 @@ export default function GameLobby() {
         return;
       }
       setUser(user);
-      fetchFriends(user.id);
     });
 
     // Cleanup: remove user from queue when component unmounts
@@ -45,65 +60,31 @@ export default function GameLobby() {
     };
   }, [searchInterval, isSearching]);
 
-  const fetchFriends = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('friends')
-      .select('friend_id, status')
-      .eq('user_id', userId)
-      .eq('status', 'accepted');
-
-    if (error) {
-      console.error('Error fetching friends:', error);
-      return;
-    }
-
-    if (data && data.length > 0) {
-      const friendIds = data.map(f => f.friend_id);
-      const { data: profilesData } = await supabase
-        .from('profiles')
-        .select('id, username, display_name')
-        .in('id', friendIds);
-
-      if (profilesData) {
-        const friendsWithProfiles = data.map(friend => ({
-          friend_id: friend.friend_id,
-          profiles: profilesData.find(p => p.id === friend.friend_id)
-        }));
-        setFriends(friendsWithProfiles);
-      }
-    }
+  const handleTimeControlSelect = (timeControl: TimeControl) => {
+    if (isSearching) return;
+    setSelectedTimeControl(timeControl);
   };
 
-  const handleCreateGame = async () => {
-    if (!selectedFriend) {
-      toast.error('Please select an opponent');
-      return;
-    }
-
-    setIsCreating(true);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('create-chess-game', {
-        body: {
-          opponentId: selectedFriend,
-          timeControl: parseInt(timeControl),
-          timeIncrement: parseInt(timeIncrement),
-        },
-      });
-
-      if (error) throw error;
-
-      toast.success('Game created! Invitation sent.');
-      navigate(`/game/${data.game.id}`);
-    } catch (error: any) {
-      console.error('Error creating game:', error);
-      toast.error(error.message || 'Failed to create game');
-    } finally {
-      setIsCreating(false);
-    }
+  const handleCustomTimeConfirm = (timeControl: number, timeIncrement: number) => {
+    const category = 
+      timeControl < 3 ? 'Bullet' :
+      timeControl < 10 ? 'Blitz' :
+      timeControl < 30 ? 'Rapid' : 'Classical';
+    
+    setSelectedTimeControl({
+      time: timeControl,
+      increment: timeIncrement,
+      category: 'Custom',
+      label: `${timeControl}+${timeIncrement}`
+    });
   };
 
   const handleQuickMatch = async () => {
+    if (!selectedTimeControl) {
+      toast.error('Please select a time control');
+      return;
+    }
+
     setIsSearching(true);
 
     try {
@@ -111,8 +92,8 @@ export default function GameLobby() {
       const { data: joinData, error: joinError } = await supabase.functions.invoke('find-match', {
         body: {
           action: 'join',
-          timeControl: parseInt(timeControl),
-          timeIncrement: parseInt(timeIncrement),
+          timeControl: selectedTimeControl.time,
+          timeIncrement: selectedTimeControl.increment,
         },
       });
 
@@ -144,8 +125,8 @@ export default function GameLobby() {
         const { data: pollData, error: pollError } = await supabase.functions.invoke('find-match', {
           body: {
             action: 'join',
-            timeControl: parseInt(timeControl),
-            timeIncrement: parseInt(timeIncrement),
+            timeControl: selectedTimeControl.time,
+            timeIncrement: selectedTimeControl.increment,
           },
         });
 
@@ -210,119 +191,132 @@ export default function GameLobby() {
 
   return (
     <div className="min-h-screen bg-background p-2 sm:p-4">
-      <div className="container mx-auto max-w-2xl">
-        <div className="flex items-center justify-between mb-4 sm:mb-6">
+      <div className="container mx-auto max-w-5xl">
+        <div className="flex items-center justify-between mb-6">
           <Button variant="secondary" size="sm" onClick={() => navigate('/')} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
             <span className="hidden sm:inline">Home</span>
           </Button>
-          <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold">Game Lobby</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Quick Match</h1>
           <div className="flex items-center gap-1 sm:gap-2">
             <NotificationBell userId={user.id} />
             <FriendsDialog userId={user.id} />
           </div>
         </div>
 
-        <div className="space-y-4 sm:space-y-6">
-          {/* Quick Match Section */}
-          <Card className="gradient-card p-4 sm:p-6 glow-primary">
-            <h2 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6">Quick Match</h2>
-            
-            <div className="space-y-4 sm:space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="quick-time">Time Control (minutes)</Label>
-                  <Select value={timeControl} onValueChange={setTimeControl} disabled={isSearching}>
-                    <SelectTrigger id="quick-time">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1 minute (Bullet)</SelectItem>
-                      <SelectItem value="3">3 minutes (Blitz)</SelectItem>
-                      <SelectItem value="5">5 minutes (Blitz)</SelectItem>
-                      <SelectItem value="10">10 minutes (Rapid)</SelectItem>
-                      <SelectItem value="15">15 minutes (Rapid)</SelectItem>
-                      <SelectItem value="30">30 minutes (Classical)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+        <div className="mb-6">
+          <p className="text-center text-muted-foreground text-sm sm:text-base">
+            Select your preferred time control to find an opponent
+          </p>
+        </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="quick-increment">Increment (seconds)</Label>
-                  <Input
-                    id="quick-increment"
-                    type="number"
-                    min="0"
-                    max="60"
-                    value={timeIncrement}
-                    onChange={(e) => setTimeIncrement(e.target.value)}
-                    disabled={isSearching}
-                  />
+        {/* Time Control Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
+          {TIME_CONTROLS.map((tc) => (
+            <Card
+              key={tc.label}
+              onClick={() => handleTimeControlSelect(tc)}
+              className={`
+                cursor-pointer p-6 sm:p-8 transition-all hover:scale-105 hover:shadow-lg
+                ${selectedTimeControl?.label === tc.label 
+                  ? 'bg-accent border-primary border-2 shadow-lg shadow-primary/20' 
+                  : 'hover:border-primary/50'
+                }
+                ${isSearching ? 'opacity-50 cursor-not-allowed' : ''}
+              `}
+            >
+              <div className="text-center space-y-2">
+                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">
+                  {tc.label}
+                </div>
+                <div className="text-sm sm:text-base text-muted-foreground font-medium">
+                  {tc.category}
                 </div>
               </div>
+            </Card>
+          ))}
 
-              {!isSearching ? (
-                <Button
-                  onClick={handleQuickMatch}
-                  className="w-full gap-2"
-                  size="lg"
-                >
-                  <Play className="w-5 h-5" />
-                  Find Match
-                </Button>
+          {/* Custom Time Control Card */}
+          <Card
+            onClick={() => !isSearching && setCustomDialogOpen(true)}
+            className={`
+              cursor-pointer p-6 sm:p-8 transition-all hover:scale-105 hover:shadow-lg
+              ${selectedTimeControl?.category === 'Custom'
+                ? 'bg-accent border-primary border-2 shadow-lg shadow-primary/20'
+                : 'hover:border-primary/50'
+              }
+              ${isSearching ? 'opacity-50 cursor-not-allowed' : ''}
+            `}
+          >
+            <div className="text-center space-y-2">
+              {selectedTimeControl?.category === 'Custom' ? (
+                <>
+                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">
+                    {selectedTimeControl.label}
+                  </div>
+                  <div className="text-sm sm:text-base text-muted-foreground font-medium">
+                    Custom
+                  </div>
+                </>
               ) : (
-                <Button
-                  onClick={handleCancelSearch}
-                  variant="destructive"
-                  className="w-full gap-2"
-                  size="lg"
-                >
-                  Cancel Search
-                </Button>
+                <>
+                  <Clock className="w-8 h-8 sm:w-10 sm:h-10 mx-auto text-muted-foreground" />
+                  <div className="text-sm sm:text-base text-muted-foreground font-medium">
+                    Custom
+                  </div>
+                </>
               )}
             </div>
           </Card>
+        </div>
 
-          {/* Challenge Friend Section */}
-          <Card className="gradient-card p-4 sm:p-6">
-            <h2 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6">Challenge a Friend</h2>
-            
-            <div className="space-y-4 sm:space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="opponent">Select Opponent</Label>
-                <Select value={selectedFriend} onValueChange={setSelectedFriend} disabled={isSearching}>
-                  <SelectTrigger id="opponent">
-                    <SelectValue placeholder="Choose a friend to play" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {friends.length === 0 ? (
-                      <div className="p-4 text-center text-sm text-muted-foreground">
-                        No friends available. Add friends first!
-                      </div>
-                    ) : (
-                      friends.map((friend: any) => (
-                        <SelectItem key={friend.friend_id} value={friend.friend_id}>
-                          {friend.profiles?.display_name || friend.profiles?.username}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
+        {/* Action Buttons */}
+        <div className="max-w-md mx-auto space-y-4">
+          {selectedTimeControl && (
+            <div className="bg-card border border-border rounded-lg p-4 text-center">
+              <p className="text-sm text-muted-foreground mb-2">Selected Time Control</p>
+              <p className="text-2xl font-bold text-primary">
+                {selectedTimeControl.label}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {selectedTimeControl.category}
+              </p>
+            </div>
+          )}
+
+          {!isSearching ? (
+            <Button
+              onClick={handleQuickMatch}
+              disabled={!selectedTimeControl}
+              className="w-full gap-2 h-14 text-lg"
+              size="lg"
+            >
+              Find Match
+            </Button>
+          ) : (
+            <>
+              <div className="flex items-center justify-center gap-3 py-4">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                <span className="text-muted-foreground">Searching for opponent...</span>
               </div>
-
               <Button
-                onClick={handleCreateGame}
-                disabled={isCreating || !selectedFriend || isSearching}
-                className="w-full gap-2"
+                onClick={handleCancelSearch}
+                variant="destructive"
+                className="w-full gap-2 h-14 text-lg"
                 size="lg"
               >
-                <Play className="w-5 h-5" />
-                {isCreating ? 'Sending Invitation...' : 'Send Challenge'}
+                Cancel Search
               </Button>
-            </div>
-          </Card>
+            </>
+          )}
         </div>
       </div>
+
+      <CustomTimeDialog
+        open={customDialogOpen}
+        onOpenChange={setCustomDialogOpen}
+        onConfirm={handleCustomTimeConfirm}
+      />
     </div>
   );
 }
