@@ -4,10 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Trophy, Users, Clock, Play } from "lucide-react";
 import { toast } from "sonner";
 import { TournamentBracket } from "@/components/tournaments/TournamentBracket";
 import { TournamentStandings } from "@/components/tournaments/TournamentStandings";
+import { TournamentSchedule } from "@/components/tournaments/TournamentSchedule";
 
 export default function TournamentDetail() {
   const { id } = useParams();
@@ -223,19 +225,22 @@ export default function TournamentDetail() {
         </div>
 
         {(tournament.status === 'active' || tournament.status === 'completed') && (
-          <>
-            {tournament.format === 'single_elimination' ? (
-              <Card className="p-6">
-                <h2 className="text-2xl font-bold mb-6">Tournament Bracket</h2>
-                <TournamentBracket matches={matches} tournament={tournament} />
-              </Card>
-            ) : (
-              <div className="space-y-6">
-                <TournamentStandings 
-                  participants={participants} 
-                  matches={matches}
-                  format={tournament.format}
-                />
+          <Tabs defaultValue="bracket" className="w-full">
+            <TabsList className="grid w-full max-w-md mx-auto grid-cols-3 mb-6">
+              <TabsTrigger value="bracket">
+                {tournament.format === 'single_elimination' ? 'Bracket' : 'Matches'}
+              </TabsTrigger>
+              <TabsTrigger value="standings">Standings</TabsTrigger>
+              <TabsTrigger value="schedule">Schedule</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="bracket">
+              {tournament.format === 'single_elimination' ? (
+                <Card className="p-6">
+                  <h2 className="text-2xl font-bold mb-6">Tournament Bracket</h2>
+                  <TournamentBracket matches={matches} tournament={tournament} />
+                </Card>
+              ) : (
                 <Card className="p-6">
                   <h2 className="text-2xl font-bold mb-6">All Matches</h2>
                   <div className="space-y-4">
@@ -269,9 +274,21 @@ export default function TournamentDetail() {
                     ))}
                   </div>
                 </Card>
-              </div>
-            )}
-          </>
+              )}
+            </TabsContent>
+
+            <TabsContent value="standings">
+              <TournamentStandings 
+                participants={participants} 
+                matches={matches}
+                format={tournament.format}
+              />
+            </TabsContent>
+
+            <TabsContent value="schedule">
+              <TournamentSchedule tournament={tournament} matches={matches} />
+            </TabsContent>
+          </Tabs>
         )}
       </div>
     </div>
