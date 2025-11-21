@@ -90,13 +90,13 @@ export default function TournamentDetail() {
         supabase.from('tournaments').select('*').eq('id', id).single(),
         supabase.from('tournament_participants').select(`
           *,
-          profiles:user_id(username, display_name, rating)
+          profiles!tournament_participants_user_id_fkey(username, display_name, rating)
         `).eq('tournament_id', id),
         supabase.from('tournament_matches').select(`
           *,
-          player1:player1_id(username, display_name),
-          player2:player2_id(username, display_name),
-          winner:winner_id(username, display_name)
+          player1:profiles!tournament_matches_player1_id_fkey(username, display_name),
+          player2:profiles!tournament_matches_player2_id_fkey(username, display_name),
+          winner:profiles!tournament_matches_winner_id_fkey(username, display_name)
         `).eq('tournament_id', id).order('round', { ascending: true }).order('match_number', { ascending: true })
       ]);
 
