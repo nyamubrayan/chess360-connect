@@ -27,6 +27,7 @@ export default function Puzzles() {
   const [currentPuzzle, setCurrentPuzzle] = useState<Puzzle | null>(null);
   const [chess, setChess] = useState<Chess>(new Chess());
   const [position, setPosition] = useState('');
+  const [playerColor, setPlayerColor] = useState<'white' | 'black'>('white');
   const [moveIndex, setMoveIndex] = useState(0);
   const [solved, setSolved] = useState(false);
   const [attempts, setAttempts] = useState(0);
@@ -95,6 +96,8 @@ export default function Puzzles() {
     const newChess = new Chess(puzzle.fen);
     setChess(newChess);
     setPosition(puzzle.fen);
+    // Set player color based on whose turn it is in the puzzle
+    setPlayerColor(newChess.turn() === 'w' ? 'white' : 'black');
     setCurrentPuzzle(puzzle);
     setMoveIndex(0);
     setSolved(false);
@@ -283,7 +286,7 @@ export default function Puzzles() {
               <ChessBoardComponent
                 position={position}
                 onMove={handleMove}
-                playerColor={chess.turn() === 'w' ? 'white' : 'black'}
+                playerColor={playerColor}
                 disabled={solved}
                 chess={chess}
               />
