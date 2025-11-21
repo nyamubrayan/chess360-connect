@@ -30,12 +30,20 @@ serve(async (req) => {
     const { timeControl, timeIncrement, action } = await req.json();
 
     if (action === 'join') {
-      // Check if user already has an ongoing game (active or waiting)
+      // Clean up stale 'waiting' games (older than 2 minutes)
+      const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+      await supabaseClient
+        .from('games')
+        .delete()
+        .eq('status', 'waiting')
+        .lt('created_at', twoMinutesAgo);
+
+      // Check if user already has an ACTIVE game (not waiting - those are stale)
       const { data: activeGames } = await supabaseClient
         .from('games')
         .select('id, status')
         .or(`white_player_id.eq.${user.id},black_player_id.eq.${user.id}`)
-        .in('status', ['active', 'waiting'])
+        .eq('status', 'active')
         .limit(1);
 
       if (activeGames && activeGames.length > 0) {
@@ -44,7 +52,7 @@ serve(async (req) => {
           JSON.stringify({ 
             hasActiveGame: true,
             gameId: activeGames[0].id,
-            message: `You already have an ongoing game (${activeGames[0].status})`
+            message: `You already have an active game`
           }),
           { 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
