@@ -120,7 +120,7 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
             {user ? (
               <>
                 <NotificationBell userId={user.id} />
-                <div className="hidden md:flex items-center gap-2">
+                <div className="hidden lg:flex items-center gap-2">
                   {userLinks.map((link) => (
                     <Button
                       key={link.path}
@@ -144,13 +144,13 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
 
         {/* Mobile Navigation */}
         <div className="lg:hidden border-t border-border/40 py-3">
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="flex items-center gap-2 min-w-fit h-9 px-3"
+                  className="flex items-center gap-2 min-w-fit h-9 px-3 shrink-0"
                 >
                   <Users className="w-4 h-4" />
                   <span className="text-sm font-medium">Community</span>
@@ -176,7 +176,19 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate(link.path)}
-                className="flex items-center gap-2 min-w-fit h-9 px-3"
+                className="flex items-center gap-2 min-w-fit h-9 px-3 shrink-0"
+              >
+                <link.icon className="w-4 h-4" />
+                <span className="text-sm font-medium">{link.label}</span>
+              </Button>
+            ))}
+            {user && userLinks.map((link) => (
+              <Button
+                key={link.path}
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate(link.path)}
+                className="flex items-center gap-2 min-w-fit h-9 px-3 shrink-0"
               >
                 <link.icon className="w-4 h-4" />
                 <span className="text-sm font-medium">{link.label}</span>
