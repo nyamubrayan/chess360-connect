@@ -292,62 +292,63 @@ export default function TournamentDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <Button variant="ghost" onClick={() => navigate('/tournaments')} className="mb-6">
+    <div className="min-h-screen bg-background pb-20 sm:pb-8">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-7xl">
+        <Button variant="ghost" onClick={() => navigate('/tournaments')} className="mb-4 sm:mb-6 -ml-2 sm:ml-0">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Tournaments
         </Button>
 
         {tournament.status === 'upcoming' && tournament.start_date && (
-          <Card className="p-6 mb-6 border-2 border-primary/50 bg-gradient-to-r from-primary/10 to-accent/10">
-            <div className="flex items-center justify-between">
+          <Card className="p-4 sm:p-6 mb-6 border-2 border-primary/50 bg-gradient-to-r from-primary/10 to-accent/10">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <Timer className="w-8 h-8 text-primary" />
+                <Timer className="w-8 h-8 text-primary flex-shrink-0" />
                 <div>
                   <p className="text-sm text-muted-foreground">Tournament starts in</p>
-                  <p className="text-3xl font-bold text-primary">{timeRemaining}</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-primary">{timeRemaining}</p>
                 </div>
               </div>
-              <div className="text-right">
+              <div className="text-left sm:text-right w-full sm:w-auto">
                 <p className="text-sm text-muted-foreground">Start time</p>
-                <p className="font-medium">{new Date(tournament.start_date).toLocaleString()}</p>
+                <p className="font-medium text-sm sm:text-base">{new Date(tournament.start_date).toLocaleString()}</p>
               </div>
             </div>
           </Card>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <Card className="lg:col-span-2 p-6">
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex-1">
-                <h1 className="text-3xl font-bold mb-2">{tournament.name}</h1>
+          <Card className="lg:col-span-2 p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
+              <div className="flex-1 w-full">
+                <h1 className="text-2xl sm:text-3xl font-bold mb-2">{tournament.name}</h1>
                 <Badge className={tournament.status === 'active' ? 'bg-green-500' : tournament.status === 'completed' ? 'bg-gray-500' : 'bg-blue-500'}>
                   {tournament.status}
                 </Badge>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                 {tournament.status === 'upcoming' && (
-                  <Button onClick={() => setInviteDialogOpen(true)} variant="outline" size="lg">
+                  <Button onClick={() => setInviteDialogOpen(true)} variant="outline" size="lg" className="flex-1 sm:flex-none">
                     <UserPlus className="w-4 h-4 mr-2" />
-                    Invite Friends
+                    <span className="hidden sm:inline">Invite Friends</span>
+                    <span className="sm:hidden">Invite</span>
                   </Button>
                 )}
                 {canJoin && (
-                  <Button onClick={handleJoinTournament} size="lg">
+                  <Button onClick={handleJoinTournament} size="lg" className="flex-1 sm:flex-none">
                     Join Tournament
                   </Button>
                 )}
                 {canStart && (
-                  <Button onClick={handleStartTournament} size="lg">
+                  <Button onClick={handleStartTournament} size="lg" className="flex-1 sm:flex-none">
                     <Play className="w-4 h-4 mr-2" />
-                    Start Tournament
+                    Start
                   </Button>
                 )}
               </div>
             </div>
             {tournament.description && (
-              <p className="text-muted-foreground mb-4">{tournament.description}</p>
+              <p className="text-muted-foreground mb-4 text-sm sm:text-base">{tournament.description}</p>
             )}
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
@@ -368,20 +369,20 @@ export default function TournamentDetail() {
             </div>
           </Card>
 
-          <Card className="p-6">
-            <h3 className="text-xl font-bold mb-4">Participants</h3>
-            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+          <Card className="p-4 sm:p-6">
+            <h3 className="text-lg sm:text-xl font-bold mb-4">Participants</h3>
+            <div className="space-y-2 max-h-[300px] sm:max-h-[400px] overflow-y-auto">
               {participants.map((participant, index) => (
-                <div key={participant.id} className="flex items-center justify-between p-2 rounded bg-accent/50">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-muted-foreground">#{index + 1}</span>
-                    <div>
-                      <p className="font-medium">{participant.profiles?.display_name || participant.profiles?.username}</p>
+                <div key={participant.id} className="flex items-center justify-between p-2 sm:p-3 rounded bg-accent/50 text-sm sm:text-base">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <span className="text-xs sm:text-sm font-bold text-muted-foreground flex-shrink-0">#{index + 1}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium truncate">{participant.profiles?.display_name || participant.profiles?.username}</p>
                       <p className="text-xs text-muted-foreground">Rating: {participant.profiles?.rating || 1200}</p>
                     </div>
                   </div>
                   {participant.status === 'eliminated' && (
-                    <Badge variant="outline" className="text-xs">Eliminated</Badge>
+                    <Badge variant="outline" className="text-xs flex-shrink-0">Eliminated</Badge>
                   )}
                 </div>
               ))}
@@ -391,48 +392,50 @@ export default function TournamentDetail() {
 
         {(tournament.status === 'active' || tournament.status === 'completed') && (
           <Tabs defaultValue="bracket" className="w-full">
-            <TabsList className="grid w-full max-w-md mx-auto grid-cols-3 mb-6">
-              <TabsTrigger value="bracket">
+            <TabsList className="grid w-full grid-cols-3 mb-6 max-w-md mx-auto">
+              <TabsTrigger value="bracket" className="text-xs sm:text-sm">
                 {tournament.format === 'single_elimination' ? 'Bracket' : 'Matches'}
               </TabsTrigger>
-              <TabsTrigger value="standings">Standings</TabsTrigger>
-              <TabsTrigger value="schedule">Schedule</TabsTrigger>
+              <TabsTrigger value="standings" className="text-xs sm:text-sm">Standings</TabsTrigger>
+              <TabsTrigger value="schedule" className="text-xs sm:text-sm">Schedule</TabsTrigger>
             </TabsList>
 
             <TabsContent value="bracket">
               {tournament.format === 'single_elimination' ? (
-                <Card className="p-6">
-                  <h2 className="text-2xl font-bold mb-6">Tournament Bracket</h2>
-                  <TournamentBracket matches={matches} tournament={tournament} />
+                <Card className="p-4 sm:p-6">
+                  <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Tournament Bracket</h2>
+                  <div className="overflow-x-auto">
+                    <TournamentBracket matches={matches} tournament={tournament} />
+                  </div>
                 </Card>
               ) : (
-                <Card className="p-6">
-                  <h2 className="text-2xl font-bold mb-6">All Matches</h2>
-                  <div className="space-y-4">
+                <Card className="p-4 sm:p-6">
+                  <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">All Matches</h2>
+                  <div className="space-y-3 sm:space-y-4">
                     {matches.map((match: any) => (
-                      <div key={match.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex-1">
-                          <p className="font-medium">
+                      <div key={match.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 border rounded-lg gap-2 sm:gap-0">
+                        <div className="flex-1 w-full sm:w-auto">
+                          <p className="font-medium text-sm sm:text-base">
                             {match.player1?.display_name || match.player1?.username || "TBD"}
                           </p>
                         </div>
-                        <span className="text-sm text-muted-foreground mx-4">vs</span>
-                        <div className="flex-1 text-right">
-                          <p className="font-medium">
+                        <span className="text-xs sm:text-sm text-muted-foreground mx-0 sm:mx-4">vs</span>
+                        <div className="flex-1 text-left sm:text-right w-full sm:w-auto">
+                          <p className="font-medium text-sm sm:text-base">
                             {match.player2?.display_name || match.player2?.username || "TBD"}
                           </p>
                         </div>
-                        <div className="ml-4 min-w-[120px]">
+                        <div className="ml-0 sm:ml-4 min-w-[120px] w-full sm:w-auto mt-2 sm:mt-0">
                           {match.status === 'completed' && match.winner && (
-                            <Badge className="bg-green-500">
+                            <Badge className="bg-green-500 w-full sm:w-auto justify-center text-xs">
                               {match.winner.display_name || match.winner.username} won
                             </Badge>
                           )}
                           {match.status === 'in_progress' && (
-                            <Badge className="bg-blue-500">In Progress</Badge>
+                            <Badge className="bg-blue-500 w-full sm:w-auto justify-center text-xs">In Progress</Badge>
                           )}
                           {match.status === 'ready' && (
-                            <Badge variant="outline">Ready</Badge>
+                            <Badge variant="outline" className="w-full sm:w-auto justify-center text-xs">Ready</Badge>
                           )}
                         </div>
                       </div>
@@ -459,19 +462,19 @@ export default function TournamentDetail() {
 
       {/* Invite Friends Dialog */}
       <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-[95vw] sm:max-w-md mx-4">
           <DialogHeader>
-            <DialogTitle>Invite Friends to Tournament</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-lg sm:text-xl">Invite Friends to Tournament</DialogTitle>
+            <DialogDescription className="text-sm">
               Select friends to invite to "{tournament?.name}"
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="max-h-[400px] pr-4">
+          <ScrollArea className="max-h-[50vh] sm:max-h-[400px] pr-2 sm:pr-4">
             {friends.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p>No friends to invite</p>
-                <p className="text-sm mt-1">Add friends first to invite them</p>
+                <p className="text-sm">No friends to invite</p>
+                <p className="text-xs mt-1">Add friends first to invite them</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -483,11 +486,11 @@ export default function TournamentDetail() {
                   return (
                     <div
                       key={friend.id}
-                      className={`flex items-center justify-between p-3 rounded-lg border ${
+                      className={`flex items-center justify-between p-2 sm:p-3 rounded-lg border ${
                         isAlreadyParticipant ? 'opacity-50 bg-muted' : 'hover:bg-accent'
                       }`}
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                         <Checkbox
                           id={`friend-${friend.id}`}
                           disabled={isAlreadyParticipant || sendingInvites}
@@ -498,9 +501,9 @@ export default function TournamentDetail() {
                         />
                         <label
                           htmlFor={`friend-${friend.id}`}
-                          className="flex flex-col cursor-pointer"
+                          className="flex flex-col cursor-pointer min-w-0 flex-1"
                         >
-                          <span className="font-medium">
+                          <span className="font-medium text-sm sm:text-base truncate">
                             {friend.display_name || friend.username}
                           </span>
                           <span className="text-xs text-muted-foreground">
@@ -509,7 +512,7 @@ export default function TournamentDetail() {
                         </label>
                       </div>
                       {isAlreadyParticipant && (
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs flex-shrink-0">
                           Joined
                         </Badge>
                       )}
@@ -524,7 +527,7 @@ export default function TournamentDetail() {
               variant="outline"
               onClick={() => setInviteDialogOpen(false)}
               disabled={sendingInvites}
-              className="flex-1"
+              className="flex-1 text-sm"
             >
               Cancel
             </Button>
@@ -542,7 +545,7 @@ export default function TournamentDetail() {
                 }
               }}
               disabled={sendingInvites || friends.length === 0}
-              className="flex-1"
+              className="flex-1 text-sm"
             >
               {sendingInvites ? 'Sending...' : 'Send Invites'}
             </Button>
