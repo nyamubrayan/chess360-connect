@@ -82,6 +82,56 @@ serve(async (req) => {
       .eq("user_id", user.id)
       .single();
 
+    // Use AI to identify best move and biggest blunder
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    let aiInsights = null;
+    
+    if (LOVABLE_API_KEY && moves && moves.length > 5) {
+      try {
+        const moveSummary = moves.slice(0, 30).map(m => 
+          `${m.move_number}. ${m.move_san}${m.is_check ? '+' : ''}${m.is_checkmate ? '#' : ''} ${m.is_capture ? '(capture)' : ''}`
+        ).join(' ');
+
+        const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [
+              {
+                role: "system",
+                content: "You are a chess analyst identifying key moments for highlight reels. Respond with JSON only."
+              },
+              {
+                role: "user",
+                content: `Analyze this chess game and identify the best move, biggest blunder, and turning point. Game moves: ${moveSummary}. PGN: ${game.pgn || 'N/A'}. Result: ${game.result}. Respond with JSON: {"bestMove": {"moveNumber": N, "reason": "..."}, "blunder": {"moveNumber": N, "reason": "..."}, "turningPoint": {"moveNumber": N, "reason": "..."}}`
+              }
+            ]
+          })
+        });
+
+        if (aiResponse.ok) {
+          const aiData = await aiResponse.json();
+          const content = aiData.choices?.[0]?.message?.content;
+          if (content) {
+            try {
+              const jsonMatch = content.match(/\{[\s\S]*\}/);
+              if (jsonMatch) {
+                aiInsights = JSON.parse(jsonMatch[0]);
+              }
+            } catch (e) {
+              console.error("Failed to parse AI response:", e);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("AI analysis error:", error);
+      }
+    }
+
     // Identify key moments for highlight
     const keyMoments = [];
     
@@ -96,37 +146,76 @@ serve(async (req) => {
       });
     }
 
-    // Add checkmates and checks
-    const importantMoves = moves?.filter(m => m.is_checkmate || m.is_check || m.is_capture);
-    if (importantMoves && importantMoves.length > 0) {
-      // Take up to 3 critical moves
-      importantMoves.slice(-3).forEach(move => {
+    // Add best move from AI
+    if (aiInsights?.bestMove && moves) {
+      const bestMove = moves.find(m => m.move_number === aiInsights.bestMove.moveNumber);
+      if (bestMove) {
         keyMoments.push({
-          type: move.is_checkmate ? "checkmate" : move.is_check ? "check" : "capture",
-          title: move.is_checkmate ? "Checkmate!" : move.is_check ? "Check!" : "Capture!",
-          moveNumber: move.move_number,
-          fen: move.fen_after,
-          move: move.move_san,
-          description: `${move.move_san}${move.is_checkmate ? '#' : move.is_check ? '+' : ''}`
+          type: "best_move",
+          title: "💎 Best Move!",
+          moveNumber: bestMove.move_number,
+          fen: bestMove.fen_after,
+          move: bestMove.move_san,
+          description: aiInsights.bestMove.reason
         });
+      }
+    }
+
+    // Add biggest blunder from AI
+    if (aiInsights?.blunder && moves) {
+      const blunderMove = moves.find(m => m.move_number === aiInsights.blunder.moveNumber);
+      if (blunderMove) {
+        keyMoments.push({
+          type: "blunder",
+          title: "💥 Critical Blunder!",
+          moveNumber: blunderMove.move_number,
+          fen: blunderMove.fen_after,
+          move: blunderMove.move_san,
+          description: aiInsights.blunder.reason
+        });
+      }
+    }
+
+    // Add turning point from AI
+    if (aiInsights?.turningPoint && moves) {
+      const turningMove = moves.find(m => m.move_number === aiInsights.turningPoint.moveNumber);
+      if (turningMove) {
+        keyMoments.push({
+          type: "turning_point",
+          title: "⚡ Turning Point!",
+          moveNumber: turningMove.move_number,
+          fen: turningMove.fen_after,
+          move: turningMove.move_san,
+          description: aiInsights.turningPoint.reason
+        });
+      }
+    }
+
+    // Add checkmate with special animation
+    const checkmateMove = moves?.find(m => m.is_checkmate);
+    if (checkmateMove) {
+      keyMoments.push({
+        type: "checkmate",
+        title: "🏆 CHECKMATE!",
+        moveNumber: checkmateMove.move_number,
+        fen: checkmateMove.fen_after,
+        move: checkmateMove.move_san,
+        description: `${checkmateMove.move_san}# - Checkmate!`
       });
     }
 
-    // Add moments from analysis if available
-    if (analysis?.key_moments) {
-      const analyzedMoments = analysis.key_moments as any[];
-      analyzedMoments.slice(0, 2).forEach((moment: any) => {
-        const move = moves?.find(m => m.move_number === moment.move_number);
-        if (move) {
-          keyMoments.push({
-            type: "critical",
-            title: "Critical Moment",
-            moveNumber: moment.move_number,
-            fen: move.fen_after,
-            move: move.move_san,
-            description: moment.description
-          });
-        }
+    // Add other critical moves if we don't have enough moments
+    if (keyMoments.length < 4) {
+      const importantMoves = moves?.filter(m => m.is_check || m.is_capture).slice(-2);
+      importantMoves?.forEach(move => {
+        keyMoments.push({
+          type: move.is_check ? "check" : "capture",
+          title: move.is_check ? "⚔️ Check!" : "💥 Capture!",
+          moveNumber: move.move_number,
+          fen: move.fen_after,
+          move: move.move_san,
+          description: `${move.move_san}${move.is_check ? '+' : ''}`
+        });
       });
     }
 
