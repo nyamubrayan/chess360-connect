@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Trophy, Users, Clock, Play } from "lucide-react";
 import { toast } from "sonner";
 import { TournamentBracket } from "@/components/tournaments/TournamentBracket";
+import { TournamentStandings } from "@/components/tournaments/TournamentStandings";
 
 export default function TournamentDetail() {
   const { id } = useParams();
@@ -32,7 +33,11 @@ export default function TournamentDetail() {
     const channel = supabase
       .channel(`tournament-${id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tournament_participants', filter: `tournament_id=eq.${id}` }, fetchTournamentData)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tournament_matches', filter: `tournament_id=eq.${id}` }, fetchTournamentData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tournament_matches', filter: `tournament_id=eq.${id}` }, async () => {
+        await fetchTournamentData();
+        // Auto-progress tournament if all matches in current round are completed
+        checkAndProgressTournament();
+      })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tournaments', filter: `id=eq.${id}` }, fetchTournamentData)
       .subscribe();
 
@@ -103,6 +108,25 @@ export default function TournamentDetail() {
     }
   };
 
+  const checkAndProgressTournament = async () => {
+    if (!tournament || tournament.status !== 'active') return;
+
+    // Check if all matches in current round are completed
+    const currentRoundMatches = matches.filter(m => m.round === tournament.current_round);
+    const allCompleted = currentRoundMatches.every(m => m.status === 'completed');
+
+    if (allCompleted && currentRoundMatches.length > 0) {
+      // Silently trigger progression
+      try {
+        await supabase.functions.invoke('manage-tournament', {
+          body: { tournamentId: id, action: 'progress' }
+        });
+      } catch (error) {
+        console.error('Failed to progress tournament:', error);
+      }
+    }
+  };
+
   if (loading || !tournament) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -116,6 +140,15 @@ export default function TournamentDetail() {
 
   const canJoin = tournament.status === 'upcoming' && !isParticipant && participants.length < tournament.max_participants;
   const canStart = tournament.status === 'upcoming' && tournament.creator_id === user?.id && participants.length >= 2;
+
+  const formatTournamentFormat = (format: string) => {
+    switch (format) {
+      case 'single_elimination': return 'Single Elimination';
+      case 'round_robin': return 'Round Robin';
+      case 'swiss': return 'Swiss System';
+      default: return format;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -162,7 +195,7 @@ export default function TournamentDetail() {
               </div>
               <div>
                 <Trophy className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
-                <p className="text-2xl font-bold capitalize">{tournament.format.replace('_', ' ')}</p>
+                <p className="text-2xl font-bold capitalize">{formatTournamentFormat(tournament.format)}</p>
                 <p className="text-sm text-muted-foreground">Format</p>
               </div>
             </div>
@@ -190,10 +223,55 @@ export default function TournamentDetail() {
         </div>
 
         {(tournament.status === 'active' || tournament.status === 'completed') && (
-          <Card className="p-6">
-            <h2 className="text-2xl font-bold mb-6">Tournament Bracket</h2>
-            <TournamentBracket matches={matches} tournament={tournament} />
-          </Card>
+          <>
+            {tournament.format === 'single_elimination' ? (
+              <Card className="p-6">
+                <h2 className="text-2xl font-bold mb-6">Tournament Bracket</h2>
+                <TournamentBracket matches={matches} tournament={tournament} />
+              </Card>
+            ) : (
+              <div className="space-y-6">
+                <TournamentStandings 
+                  participants={participants} 
+                  matches={matches}
+                  format={tournament.format}
+                />
+                <Card className="p-6">
+                  <h2 className="text-2xl font-bold mb-6">All Matches</h2>
+                  <div className="space-y-4">
+                    {matches.map((match: any) => (
+                      <div key={match.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex-1">
+                          <p className="font-medium">
+                            {match.player1?.display_name || match.player1?.username || "TBD"}
+                          </p>
+                        </div>
+                        <span className="text-sm text-muted-foreground mx-4">vs</span>
+                        <div className="flex-1 text-right">
+                          <p className="font-medium">
+                            {match.player2?.display_name || match.player2?.username || "TBD"}
+                          </p>
+                        </div>
+                        <div className="ml-4 min-w-[120px]">
+                          {match.status === 'completed' && match.winner && (
+                            <Badge className="bg-green-500">
+                              {match.winner.display_name || match.winner.username} won
+                            </Badge>
+                          )}
+                          {match.status === 'in_progress' && (
+                            <Badge className="bg-blue-500">In Progress</Badge>
+                          )}
+                          {match.status === 'ready' && (
+                            <Badge variant="outline">Ready</Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

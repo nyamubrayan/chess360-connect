@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { generateSwissPairings, calculateSwissRounds } from "./swiss-pairing.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -93,18 +94,50 @@ async function startTournament(supabase: any, tournamentId: string, userId: stri
       .eq('user_id', shuffled[i].user_id);
   }
 
-  // Create first round matches
-  const matches = [];
-  for (let i = 0; i < shuffled.length; i += 2) {
-    if (i + 1 < shuffled.length) {
-      matches.push({
-        tournament_id: tournamentId,
-        round: 1,
-        match_number: Math.floor(i / 2) + 1,
-        player1_id: shuffled[i].user_id,
-        player2_id: shuffled[i + 1].user_id,
-        status: 'ready'
-      });
+  let matches = [];
+
+  if (tournament.format === 'single_elimination') {
+    // Single elimination: pair adjacent players
+    for (let i = 0; i < shuffled.length; i += 2) {
+      if (i + 1 < shuffled.length) {
+        matches.push({
+          tournament_id: tournamentId,
+          round: 1,
+          match_number: Math.floor(i / 2) + 1,
+          player1_id: shuffled[i].user_id,
+          player2_id: shuffled[i + 1].user_id,
+          status: 'ready'
+        });
+      }
+    }
+  } else if (tournament.format === 'round_robin') {
+    // Round robin: everyone plays everyone
+    let matchNumber = 1;
+    for (let i = 0; i < shuffled.length; i++) {
+      for (let j = i + 1; j < shuffled.length; j++) {
+        matches.push({
+          tournament_id: tournamentId,
+          round: 1,
+          match_number: matchNumber++,
+          player1_id: shuffled[i].user_id,
+          player2_id: shuffled[j].user_id,
+          status: 'ready'
+        });
+      }
+    }
+  } else if (tournament.format === 'swiss') {
+    // Swiss: first round random pairings
+    for (let i = 0; i < shuffled.length; i += 2) {
+      if (i + 1 < shuffled.length) {
+        matches.push({
+          tournament_id: tournamentId,
+          round: 1,
+          match_number: Math.floor(i / 2) + 1,
+          player1_id: shuffled[i].user_id,
+          player2_id: shuffled[i + 1].user_id,
+          status: 'ready'
+        });
+      }
     }
   }
 
@@ -122,7 +155,7 @@ async function startTournament(supabase: any, tournamentId: string, userId: stri
 
   if (updateError) throw updateError;
 
-  // Create games for first round
+  // Create games for matches
   for (const match of matches) {
     await createGameForMatch(supabase, tournamentId, match);
   }
@@ -166,7 +199,7 @@ async function createGameForMatch(supabase: any, tournamentId: string, match: an
 async function progressTournament(supabase: any, tournamentId: string) {
   const { data: tournament } = await supabase
     .from('tournaments')
-    .select('current_round, max_participants')
+    .select('current_round, max_participants, format')
     .eq('id', tournamentId)
     .single();
 
@@ -179,7 +212,7 @@ async function progressTournament(supabase: any, tournamentId: string) {
     .eq('tournament_id', tournamentId)
     .eq('round', currentRound);
 
-  const allCompleted = currentMatches.every((m: any) => m.winner_id !== null);
+  const allCompleted = currentMatches.every((m: any) => m.status === 'completed');
 
   if (!allCompleted) {
     return new Response(JSON.stringify({ message: 'Waiting for matches to complete' }), {
@@ -187,8 +220,88 @@ async function progressTournament(supabase: any, tournamentId: string) {
     });
   }
 
-  // Create next round matches
-  const winners = currentMatches.map((m: any) => m.winner_id);
+  if (tournament.format === 'round_robin') {
+    // Round robin: all matches created at start, just mark complete
+    await supabase
+      .from('tournaments')
+      .update({ status: 'completed' })
+      .eq('id', tournamentId);
+
+    // Update all participants to completed
+    await supabase
+      .from('tournament_participants')
+      .update({ status: 'completed' })
+      .eq('tournament_id', tournamentId);
+
+    return new Response(JSON.stringify({ message: 'Tournament completed' }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (tournament.format === 'swiss') {
+    const { data: participants } = await supabase
+      .from('tournament_participants')
+      .select('user_id')
+      .eq('tournament_id', tournamentId);
+
+    const totalRounds = calculateSwissRounds(participants.length);
+
+    if (currentRound >= totalRounds) {
+      // Tournament complete
+      await supabase
+        .from('tournaments')
+        .update({ status: 'completed' })
+        .eq('id', tournamentId);
+
+      await supabase
+        .from('tournament_participants')
+        .update({ status: 'completed' })
+        .eq('tournament_id', tournamentId);
+
+      return new Response(JSON.stringify({ message: 'Tournament completed' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Generate next round pairings
+    const { data: allMatches } = await supabase
+      .from('tournament_matches')
+      .select('*')
+      .eq('tournament_id', tournamentId);
+
+    const pairings = generateSwissPairings(participants, allMatches);
+    const nextRound = currentRound + 1;
+    const nextMatches = [];
+
+    for (let i = 0; i < pairings.length; i++) {
+      nextMatches.push({
+        tournament_id: tournamentId,
+        round: nextRound,
+        match_number: i + 1,
+        player1_id: pairings[i][0],
+        player2_id: pairings[i][1],
+        status: 'ready'
+      });
+    }
+
+    await supabase.from('tournament_matches').insert(nextMatches);
+    await supabase
+      .from('tournaments')
+      .update({ current_round: nextRound })
+      .eq('id', tournamentId);
+
+    // Create games
+    for (const match of nextMatches) {
+      await createGameForMatch(supabase, tournamentId, match);
+    }
+
+    return new Response(JSON.stringify({ success: true }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  // Single elimination
+  const winners = currentMatches.map((m: any) => m.winner_id).filter(Boolean);
 
   if (winners.length === 1) {
     // Tournament complete

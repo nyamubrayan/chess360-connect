@@ -19,6 +19,7 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
   const [formData, setFormData] = useState({
     name: "",
     description: "",
+    format: "single_elimination",
     maxParticipants: "8",
     timeControl: "600",
     timeIncrement: "0",
@@ -41,7 +42,7 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
         time_increment: parseInt(formData.timeIncrement),
         start_date: formData.startDate || null,
         creator_id: user.id,
-        format: 'single_elimination',
+        format: formData.format,
         status: 'upcoming'
       });
 
@@ -55,6 +56,7 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
       setFormData({
         name: "",
         description: "",
+        format: "single_elimination",
         maxParticipants: "8",
         timeControl: "600",
         timeIncrement: "0",
@@ -95,6 +97,28 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
               placeholder="Tournament details and rules..."
               rows={3}
             />
+          </div>
+
+          <div>
+            <Label htmlFor="format">Tournament Format *</Label>
+            <Select
+              value={formData.format}
+              onValueChange={(value) => setFormData({ ...formData, format: value })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="single_elimination">Single Elimination</SelectItem>
+                <SelectItem value="round_robin">Round Robin</SelectItem>
+                <SelectItem value="swiss">Swiss System</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1">
+              {formData.format === 'single_elimination' && 'Players are eliminated after one loss'}
+              {formData.format === 'round_robin' && 'Everyone plays everyone once'}
+              {formData.format === 'swiss' && 'Players face opponents with similar scores'}
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
