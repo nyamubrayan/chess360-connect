@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { GameHighlightPlayer } from './GameHighlightPlayer';
+import { GenerateHighlightDialog } from './GenerateHighlightDialog';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Highlight {
@@ -171,15 +172,30 @@ export const ProfileHighlights = ({ userId, limit = 6 }: ProfileHighlightsProps)
               : 'Play a game to create your first highlight reel.'
             }
           </p>
-          {gamesWithoutHighlights > 0 && (
-            <Button 
-              onClick={generateAllHighlights} 
-              disabled={generating}
-              className="mt-4"
-            >
-              {generating ? 'Generating...' : `Generate Highlights for ${gamesWithoutHighlights} Games`}
-            </Button>
-          )}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+            <GenerateHighlightDialog 
+              userId={userId}
+              onHighlightGenerated={() => {
+                fetchHighlights();
+                checkGamesWithoutHighlights();
+              }}
+              trigger={
+                <Button variant="default" className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Create Highlight
+                </Button>
+              }
+            />
+            {gamesWithoutHighlights > 0 && (
+              <Button 
+                onClick={generateAllHighlights} 
+                disabled={generating}
+                variant="outline"
+              >
+                {generating ? 'Generating...' : `Generate All ${gamesWithoutHighlights} Highlights`}
+              </Button>
+            )}
+          </div>
         </div>
       </Card>
     );
@@ -187,21 +203,36 @@ export const ProfileHighlights = ({ userId, limit = 6 }: ProfileHighlightsProps)
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <h2 className="text-2xl font-bold flex items-center gap-2">
           <Sparkles className="h-6 w-6 text-primary" />
           Game Highlights
         </h2>
-        {gamesWithoutHighlights > 0 && (
-          <Button 
-            onClick={generateAllHighlights} 
-            disabled={generating}
-            variant="outline"
-            size="sm"
-          >
-            {generating ? 'Generating...' : `Generate ${gamesWithoutHighlights} More`}
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <GenerateHighlightDialog 
+            userId={userId}
+            onHighlightGenerated={() => {
+              fetchHighlights();
+              checkGamesWithoutHighlights();
+            }}
+            trigger={
+              <Button variant="default" size="sm" className="gap-2">
+                <Plus className="h-4 w-4" />
+                Create Highlight
+              </Button>
+            }
+          />
+          {gamesWithoutHighlights > 0 && (
+            <Button 
+              onClick={generateAllHighlights} 
+              disabled={generating}
+              variant="outline"
+              size="sm"
+            >
+              {generating ? 'Generating...' : `Generate ${gamesWithoutHighlights} More`}
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

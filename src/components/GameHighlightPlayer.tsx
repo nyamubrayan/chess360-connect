@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
-import { Play, Pause, Share2, MessageSquare } from 'lucide-react';
+import { Play, Pause, Share2, Download } from 'lucide-react';
 import { Chessboard } from 'react-chessboard';
 import { toast } from 'sonner';
 
@@ -36,7 +36,11 @@ export const GameHighlightPlayer = ({
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [currentMomentIndex, setCurrentMomentIndex] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const intervalRef = useRef<number>();
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const boardContainerRef = useRef<HTMLDivElement>(null);
 
   const currentMoment = keyMoments[currentMomentIndex];
   const timePerMoment = (duration * 1000) / keyMoments.length;
@@ -82,6 +86,95 @@ export const GameHighlightPlayer = ({
     setIsPlaying(!isPlaying);
   };
 
+  const handleDownload = async () => {
+    if (keyMoments.length === 0) {
+      toast.error('No moments to record');
+      return;
+    }
+
+    try {
+      setIsDownloading(true);
+      toast.info('Preparing download... This may take a moment.');
+
+      // Create a canvas element
+      const canvas = document.createElement('canvas');
+      canvas.width = 1080;
+      canvas.height = 1080;
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        throw new Error('Could not get canvas context');
+      }
+
+      // Prepare to record
+      const stream = canvas.captureStream(30); // 30 FPS
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'video/webm;codecs=vp9',
+        videoBitsPerSecond: 5000000 // 5 Mbps
+      });
+
+      const chunks: Blob[] = [];
+      mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `chess-highlight-${highlightId}-${Date.now()}.webm`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success('Highlight downloaded! Convert to MP4 for wider compatibility.');
+        setIsDownloading(false);
+      };
+
+      // Start recording
+      mediaRecorder.start();
+      setIsRecording(true);
+
+      // Animate through moments
+      const momentDuration = (duration * 1000) / keyMoments.length;
+      
+      for (let i = 0; i < keyMoments.length; i++) {
+        const moment = keyMoments[i];
+        
+        // Draw background
+        ctx.fillStyle = '#1a1f2e';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw title
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 48px Inter';
+        ctx.textAlign = 'center';
+        ctx.fillText(moment.title, canvas.width / 2, 100);
+
+        // Draw move if available
+        if (moment.move) {
+          ctx.font = 'bold 72px monospace';
+          ctx.fillStyle = '#3b82f6';
+          ctx.fillText(moment.move, canvas.width / 2, 540);
+        }
+
+        // Draw description
+        ctx.font = '32px Inter';
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillText(moment.description, canvas.width / 2, canvas.height - 80);
+
+        // Wait for moment duration
+        await new Promise(resolve => setTimeout(resolve, momentDuration));
+      }
+
+      // Stop recording
+      mediaRecorder.stop();
+      setIsRecording(false);
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('Failed to download highlight');
+      setIsDownloading(false);
+      setIsRecording(false);
+    }
+  };
+
   const handleShare = () => {
     const shareUrl = `${window.location.origin}/profile#highlight-${highlightId}`;
     const shareText = `Check out my chess highlight: ${title} - ${description}`;
@@ -123,7 +216,7 @@ export const GameHighlightPlayer = ({
     <Card className="gradient-card overflow-hidden">
       <div className="relative">
         {/* Chessboard Display */}
-        <div className="relative aspect-square bg-gradient-to-br from-primary/20 to-secondary/20">
+        <div ref={boardContainerRef} className="relative aspect-square bg-gradient-to-br from-primary/20 to-secondary/20">
           <Chessboard
             position={currentMoment?.fen}
             areArrowsAllowed={false}
@@ -133,6 +226,12 @@ export const GameHighlightPlayer = ({
               borderRadius: '0',
             }}
           />
+          {isRecording && (
+            <div className="absolute top-4 right-4 bg-destructive text-destructive-foreground px-3 py-1 rounded-full text-sm font-semibold animate-pulse flex items-center gap-2">
+              <div className="h-2 w-2 bg-white rounded-full" />
+              Recording
+            </div>
+          )}
           
           {/* Animated Overlay */}
           <div 
@@ -219,6 +318,7 @@ export const GameHighlightPlayer = ({
             variant="default"
             size="sm"
             className="flex-1"
+            disabled={isDownloading || isRecording}
           >
             {isPlaying ? (
               <>
@@ -239,9 +339,25 @@ export const GameHighlightPlayer = ({
           </Button>
           
           <Button
+            onClick={handleDownload}
+            variant="outline"
+            size="sm"
+            disabled={isDownloading || isRecording}
+            title="Download as video"
+          >
+            {isDownloading ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+          </Button>
+          
+          <Button
             onClick={handleShare}
             variant="outline"
             size="sm"
+            disabled={isDownloading || isRecording}
+            title="Share highlight"
           >
             <Share2 className="h-4 w-4" />
           </Button>
