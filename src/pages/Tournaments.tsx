@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Users, Calendar, Plus } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Trophy, Users, Calendar, Plus, UserPlus } from "lucide-react";
 import { CreateTournamentDialog } from "@/components/tournaments/CreateTournamentDialog";
 import { toast } from "sonner";
 
@@ -19,6 +20,7 @@ interface Tournament {
   time_control: number;
   created_at: string;
   participant_count?: number;
+  is_participant?: boolean;
 }
 
 export default function Tournaments() {
@@ -27,6 +29,7 @@ export default function Tournaments() {
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [filterStatus, setFilterStatus] = useState<string>('all');
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -71,10 +74,23 @@ export default function Tournaments() {
 
       if (error) throw error;
 
-      const tournamentsWithCounts = tournamentsData?.map(t => ({
-        ...t,
-        participant_count: t.tournament_participants?.[0]?.count || 0
-      })) || [];
+      const tournamentsWithCounts = await Promise.all(
+        (tournamentsData || []).map(async (t) => {
+          // Check if current user is a participant
+          const { data: participation } = await supabase
+            .from('tournament_participants')
+            .select('id')
+            .eq('tournament_id', t.id)
+            .eq('user_id', user?.id)
+            .maybeSingle();
+
+          return {
+            ...t,
+            participant_count: t.tournament_participants?.[0]?.count || 0,
+            is_participant: !!participation
+          };
+        })
+      );
 
       setTournaments(tournamentsWithCounts);
     } catch (error: any) {
@@ -108,6 +124,35 @@ export default function Tournaments() {
     }
   };
 
+  const handleQuickJoin = async (tournamentId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click navigation
+    
+    if (!user) {
+      toast.error("Please sign in to join tournaments");
+      navigate("/auth");
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from('tournament_participants').insert({
+        tournament_id: tournamentId,
+        user_id: user.id,
+        status: 'registered'
+      });
+
+      if (error) throw error;
+      toast.success("Joined tournament successfully!");
+      fetchTournaments();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to join tournament");
+    }
+  };
+
+  const filteredTournaments = tournaments.filter(t => {
+    if (filterStatus === 'all') return true;
+    return t.status === filterStatus;
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -133,54 +178,113 @@ export default function Tournaments() {
           </Button>
         </div>
 
-        {tournaments.length === 0 ? (
+        <Tabs value={filterStatus} onValueChange={setFilterStatus} className="mb-6">
+          <TabsList>
+            <TabsTrigger value="all">All Tournaments</TabsTrigger>
+            <TabsTrigger value="upcoming">
+              Upcoming
+              <Badge variant="secondary" className="ml-2">
+                {tournaments.filter(t => t.status === 'upcoming').length}
+              </Badge>
+            </TabsTrigger>
+            <TabsTrigger value="active">Active</TabsTrigger>
+            <TabsTrigger value="completed">Completed</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {filteredTournaments.length === 0 ? (
           <Card className="p-12 text-center">
             <Trophy className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-xl font-semibold mb-2">No tournaments yet</h3>
-            <p className="text-muted-foreground mb-4">Be the first to create a tournament!</p>
-            <Button onClick={() => setShowCreateDialog(true)}>
-              Create Tournament
-            </Button>
+            <h3 className="text-xl font-semibold mb-2">
+              {filterStatus === 'all' ? 'No tournaments yet' : `No ${filterStatus} tournaments`}
+            </h3>
+            <p className="text-muted-foreground mb-4">
+              {filterStatus === 'upcoming' 
+                ? 'No upcoming tournaments at the moment. Create one to get started!'
+                : filterStatus === 'all'
+                ? 'Be the first to create a tournament!'
+                : 'Check back later for more tournaments.'}
+            </p>
+            {filterStatus === 'all' && (
+              <Button onClick={() => setShowCreateDialog(true)}>
+                Create Tournament
+              </Button>
+            )}
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {tournaments.map((tournament) => (
-              <Card
-                key={tournament.id}
-                className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => navigate(`/tournaments/${tournament.id}`)}
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-xl font-bold text-foreground">{tournament.name}</h3>
-                  <Badge className={getStatusColor(tournament.status)}>
-                    {tournament.status}
-                  </Badge>
-                </div>
+            {filteredTournaments.map((tournament) => {
+              const isFull = (tournament.participant_count || 0) >= tournament.max_participants;
+              const canJoin = tournament.status === 'upcoming' && !tournament.is_participant && !isFull;
 
-                {tournament.description && (
-                  <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
-                    {tournament.description}
-                  </p>
-                )}
-
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center text-muted-foreground">
-                    <Users className="w-4 h-4 mr-2" />
-                    <span>{tournament.participant_count || 0} / {tournament.max_participants} players</span>
-                  </div>
-                  <div className="flex items-center text-muted-foreground">
-                    <Trophy className="w-4 h-4 mr-2" />
-                    <span>{formatTimeControl(tournament.time_control)} • {formatTournamentFormat(tournament.format)}</span>
-                  </div>
-                  {tournament.start_date && (
-                    <div className="flex items-center text-muted-foreground">
-                      <Calendar className="w-4 h-4 mr-2" />
-                      <span>{new Date(tournament.start_date).toLocaleDateString()}</span>
+              return (
+                <Card
+                  key={tournament.id}
+                  className="p-6 hover:shadow-lg transition-shadow relative"
+                >
+                  <div 
+                    className="cursor-pointer"
+                    onClick={() => navigate(`/tournaments/${tournament.id}`)}
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <h3 className="text-xl font-bold text-foreground pr-2">{tournament.name}</h3>
+                      <Badge className={getStatusColor(tournament.status)}>
+                        {tournament.status}
+                      </Badge>
                     </div>
+
+                    {tournament.description && (
+                      <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+                        {tournament.description}
+                      </p>
+                    )}
+
+                    <div className="space-y-2 text-sm mb-4">
+                      <div className="flex items-center text-muted-foreground">
+                        <Users className="w-4 h-4 mr-2" />
+                        <span>
+                          {tournament.participant_count || 0} / {tournament.max_participants} players
+                          {isFull && <span className="ml-2 text-destructive font-medium">(Full)</span>}
+                        </span>
+                      </div>
+                      <div className="flex items-center text-muted-foreground">
+                        <Trophy className="w-4 h-4 mr-2" />
+                        <span>{formatTimeControl(tournament.time_control)} • {formatTournamentFormat(tournament.format)}</span>
+                      </div>
+                      {tournament.start_date && (
+                        <div className="flex items-center text-muted-foreground">
+                          <Calendar className="w-4 h-4 mr-2" />
+                          <span>{new Date(tournament.start_date).toLocaleDateString()}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {tournament.is_participant && (
+                    <Badge variant="secondary" className="mb-3">
+                      ✓ You're registered
+                    </Badge>
                   )}
-                </div>
-              </Card>
-            ))}
+
+                  {canJoin && (
+                    <Button 
+                      onClick={(e) => handleQuickJoin(tournament.id, e)}
+                      className="w-full"
+                      size="sm"
+                    >
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Join Tournament
+                    </Button>
+                  )}
+
+                  {isFull && tournament.status === 'upcoming' && !tournament.is_participant && (
+                    <Button variant="outline" disabled className="w-full" size="sm">
+                      Tournament Full
+                    </Button>
+                  )}
+                </Card>
+              );
+            })}
           </div>
         )}
 
