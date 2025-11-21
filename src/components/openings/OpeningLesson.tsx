@@ -214,11 +214,11 @@ export const OpeningLesson = ({ opening, onBack, user }: OpeningLessonProps) => 
 
               {/* AI Explanation */}
               {currentMoveIndex >= 0 && currentMoves.length > 0 && (
-                <div className="mt-4 p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                  <div className="flex items-start gap-2 mb-2">
-                    <Sparkles className="w-5 h-5 text-primary mt-0.5" />
-                    <div className="flex-1">
-                      <h3 className="text-sm font-semibold mb-1">
+                <div className="mt-4 p-3 sm:p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <Sparkles className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm sm:text-base font-semibold mb-2">
                         Move {currentMoveIndex + 1}: {currentMoves[currentMoveIndex]}
                       </h3>
                       {loadingExplanation ? (
@@ -226,7 +226,7 @@ export const OpeningLesson = ({ opening, onBack, user }: OpeningLessonProps) => 
                           Generating explanation...
                         </div>
                       ) : currentExplanation ? (
-                        <p className="text-sm">{currentExplanation}</p>
+                        <p className="text-sm sm:text-base leading-relaxed">{currentExplanation}</p>
                       ) : (
                         <p className="text-sm text-muted-foreground italic">
                           Navigate through moves to see AI explanations
