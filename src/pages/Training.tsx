@@ -65,7 +65,7 @@ export default function Training() {
       gradient: 'from-orange-500/20 to-amber-500/20',
       iconColor: 'text-orange-500',
       path: '/lessons',
-      available: false
+      available: true
     }
   ];
 
