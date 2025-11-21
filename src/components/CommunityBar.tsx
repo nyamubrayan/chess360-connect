@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Button } from './ui/button';
-import { Trophy, Target, Users, Puzzle, UserIcon, Menu } from 'lucide-react';
+import { Trophy, Target, Puzzle, UserIcon, Menu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { NotificationBell } from './NotificationBell';
 import { User } from '@supabase/supabase-js';
+import chessafariLogo from '@/assets/chessafari-logo.png';
 import {
   Sheet,
   SheetContent,
@@ -51,9 +52,8 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 w-full">
           {/* Logo */}
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
-            <Users className="w-7 h-7 text-primary" />
-            <span className="font-bold text-xl tracking-tight">ChessMaster</span>
+          <div className="flex items-center cursor-pointer" onClick={() => navigate('/')}>
+            <img src={chessafariLogo} alt="Chessafari" className="h-10 w-auto" />
           </div>
 
           {/* Main Navigation */}
