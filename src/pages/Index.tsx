@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 import { CommunityBar } from "@/components/CommunityBar";
-import { FeedSection } from "@/components/FeedSection";
 import { HeroSection } from "@/components/home/HeroSection";
 import { FeaturesSection } from "@/components/home/FeaturesSection";
 import { StatsSection } from "@/components/home/StatsSection";
@@ -35,7 +34,6 @@ const Index = () => {
 
       <FeaturesSection />
       <StatsSection />
-      <FeedSection />
     </div>
   );
 };

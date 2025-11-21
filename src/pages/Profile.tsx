@@ -21,12 +21,6 @@ interface Profile {
   created_at: string;
 }
 
-interface LeaderboardStats {
-  tournaments_won: number | null;
-  study_sessions: number | null;
-  annotations_count: number | null;
-  helpful_answers_count: number | null;
-}
 
 interface PlayerStats {
   total_games: number;
@@ -42,7 +36,6 @@ const Profile = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [stats, setStats] = useState<LeaderboardStats | null>(null);
   const [playerStats, setPlayerStats] = useState<PlayerStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -81,19 +74,12 @@ const Profile = () => {
 
     setProfile(profileData);
 
-    const { data: statsData } = await supabase
-      .from("leaderboard_stats")
-      .select("*")
-      .eq("user_id", profileId)
-      .single();
-
     const { data: playerStatsData } = await supabase
       .from("player_stats")
       .select("*")
       .eq("user_id", profileId)
       .single();
 
-    setStats(statsData);
     setPlayerStats(playerStatsData);
     setLoading(false);
   };
@@ -193,30 +179,6 @@ const Profile = () => {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Win Rate</span>
                 <span className="font-semibold">{playerStats?.win_rate || 0}%</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Achievements</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Tournaments Won</span>
-                <span className="font-semibold">{stats?.tournaments_won || 0}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Study Sessions</span>
-                <span className="font-semibold">{stats?.study_sessions || 0}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Annotations</span>
-                <span className="font-semibold">{stats?.annotations_count || 0}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Helpful Answers</span>
-                <span className="font-semibold">{stats?.helpful_answers_count || 0}</span>
               </div>
             </CardContent>
           </Card>
