@@ -6,6 +6,45 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helper function to update tournament match
+async function updateTournamentMatch(
+  supabaseClient: any,
+  gameId: string,
+  winnerId: string | null
+) {
+  // Check if this game is part of a tournament
+  const { data: tournamentMatch } = await supabaseClient
+    .from('tournament_matches')
+    .select('*, tournaments(format)')
+    .eq('game_id', gameId)
+    .maybeSingle();
+
+  if (tournamentMatch) {
+    console.log('Updating tournament match:', tournamentMatch.id);
+    
+    await supabaseClient
+      .from('tournament_matches')
+      .update({
+        winner_id: winnerId,
+        status: 'completed'
+      })
+      .eq('id', tournamentMatch.id);
+
+    // For single elimination, mark loser as eliminated
+    if (tournamentMatch.tournaments.format === 'single_elimination' && winnerId) {
+      const loserId = winnerId === tournamentMatch.player1_id 
+        ? tournamentMatch.player2_id 
+        : tournamentMatch.player1_id;
+      
+      await supabaseClient
+        .from('tournament_participants')
+        .update({ status: 'eliminated' })
+        .eq('tournament_id', tournamentMatch.tournament_id)
+        .eq('user_id', loserId);
+    }
+  }
+}
+
 // Helper function to update ELO ratings
 async function updateEloRatings(
   supabaseClient: any,
@@ -141,6 +180,9 @@ serve(async (req) => {
           title: 'Opponent Resigned',
           message: 'Your opponent has resigned. You win!',
         });
+        
+        // Update tournament match if applicable
+        await updateTournamentMatch(supabaseClient, gameId, winnerId);
 
         console.log('Player resigned');
         break;
@@ -213,6 +255,9 @@ serve(async (req) => {
             message: 'The game has ended in a draw.',
           },
         ]);
+        
+        // Update tournament match if applicable (no winner for draw)
+        await updateTournamentMatch(supabaseClient, gameId, null);
 
         console.log('Draw accepted');
         break;

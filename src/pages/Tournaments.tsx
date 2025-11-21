@@ -99,6 +99,15 @@ export default function Tournaments() {
     return `${minutes} min`;
   };
 
+  const formatTournamentFormat = (format: string) => {
+    switch (format) {
+      case 'single_elimination': return 'Single Elimination';
+      case 'round_robin': return 'Round Robin';
+      case 'swiss': return 'Swiss System';
+      default: return format;
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -161,7 +170,7 @@ export default function Tournaments() {
                   </div>
                   <div className="flex items-center text-muted-foreground">
                     <Trophy className="w-4 h-4 mr-2" />
-                    <span>{formatTimeControl(tournament.time_control)} • {tournament.format.replace('_', ' ')}</span>
+                    <span>{formatTimeControl(tournament.time_control)} • {formatTournamentFormat(tournament.format)}</span>
                   </div>
                   {tournament.start_date && (
                     <div className="flex items-center text-muted-foreground">
