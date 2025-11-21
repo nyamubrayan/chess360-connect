@@ -16,6 +16,7 @@ import Training from "./pages/Training";
 import Openings from "./pages/Openings";
 import Endgames from "./pages/Endgames";
 import Lessons from "./pages/Lessons";
+import Connect from "./pages/Connect";
 import Tournaments from "./pages/Tournaments";
 import TournamentDetail from "./pages/TournamentDetail";
 import NotFound from "./pages/NotFound";
@@ -42,6 +43,7 @@ const App = () => (
           <Route path="/openings" element={<Openings />} />
           <Route path="/endgames" element={<Endgames />} />
           <Route path="/lessons" element={<Lessons />} />
+          <Route path="/connect" element={<Connect />} />
           <Route path="/tournaments" element={<Tournaments />} />
           <Route path="/tournaments/:id" element={<TournamentDetail />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
