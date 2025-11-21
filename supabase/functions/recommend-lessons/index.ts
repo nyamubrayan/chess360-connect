@@ -164,33 +164,35 @@ Based on this data, recommend 4-5 personalized chess lessons that will help this
         ],
         tools: [{
           type: "function",
-          name: "suggest_lessons",
-          description: "Return 4-5 personalized chess lesson recommendations",
-          parameters: {
-            type: "object",
-            properties: {
-              lessons: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    title: { type: "string", description: "Lesson title (max 8 words)" },
-                    priority: { type: "string", enum: ["high", "medium", "low"] },
-                    category: { type: "string", enum: ["opening", "middlegame", "endgame", "tactics", "strategy"] },
-                    reason: { type: "string", description: "Detailed explanation of why this lesson is recommended" },
-                    targetAreas: { 
-                      type: "array", 
-                      items: { type: "string" },
-                      description: "Specific areas this addresses"
-                    }
-                  },
-                  required: ["title", "priority", "category", "reason", "targetAreas"],
-                  additionalProperties: false
+          function: {
+            name: "suggest_lessons",
+            description: "Return 4-5 personalized chess lesson recommendations",
+            parameters: {
+              type: "object",
+              properties: {
+                lessons: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      title: { type: "string", description: "Lesson title (max 8 words)" },
+                      priority: { type: "string", enum: ["high", "medium", "low"] },
+                      category: { type: "string", enum: ["opening", "middlegame", "endgame", "tactics", "strategy"] },
+                      reason: { type: "string", description: "Detailed explanation of why this lesson is recommended" },
+                      targetAreas: { 
+                        type: "array", 
+                        items: { type: "string" },
+                        description: "Specific areas this addresses"
+                      }
+                    },
+                    required: ["title", "priority", "category", "reason", "targetAreas"],
+                    additionalProperties: false
+                  }
                 }
-              }
-            },
-            required: ["lessons"],
-            additionalProperties: false
+              },
+              required: ["lessons"],
+              additionalProperties: false
+            }
           }
         }],
         tool_choice: { type: "function", function: { name: "suggest_lessons" } }
