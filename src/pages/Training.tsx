@@ -47,7 +47,7 @@ export default function Training() {
       gradient: 'from-blue-500/20 to-cyan-500/20',
       iconColor: 'text-blue-500',
       path: '/openings',
-      available: false
+      available: true
     },
     {
       icon: Target,
