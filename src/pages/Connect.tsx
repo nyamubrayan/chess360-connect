@@ -78,11 +78,17 @@ export default function Connect() {
       );
 
       // Fetch all profiles except current user and those who blocked you
-      const { data: profilesData, error: profilesError } = await supabase
+      let profilesQuery = supabase
         .from('profiles')
         .select('*')
-        .neq('id', currentUserId)
-        .not('id', 'in', `(${Array.from(blockedMe).join(',') || 'null'})`)
+        .neq('id', currentUserId);
+
+      // Only filter blocked users if there are any
+      if (blockedMe.size > 0) {
+        profilesQuery = profilesQuery.not('id', 'in', `(${Array.from(blockedMe).join(',')})`);
+      }
+
+      const { data: profilesData, error: profilesError } = await profilesQuery
         .order('rating', { ascending: false });
 
       if (profilesError) throw profilesError;
