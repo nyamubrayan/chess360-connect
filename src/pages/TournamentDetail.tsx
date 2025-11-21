@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Trophy, Users, Clock, Play, Timer } from "lucide-react";
+import { ArrowLeft, Trophy, Users, Clock, Play, Timer, Share2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { TournamentBracket } from "@/components/tournaments/TournamentBracket";
 import { TournamentStandings } from "@/components/tournaments/TournamentStandings";
@@ -22,6 +22,7 @@ export default function TournamentDetail() {
   const [loading, setLoading] = useState(true);
   const [isParticipant, setIsParticipant] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<string>("");
+  const [linkCopied, setLinkCopied] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -164,6 +165,18 @@ export default function TournamentDetail() {
     }
   };
 
+  const handleCopyLink = async () => {
+    const tournamentLink = `${window.location.origin}/tournaments/${id}`;
+    try {
+      await navigator.clipboard.writeText(tournamentLink);
+      setLinkCopied(true);
+      toast.success("Link copied to clipboard!");
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch (error) {
+      toast.error("Failed to copy link");
+    }
+  };
+
   if (loading || !tournament) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -216,27 +229,53 @@ export default function TournamentDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <Card className="lg:col-span-2 p-6">
             <div className="flex justify-between items-start mb-4">
-              <div>
+              <div className="flex-1">
                 <h1 className="text-3xl font-bold mb-2">{tournament.name}</h1>
                 <Badge className={tournament.status === 'active' ? 'bg-green-500' : tournament.status === 'completed' ? 'bg-gray-500' : 'bg-blue-500'}>
                   {tournament.status}
                 </Badge>
               </div>
-              {canJoin && (
-                <Button onClick={handleJoinTournament} size="lg">
-                  Join Tournament
+              <div className="flex gap-2">
+                <Button onClick={handleCopyLink} variant="outline" size="lg">
+                  {linkCopied ? (
+                    <>
+                      <Check className="w-4 h-4 mr-2" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Share2 className="w-4 h-4 mr-2" />
+                      Share
+                    </>
+                  )}
                 </Button>
-              )}
-              {canStart && (
-                <Button onClick={handleStartTournament} size="lg">
-                  <Play className="w-4 h-4 mr-2" />
-                  Start Tournament
-                </Button>
-              )}
+                {canJoin && (
+                  <Button onClick={handleJoinTournament} size="lg">
+                    Join Tournament
+                  </Button>
+                )}
+                {canStart && (
+                  <Button onClick={handleStartTournament} size="lg">
+                    <Play className="w-4 h-4 mr-2" />
+                    Start Tournament
+                  </Button>
+                )}
+              </div>
             </div>
             {tournament.description && (
               <p className="text-muted-foreground mb-4">{tournament.description}</p>
             )}
+            <div className="mt-4 p-3 bg-muted/50 rounded-lg border border-border">
+              <p className="text-xs text-muted-foreground mb-1">Share this tournament</p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 text-sm bg-background px-3 py-2 rounded border border-border truncate">
+                  {window.location.origin}/tournaments/{id}
+                </code>
+                <Button onClick={handleCopyLink} size="sm" variant="ghost">
+                  {linkCopied ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
+                </Button>
+              </div>
+            </div>
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
                 <Users className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
