@@ -288,16 +288,76 @@ export default function Training() {
                     key={piece.name}
                     className="bg-gradient-to-r from-muted/20 to-transparent p-6 rounded-lg border border-border hover:border-primary/50 transition-all"
                   >
-                    <div className="flex items-start gap-4">
-                      <div className="text-6xl flex-shrink-0">{piece.symbol}</div>
+                    <div className="flex flex-col lg:flex-row items-start gap-6">
                       <div className="flex-1 space-y-2">
-                        <h3 className="text-xl font-bold text-primary">{piece.name}</h3>
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="text-4xl">{piece.symbol}</div>
+                          <h3 className="text-xl font-bold text-primary">{piece.name}</h3>
+                        </div>
                         <p className="text-foreground">
                           <strong>Movement:</strong> {piece.movement}
                         </p>
                         <p className="text-muted-foreground text-sm">
                           <strong>Special:</strong> {piece.special}
                         </p>
+                      </div>
+                      
+                      {/* Animated Movement Demonstration */}
+                      <div className="w-full lg:w-64 flex-shrink-0">
+                        <div className="bg-muted/10 p-2 rounded-lg">
+                          <div className="grid grid-cols-5 gap-0.5 w-full aspect-square">
+                            {Array.from({ length: 25 }, (_, i) => {
+                              const row = Math.floor(i / 5);
+                              const col = i % 5;
+                              const centerRow = 2;
+                              const centerCol = 2;
+                              const isCenter = row === centerRow && col === centerCol;
+                              
+                              let isHighlighted = false;
+                              
+                              // Highlight possible moves based on piece type
+                              if (piece.name === 'King') {
+                                isHighlighted = Math.abs(row - centerRow) <= 1 && Math.abs(col - centerCol) <= 1 && !isCenter;
+                              } else if (piece.name === 'Queen') {
+                                isHighlighted = (row === centerRow || col === centerCol || Math.abs(row - centerRow) === Math.abs(col - centerCol)) && !isCenter;
+                              } else if (piece.name === 'Rook') {
+                                isHighlighted = (row === centerRow || col === centerCol) && !isCenter;
+                              } else if (piece.name === 'Bishop') {
+                                isHighlighted = Math.abs(row - centerRow) === Math.abs(col - centerCol) && !isCenter;
+                              } else if (piece.name === 'Knight') {
+                                const rowDiff = Math.abs(row - centerRow);
+                                const colDiff = Math.abs(col - centerCol);
+                                isHighlighted = (rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2);
+                              } else if (piece.name === 'Pawn') {
+                                isHighlighted = (col === centerCol && row === centerRow - 1) || 
+                                               (col === centerCol && row === centerRow - 2) ||
+                                               ((col === centerCol - 1 || col === centerCol + 1) && row === centerRow - 1);
+                              }
+                              
+                              return (
+                                <div
+                                  key={i}
+                                  className={`aspect-square flex items-center justify-center text-2xl rounded-sm transition-all duration-300 ${
+                                    (row + col) % 2 === 0 ? 'bg-background' : 'bg-primary/20'
+                                  } ${
+                                    isCenter 
+                                      ? 'animate-pulse' 
+                                      : isHighlighted 
+                                      ? 'bg-primary/40 animate-[pulse_2s_ease-in-out_infinite]' 
+                                      : ''
+                                  }`}
+                                  style={{
+                                    animationDelay: isHighlighted ? `${Math.random() * 0.5}s` : '0s'
+                                  }}
+                                >
+                                  {isCenter && <span className="animate-scale-in">{piece.symbol}</span>}
+                                  {isHighlighted && <span className="text-xs text-primary-foreground opacity-60">•</span>}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <p className="text-xs text-center text-muted-foreground mt-2">Possible moves highlighted</p>
+                        </div>
                       </div>
                     </div>
                   </div>
