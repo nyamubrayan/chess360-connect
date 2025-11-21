@@ -17,9 +17,6 @@ interface PlayerWithStats {
     wins: number;
     win_rate: number;
   } | null;
-  leaderboard_stats: {
-    tournaments_won: number;
-  } | null;
 }
 
 const Leaderboard = () => {
@@ -60,9 +57,6 @@ const Leaderboard = () => {
           total_games,
           wins,
           win_rate
-        ),
-        leaderboard_stats (
-          tournaments_won
         )
       `
       )
@@ -75,7 +69,6 @@ const Leaderboard = () => {
       const formattedData = (data || []).map((p: any) => ({
         ...p,
         player_stats: Array.isArray(p.player_stats) ? p.player_stats[0] : p.player_stats,
-        leaderboard_stats: Array.isArray(p.leaderboard_stats) ? p.leaderboard_stats[0] : p.leaderboard_stats,
       }));
       setPlayers(formattedData);
     }
