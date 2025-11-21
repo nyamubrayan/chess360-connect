@@ -88,26 +88,65 @@ export default function TournamentDetail() {
     try {
       const [tournamentRes, participantsRes, matchesRes] = await Promise.all([
         supabase.from('tournaments').select('*').eq('id', id).single(),
-        supabase.from('tournament_participants').select(`
-          *,
-          profiles!tournament_participants_user_id_fkey(username, display_name, rating)
-        `).eq('tournament_id', id),
-        supabase.from('tournament_matches').select(`
-          *,
-          player1:profiles!tournament_matches_player1_id_fkey(username, display_name),
-          player2:profiles!tournament_matches_player2_id_fkey(username, display_name),
-          winner:profiles!tournament_matches_winner_id_fkey(username, display_name)
-        `).eq('tournament_id', id).order('round', { ascending: true }).order('match_number', { ascending: true })
+        supabase.from('tournament_participants').select('*').eq('tournament_id', id),
+        supabase.from('tournament_matches')
+          .select('*')
+          .eq('tournament_id', id)
+          .order('round', { ascending: true })
+          .order('match_number', { ascending: true }),
       ]);
 
       if (tournamentRes.error) throw tournamentRes.error;
       if (participantsRes.error) throw participantsRes.error;
       if (matchesRes.error) throw matchesRes.error;
 
+      const participantsData = participantsRes.data || [];
+      const matchesData = matchesRes.data || [];
+
+      const userIds = new Set<string>();
+
+      participantsData.forEach((p: any) => {
+        if (p.user_id) userIds.add(p.user_id);
+      });
+
+      matchesData.forEach((m: any) => {
+        if (m.player1_id) userIds.add(m.player1_id);
+        if (m.player2_id) userIds.add(m.player2_id);
+        if (m.winner_id) userIds.add(m.winner_id);
+      });
+
+      let profilesById: Record<string, any> = {};
+
+      if (userIds.size > 0) {
+        const profilesRes = await supabase
+          .from('profiles')
+          .select('id, username, display_name, rating')
+          .in('id', Array.from(userIds));
+
+        if (profilesRes.error) throw profilesRes.error;
+
+        profilesById = (profilesRes.data || []).reduce((acc: any, profile: any) => {
+          acc[profile.id] = profile;
+          return acc;
+        }, {} as Record<string, any>);
+      }
+
+      const participantsWithProfiles = participantsData.map((p: any) => ({
+        ...p,
+        profiles: p.user_id ? profilesById[p.user_id] || null : null,
+      }));
+
+      const matchesWithPlayers = matchesData.map((m: any) => ({
+        ...m,
+        player1: m.player1_id ? profilesById[m.player1_id] || null : null,
+        player2: m.player2_id ? profilesById[m.player2_id] || null : null,
+        winner: m.winner_id ? profilesById[m.winner_id] || null : null,
+      }));
+
       setTournament(tournamentRes.data);
-      setParticipants(participantsRes.data || []);
-      setMatches(matchesRes.data || []);
-      setIsParticipant(participantsRes.data?.some(p => p.user_id === user?.id) || false);
+      setParticipants(participantsWithProfiles);
+      setMatches(matchesWithPlayers);
+      setIsParticipant(participantsData.some((p: any) => p.user_id === user?.id) || false);
     } catch (error: any) {
       toast.error("Failed to load tournament");
       console.error(error);
@@ -115,7 +154,6 @@ export default function TournamentDetail() {
       setLoading(false);
     }
   };
-
   const handleJoinTournament = async () => {
     try {
       const { error } = await supabase.from('tournament_participants').insert({
