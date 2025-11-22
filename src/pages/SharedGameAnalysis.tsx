@@ -1,22 +1,13 @@
-import { useState, useEffect, useRef } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Chessboard } from "react-chessboard";
-import { Chess } from "chess.js";
-import { Loader2, ChevronLeft, ChevronRight, Brain, TrendingUp, AlertTriangle, XCircle, CheckCircle, Download, Share2, Copy, Check } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight, Brain, Home, CheckCircle, AlertTriangle, TrendingUp, XCircle } from "lucide-react";
 import { toast } from "sonner";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
-
-interface GameMoveAnalysisProps {
-  gameId: string;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
 
 interface Move {
   id: string;
@@ -35,23 +26,21 @@ interface MoveAnalysis {
   type: "good" | "questionable" | "mistake" | "blunder";
 }
 
-export const GameMoveAnalysis = ({ gameId, open, onOpenChange }: GameMoveAnalysisProps) => {
+export default function SharedGameAnalysis() {
+  const { gameId } = useParams<{ gameId: string }>();
+  const navigate = useNavigate();
   const [moves, setMoves] = useState<Move[]>([]);
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [analyzingMove, setAnalyzingMove] = useState(false);
   const [moveAnalysis, setMoveAnalysis] = useState<MoveAnalysis | null>(null);
   const [game, setGame] = useState<any>(null);
-  const [userId, setUserId] = useState<string>("");
-  const [exporting, setExporting] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (open && gameId) {
+    if (gameId) {
       fetchGameData();
     }
-  }, [open, gameId]);
+  }, [gameId]);
 
   useEffect(() => {
     if (moves.length > 0 && currentMoveIndex >= 0) {
@@ -62,11 +51,7 @@ export const GameMoveAnalysis = ({ gameId, open, onOpenChange }: GameMoveAnalysi
   const fetchGameData = async () => {
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      setUserId(user.id);
-
-      // Fetch game details
+      // Fetch game details (public access)
       const { data: gameData, error: gameError } = await supabase
         .from('games')
         .select(`
@@ -80,7 +65,7 @@ export const GameMoveAnalysis = ({ gameId, open, onOpenChange }: GameMoveAnalysi
       if (gameError) throw gameError;
       setGame(gameData);
 
-      // Fetch all moves
+      // Fetch all moves (public access)
       const { data: movesData, error: movesError } = await supabase
         .from('game_moves')
         .select('*')
@@ -119,7 +104,6 @@ export const GameMoveAnalysis = ({ gameId, open, onOpenChange }: GameMoveAnalysi
       setMoveAnalysis(data.analysis);
     } catch (error: any) {
       console.error('Error analyzing move:', error);
-      // Don't show error toast for rate limits, just show no analysis
       if (error.message?.includes('rate limit')) {
         setMoveAnalysis({
           evaluation: "Analysis temporarily unavailable due to rate limits.",
@@ -177,131 +161,68 @@ export const GameMoveAnalysis = ({ gameId, open, onOpenChange }: GameMoveAnalysi
     return playerId === game?.white_player_id ? 'White' : 'Black';
   };
 
-  const exportToPDF = async () => {
-    if (!contentRef.current) return;
-    
-    setExporting(true);
-    try {
-      const canvas = await html2canvas(contentRef.current, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-      });
-      
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-      });
-      
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-      const imgX = (pdfWidth - imgWidth * ratio) / 2;
-      const imgY = 10;
-      
-      pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
-      
-      const opponent = game?.white_player_id === userId 
-        ? game?.black_player.username 
-        : game?.white_player.username;
-      
-      pdf.save(`game-analysis-vs-${opponent}.pdf`);
-      toast.success('Game analysis exported as PDF');
-    } catch (error) {
-      console.error('Error exporting PDF:', error);
-      toast.error('Failed to export PDF');
-    } finally {
-      setExporting(false);
-    }
-  };
-
-  const shareAnalysis = async () => {
-    const shareUrl = `${window.location.origin}/game-analysis/${gameId}`;
-    
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      toast.success('Analysis link copied to clipboard!');
-      setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      console.error('Error copying to clipboard:', error);
-      toast.error('Failed to copy link');
-    }
-  };
-
   if (loading) {
     return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-6xl max-h-[90vh]">
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        </DialogContent>
-      </Dialog>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!game) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+        <Card className="p-8 text-center max-w-md">
+          <h2 className="text-2xl font-bold mb-4">Game Not Found</h2>
+          <p className="text-muted-foreground mb-6">The game analysis you're looking for doesn't exist or has been removed.</p>
+          <Button onClick={() => navigate('/')}>
+            <Home className="h-4 w-4 mr-2" />
+            Go Home
+          </Button>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Brain className="h-5 w-5" />
-              Move-by-Move Analysis
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={shareAnalysis}
-                disabled={copied}
-              >
-                {copied ? (
-                  <>
-                    <Check className="h-4 w-4 mr-2" />
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <Share2 className="h-4 w-4 mr-2" />
-                    Share
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={exportToPDF}
-                disabled={exporting}
-              >
-                {exporting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Exporting...
-                  </>
-                ) : (
-                  <>
-                    <Download className="h-4 w-4 mr-2" />
-                    Export PDF
-                  </>
-                )}
-              </Button>
-            </div>
-          </DialogTitle>
-        </DialogHeader>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto p-4 max-w-7xl">
+        {/* Header */}
+        <div className="mb-6">
+          <Button variant="outline" onClick={() => navigate('/')}>
+            <Home className="h-4 w-4 mr-2" />
+            Home
+          </Button>
+        </div>
 
-        <div ref={contentRef} className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+        <Card className="p-6 mb-6">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <h1 className="text-2xl font-bold mb-2 flex items-center gap-2">
+                <Brain className="h-6 w-6" />
+                Shared Game Analysis
+              </h1>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+                <span>
+                  <span className="font-semibold text-foreground">{game.white_player.username}</span> ({game.white_player.rating})
+                </span>
+                <span>vs</span>
+                <span>
+                  <span className="font-semibold text-foreground">{game.black_player.username}</span> ({game.black_player.rating})
+                </span>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Game Analysis Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left: Chessboard */}
           <div className="space-y-4">
             <Card className="p-4">
               <Chessboard
                 position={getCurrentPosition()}
-                boardWidth={400}
+                boardWidth={Math.min(500, window.innerWidth - 80)}
                 customBoardStyle={{
                   borderRadius: '8px',
                   boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
@@ -414,13 +335,7 @@ export const GameMoveAnalysis = ({ gameId, open, onOpenChange }: GameMoveAnalysi
             </Card>
           </div>
         </div>
-
-        <div className="flex justify-end gap-2 mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Close
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
-};
+}
