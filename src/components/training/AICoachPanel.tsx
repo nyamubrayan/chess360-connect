@@ -88,6 +88,7 @@ export function AICoachPanel() {
   const [whiteTimeRemaining, setWhiteTimeRemaining] = useState(selectedTimeControl.time * 60);
   const [blackTimeRemaining, setBlackTimeRemaining] = useState(selectedTimeControl.time * 60);
   const [lastMoveTime, setLastMoveTime] = useState<string | null>(null);
+  const [timeControlDialogOpen, setTimeControlDialogOpen] = useState(false);
 
   // Get current user
   useEffect(() => {
@@ -506,6 +507,12 @@ export function AICoachPanel() {
   };
 
   const handleModeChange = async (mode: GameMode) => {
+    if (mode === 'friend') {
+      // Show time control selection dialog
+      setTimeControlDialogOpen(true);
+      return;
+    }
+
     // Complete current session if it exists
     if (sessionId && sessionStartTime && gameMode === 'friend') {
       const duration = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
@@ -548,10 +555,57 @@ export function AICoachPanel() {
     setSessionStartTime(new Date());
     setGameMode(mode);
     await handleReset();
-    
-    if (mode === 'friend') {
-      startTrainingMatchmaking();
+  };
+
+  const handleStartOnlineMode = async (timeControl: TimeControl) => {
+    setSelectedTimeControl(timeControl);
+    setWhiteTimeRemaining(timeControl.time * 60);
+    setBlackTimeRemaining(timeControl.time * 60);
+    setTimeControlDialogOpen(false);
+
+    // Complete current session if it exists
+    if (sessionId && sessionStartTime && gameMode === 'friend') {
+      const duration = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
+      const hostTotal = moveStats.host_good_moves + moveStats.host_mistakes + moveStats.host_blunders;
+      const guestTotal = moveStats.guest_good_moves + moveStats.guest_mistakes + moveStats.guest_blunders;
+      
+      const hostAccuracy = hostTotal > 0 
+        ? ((moveStats.host_good_moves / hostTotal) * 100)
+        : null;
+      const guestAccuracy = guestTotal > 0
+        ? ((moveStats.guest_good_moves / guestTotal) * 100)
+        : null;
+
+      await supabase
+        .from('training_sessions')
+        .update({
+          status: 'completed',
+          completed_at: new Date().toISOString(),
+          duration,
+          host_move_accuracy: hostAccuracy,
+          guest_move_accuracy: guestAccuracy
+        })
+        .eq('id', sessionId);
+    } else if (sessionId) {
+      // Delete incomplete sessions
+      await supabase
+        .from('training_sessions')
+        .delete()
+        .eq('id', sessionId);
     }
+
+    // Cancel any pending matchmaking
+    if (searchingForOpponent) {
+      await cancelTrainingMatchmaking();
+    }
+    
+    setSessionId(null);
+    setSearchingForOpponent(false);
+    setOpponentInfo(null);
+    setSessionStartTime(new Date());
+    setGameMode('friend');
+    await handleReset();
+    startTrainingMatchmaking();
   };
 
   const handleTimeControlChange = (timeControl: TimeControl) => {
@@ -621,17 +675,45 @@ export function AICoachPanel() {
               <span className="hidden sm:inline">Solo Practice</span>
               <span className="sm:hidden">Solo</span>
             </Button>
-            <Button
-              variant={gameMode === 'friend' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => handleModeChange('friend')}
-              className="flex items-center gap-2 text-xs sm:text-sm"
-              disabled={searchingForOpponent}
-            >
-              <Users className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">Play Online</span>
-              <span className="sm:hidden">Online</span>
-            </Button>
+            <Dialog open={timeControlDialogOpen} onOpenChange={setTimeControlDialogOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  variant={gameMode === 'friend' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handleModeChange('friend')}
+                  className="flex items-center gap-2 text-xs sm:text-sm"
+                  disabled={searchingForOpponent}
+                >
+                  <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Play Online</span>
+                  <span className="sm:hidden">Online</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="text-xl font-bold text-gradient">Select Time Control</DialogTitle>
+                  <DialogDescription>
+                    Choose your preferred time control for the training match
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid grid-cols-2 gap-3 py-4">
+                  {TIME_CONTROLS.map((tc) => (
+                    <Button
+                      key={tc.label}
+                      variant="outline"
+                      className="h-24 flex flex-col items-center justify-center gap-2 hover:bg-primary/10 hover:border-primary transition-all"
+                      onClick={() => handleStartOnlineMode(tc)}
+                    >
+                      <Clock className="w-6 h-6 text-primary" />
+                      <span className="text-2xl font-bold">{tc.label}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {tc.time} min + {tc.increment}s
+                      </span>
+                    </Button>
+                  ))}
+                </div>
+              </DialogContent>
+            </Dialog>
             {searchingForOpponent && (
               <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                 <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
@@ -651,25 +733,6 @@ export function AICoachPanel() {
 
           {/* Controls Row */}
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Time Control Selector */}
-            <div className="flex items-center gap-1 sm:gap-2 bg-muted/30 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 flex-1 min-w-0">
-              <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground flex-shrink-0" />
-              <div className="flex gap-0.5 sm:gap-1 overflow-x-auto scrollbar-hide">
-                {TIME_CONTROLS.map((tc) => (
-                  <Button
-                    key={tc.label}
-                    variant={selectedTimeControl.label === tc.label ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => handleTimeControlChange(tc)}
-                    disabled={gameMode === 'friend' && sessionId !== null}
-                    className="h-7 sm:h-8 px-2 sm:px-3 text-xs flex-shrink-0"
-                  >
-                    {tc.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
             {/* Solo Mode Controls */}
             {gameMode === 'solo' && (
               <div className="flex gap-2">
@@ -680,7 +743,7 @@ export function AICoachPanel() {
                   className="flex items-center gap-1 sm:gap-2 h-7 sm:h-9 px-2 sm:px-3"
                 >
                   <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline text-xs sm:text-sm">Takeback</span>
+                  <span className="text-xs sm:text-sm">Takeback</span>
                 </Button>
                 <Button
                   variant="outline"
@@ -689,7 +752,7 @@ export function AICoachPanel() {
                   className="flex items-center gap-1 sm:gap-2 h-7 sm:h-9 px-2 sm:px-3"
                 >
                   <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline text-xs sm:text-sm">Reset</span>
+                  <span className="text-xs sm:text-sm">Reset</span>
                 </Button>
               </div>
             )}
