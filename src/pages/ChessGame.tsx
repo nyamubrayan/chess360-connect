@@ -33,6 +33,7 @@ export default function ChessGame() {
   const [gameStarted, setGameStarted] = useState(false);
   const [inactivityTimer, setInactivityTimer] = useState<NodeJS.Timeout | null>(null);
   const [firstMoveCountdown, setFirstMoveCountdown] = useState<number | null>(null);
+  const [lastMove, setLastMove] = useState<{ from: string; to: string } | null>(null);
   
   const sounds = useChessSounds();
 
@@ -358,6 +359,17 @@ export default function ChessGame() {
 
     if (data) {
       setMoves(data);
+      // Update last move highlight
+      if (data.length > 0) {
+        const latestMove = data[data.length - 1];
+        const moveUci = latestMove.move_uci;
+        if (moveUci && moveUci.length >= 4) {
+          setLastMove({
+            from: moveUci.substring(0, 2),
+            to: moveUci.substring(2, 4),
+          });
+        }
+      }
     }
   };
 
@@ -459,8 +471,9 @@ export default function ChessGame() {
       return;
     }
 
-    // Update position immediately for instant feedback
+    // Update position and last move highlight immediately for instant feedback
     setPosition(chess.fen());
+    setLastMove({ from, to });
     setIsProcessing(true);
 
     // Play sound immediately
@@ -758,6 +771,7 @@ export default function ChessGame() {
               playerColor={playerColor}
               disabled={isProcessing || game.status !== 'active'}
               chess={chess}
+              lastMove={lastMove}
             />
             
             {/* Your Name (bottom) */}
