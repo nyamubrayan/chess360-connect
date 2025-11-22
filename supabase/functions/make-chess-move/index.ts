@@ -122,9 +122,9 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { gameId, moveData } = await req.json();
+    const { gameId, from, to, promotionPiece, moveData } = await req.json();
 
-    console.log('Making move:', { gameId, moveData, userId: user.id });
+    console.log('Making move:', { gameId, from, to, promotionPiece, userId: user.id });
 
     // Fetch current game
     const { data: game } = await supabaseClient
@@ -135,6 +135,89 @@ serve(async (req) => {
 
     if (!game) {
       throw new Error('Game not found');
+    }
+
+    // If from/to provided, validate and calculate move data first
+    let validatedMoveData = moveData;
+    if (from && to) {
+      const { Chess } = await import('https://esm.sh/chess.js@1.0.0-beta.8');
+      const chess = new Chess(game.current_fen);
+
+      // Validate it's the player's turn
+      const isWhitePlayer = game.white_player_id === user.id;
+      const currentTurn = chess.turn();
+      
+      if ((isWhitePlayer && currentTurn !== 'w') || (!isWhitePlayer && currentTurn !== 'b')) {
+        return new Response(
+          JSON.stringify({ valid: false, error: 'Not your turn' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        );
+      }
+
+      // Try to make the move
+      const move = chess.move({ 
+        from, 
+        to, 
+        promotion: promotionPiece || 'q' 
+      });
+
+      if (!move) {
+        return new Response(
+          JSON.stringify({ valid: false, error: 'Invalid move' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        );
+      }
+
+      // Build move data
+      const newFen = chess.fen();
+      const newPgn = chess.pgn();
+      const isCheck = chess.isCheck();
+      const isCheckmate = chess.isCheckmate();
+      const isDraw = chess.isDraw();
+      const isStalemate = chess.isStalemate();
+      const isThreefoldRepetition = chess.isThreefoldRepetition();
+      const isInsufficientMaterial = chess.isInsufficientMaterial();
+
+      // Determine game status
+      let status = 'active';
+      let result = null;
+      let winner = null;
+
+      if (isCheckmate) {
+        status = 'completed';
+        result = 'checkmate';
+        winner = isWhitePlayer ? game.white_player_id : game.black_player_id;
+      } else if (isStalemate) {
+        status = 'completed';
+        result = 'stalemate';
+      } else if (isDraw || isThreefoldRepetition || isInsufficientMaterial) {
+        status = 'completed';
+        result = 'draw';
+      }
+
+      validatedMoveData = {
+        valid: true,
+        newFen,
+        newPgn,
+        moveSan: move.san,
+        moveUci: move.from + move.to + (move.promotion || ''),
+        moveNumber: game.move_count + 1,
+        isCheck,
+        isCheckmate,
+        isCapture: move.captured !== undefined,
+        isCastling: move.flags.includes('k') || move.flags.includes('q'),
+        isEnPassant: move.flags.includes('e'),
+        promotionPiece: move.promotion || null,
+        status,
+        result,
+        winner,
+        fiftyMoveCounter: 0,
+        positionHistory: []
+      };
+    }
+
+    if (!validatedMoveData) {
+      throw new Error('Invalid move data');
     }
 
     // Calculate time spent
@@ -189,15 +272,15 @@ serve(async (req) => {
 
     // Update game state
     const updates: any = {
-      current_fen: moveData.newFen,
-      pgn: moveData.newPgn,
-      current_turn: moveData.newFen.split(' ')[1],
+      current_fen: validatedMoveData.newFen,
+      pgn: validatedMoveData.newPgn,
+      current_turn: validatedMoveData.newFen.split(' ')[1],
       last_move_at: now.toISOString(),
       move_count: game.move_count + 1,
-      fifty_move_counter: moveData.fiftyMoveCounter,
-      position_history: moveData.positionHistory,
-      draw_offered_by: null, // Clear any draw offers
-      undo_requested_by: null, // Clear any undo requests
+      fifty_move_counter: validatedMoveData.fiftyMoveCounter || 0,
+      position_history: validatedMoveData.positionHistory || [],
+      draw_offered_by: null,
+      undo_requested_by: null,
     };
 
     if (isWhitePlayer) {
@@ -206,11 +289,11 @@ serve(async (req) => {
       updates.black_time_remaining = newTimeRemaining;
     }
 
-    if (moveData.status) {
-      updates.status = moveData.status;
-      updates.result = moveData.result;
-      updates.winner_id = moveData.winner;
-      if (moveData.status === 'completed') {
+    if (validatedMoveData.status) {
+      updates.status = validatedMoveData.status;
+      updates.result = validatedMoveData.result;
+      updates.winner_id = validatedMoveData.winner;
+      if (validatedMoveData.status === 'completed') {
         updates.completed_at = now.toISOString();
       }
     }
@@ -225,12 +308,12 @@ serve(async (req) => {
     }
 
     // Update ELO ratings and send notifications if game ended
-    if (moveData.status === 'completed') {
+    if (validatedMoveData.status === 'completed') {
       let eloResult: 'white_win' | 'black_win' | 'draw' = 'draw';
       
-      if (moveData.result === 'checkmate') {
-        eloResult = moveData.winner === game.white_player_id ? 'white_win' : 'black_win';
-      } else if (moveData.result === 'stalemate' || moveData.result === 'draw') {
+      if (validatedMoveData.result === 'checkmate') {
+        eloResult = validatedMoveData.winner === game.white_player_id ? 'white_win' : 'black_win';
+      } else if (validatedMoveData.result === 'stalemate' || validatedMoveData.result === 'draw') {
         eloResult = 'draw';
       }
 
@@ -252,8 +335,8 @@ serve(async (req) => {
 
       const notifications = [];
       
-      if (moveData.result === 'checkmate') {
-        const winnerId = moveData.winner;
+      if (validatedMoveData.result === 'checkmate') {
+        const winnerId = validatedMoveData.winner;
         const loserId = winnerId === game.white_player_id ? game.black_player_id : game.white_player_id;
         
         notifications.push(
@@ -270,55 +353,60 @@ serve(async (req) => {
             message: 'You have been checkmated. Game over.',
           }
         );
-      } else if (moveData.result === 'stalemate' || moveData.result === 'draw') {
+      } else if (validatedMoveData.result === 'stalemate' || validatedMoveData.result === 'draw') {
         notifications.push(
           {
             user_id: game.white_player_id,
             type: 'game_ended',
             title: 'Game Drawn',
-            message: `The game has ended in a ${moveData.result}.`,
+            message: `The game has ended in a ${validatedMoveData.result}.`,
           },
           {
             user_id: game.black_player_id,
             type: 'game_ended',
             title: 'Game Drawn',
-            message: `The game has ended in a ${moveData.result}.`,
+            message: `The game has ended in a ${validatedMoveData.result}.`,
           }
         );
       }
 
       if (notifications.length > 0) {
         await supabaseClient.from('notifications').insert(notifications);
-        console.log('Game ended notifications sent:', moveData.result);
+        console.log('Game ended notifications sent:', validatedMoveData.result);
       }
       
       // Update tournament match if applicable
-      await updateTournamentMatch(supabaseClient, gameId, moveData.winner || null);
+      await updateTournamentMatch(supabaseClient, gameId, validatedMoveData.winner || null);
     }
 
     // Insert move record
     await supabaseClient.from('game_moves').insert({
       game_id: gameId,
-      move_number: moveData.moveNumber,
+      move_number: validatedMoveData.moveNumber,
       player_id: user.id,
-      move_san: moveData.moveSan,
-      move_uci: moveData.moveUci,
+      move_san: validatedMoveData.moveSan,
+      move_uci: validatedMoveData.moveUci,
       fen_before: game.current_fen,
-      fen_after: moveData.newFen,
+      fen_after: validatedMoveData.newFen,
       time_spent: timeSpent * 1000,
       time_remaining: newTimeRemaining * 1000,
-      is_check: moveData.isCheck,
-      is_checkmate: moveData.isCheckmate,
-      is_capture: moveData.isCapture,
-      is_castling: moveData.isCastling,
-      is_en_passant: moveData.isEnPassant,
-      promotion_piece: moveData.promotionPiece,
+      is_check: validatedMoveData.isCheck,
+      is_checkmate: validatedMoveData.isCheckmate,
+      is_capture: validatedMoveData.isCapture,
+      is_castling: validatedMoveData.isCastling,
+      is_en_passant: validatedMoveData.isEnPassant,
+      promotion_piece: validatedMoveData.promotionPiece,
     });
 
     console.log('Move completed successfully. Game status:', updates.status || 'active');
 
     return new Response(
-      JSON.stringify({ success: true, timeRemaining: newTimeRemaining }),
+      JSON.stringify({ 
+        success: true, 
+        valid: true,
+        timeRemaining: newTimeRemaining,
+        ...validatedMoveData 
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
