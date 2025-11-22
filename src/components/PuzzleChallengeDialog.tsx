@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { ChessBoardComponent } from '@/components/chess/ChessBoard';
 import { useChessSounds } from '@/hooks/useChessSounds';
 import { toast } from 'sonner';
-import { Brain, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { Brain, CheckCircle, XCircle, RefreshCw, Trophy } from 'lucide-react';
 
 interface PuzzleChallengeDialogProps {
   open: boolean;
@@ -45,6 +45,13 @@ export function PuzzleChallengeDialog({
   const [solved, setSolved] = useState(false);
   const [attempts, setAttempts] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [startTime, setStartTime] = useState<number | null>(null);
+  const [leaderboardData, setLeaderboardData] = useState<{
+    fastestTime: number | null;
+    totalAttempts: number;
+    successfulSolves: number;
+    successRate: number;
+  } | null>(null);
   const sounds = useChessSounds();
 
   useEffect(() => {
@@ -94,6 +101,45 @@ export function PuzzleChallengeDialog({
     setMoveIndex(0);
     setSolved(false);
     setAttempts(0);
+    setStartTime(Date.now());
+    fetchLeaderboardData(puzzleData.id);
+  };
+
+  const fetchLeaderboardData = async (puzzleId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_puzzle_attempts')
+        .select('time_spent, solved')
+        .eq('puzzle_id', puzzleId);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const successfulSolves = data.filter((d) => d.solved && d.time_spent).length;
+        const totalAttempts = data.length;
+        const fastestTime = data
+          .filter((d) => d.solved && d.time_spent)
+          .reduce((min, curr) => {
+            return curr.time_spent! < min ? curr.time_spent! : min;
+          }, Infinity);
+
+        setLeaderboardData({
+          fastestTime: fastestTime === Infinity ? null : fastestTime,
+          totalAttempts,
+          successfulSolves,
+          successRate: totalAttempts > 0 ? (successfulSolves / totalAttempts) * 100 : 0,
+        });
+      } else {
+        setLeaderboardData({
+          fastestTime: null,
+          totalAttempts: 0,
+          successfulSolves: 0,
+          successRate: 0,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching leaderboard data:', error);
+    }
   };
 
   const handleMove = async (from: string, to: string) => {
@@ -124,6 +170,11 @@ export function PuzzleChallengeDialog({
     if (moveIndex + 1 >= puzzle.solution_moves.length) {
       setSolved(true);
       sounds.playCheckmate();
+      
+      // Record puzzle attempt
+      const timeSpent = startTime ? Math.floor((Date.now() - startTime) / 1000) : null;
+      recordPuzzleAttempt(puzzle.id, true, timeSpent);
+      
       toast.success('🎉 Puzzle solved! Sending friend request...', { duration: 3000 });
       
       setTimeout(() => {
@@ -146,6 +197,29 @@ export function PuzzleChallengeDialog({
     }, 500);
   };
 
+  const recordPuzzleAttempt = async (puzzleId: string, isSolved: boolean, timeSpent: number | null) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      await supabase.from('user_puzzle_attempts').insert({
+        user_id: user.id,
+        puzzle_id: puzzleId,
+        solved: isSolved,
+        time_spent: timeSpent,
+        attempts: attempts + 1,
+        completed_at: isSolved ? new Date().toISOString() : null,
+      });
+
+      // Refresh leaderboard data
+      if (isSolved) {
+        fetchLeaderboardData(puzzleId);
+      }
+    } catch (error) {
+      console.error('Error recording puzzle attempt:', error);
+    }
+  };
+
   const handleClose = () => {
     setPuzzle(null);
     setChess(new Chess());
@@ -153,6 +227,8 @@ export function PuzzleChallengeDialog({
     setMoveIndex(0);
     setSolved(false);
     setAttempts(0);
+    setStartTime(null);
+    setLeaderboardData(null);
     onOpenChange(false);
   };
 
@@ -229,6 +305,37 @@ export function PuzzleChallengeDialog({
                   </div>
                 </div>
               </div>
+
+              {leaderboardData && (
+                <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <Trophy className="w-4 h-4 text-primary" />
+                    Leaderboard Stats
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Players Solved:</span>
+                      <span className="font-medium text-primary">
+                        {leaderboardData.successfulSolves}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Success Rate:</span>
+                      <span className="font-medium">
+                        {leaderboardData.successRate.toFixed(1)}%
+                      </span>
+                    </div>
+                    {leaderboardData.fastestTime && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Fastest Time:</span>
+                        <span className="font-medium text-primary">
+                          {leaderboardData.fastestTime}s
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <Button
                 variant="outline"
