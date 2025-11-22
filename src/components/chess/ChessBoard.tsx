@@ -8,9 +8,10 @@ interface ChessBoardProps {
   playerColor: 'white' | 'black' | null;
   disabled?: boolean;
   chess: Chess;
+  lastMove?: { from: string; to: string } | null;
 }
 
-export const ChessBoardComponent = ({ position, onMove, playerColor, disabled, chess }: ChessBoardProps) => {
+export const ChessBoardComponent = ({ position, onMove, playerColor, disabled, chess, lastMove }: ChessBoardProps) => {
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const [legalMoves, setLegalMoves] = useState<Square[]>([]);
 
@@ -57,7 +58,17 @@ export const ChessBoardComponent = ({ position, onMove, playerColor, disabled, c
 
   const customSquareStyles: Record<string, React.CSSProperties> = {};
   
-  // Highlight selected square
+  // Highlight last move squares
+  if (lastMove) {
+    customSquareStyles[lastMove.from] = {
+      backgroundColor: 'rgba(255, 255, 100, 0.5)',
+    };
+    customSquareStyles[lastMove.to] = {
+      backgroundColor: 'rgba(255, 255, 100, 0.5)',
+    };
+  }
+  
+  // Highlight selected square (overrides last move highlight if same square)
   if (selectedSquare) {
     customSquareStyles[selectedSquare] = {
       backgroundColor: 'rgba(255, 255, 0, 0.4)',
