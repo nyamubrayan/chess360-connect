@@ -360,29 +360,29 @@ export default function Connect() {
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                 {connectedFriends.map((friend) => (
-                  <div
+                  <button
                     key={friend.id}
-                    className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
+                    className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 active:bg-muted/60 transition-all cursor-pointer text-left w-full touch-manipulation"
                     onClick={() => navigate(`/profile/${friend.id}`)}
                   >
-                    <Avatar className="w-10 h-10 border-2 border-primary/20">
+                    <Avatar className="w-10 h-10 border-2 border-primary/20 shrink-0">
                       <AvatarImage src={friend.avatar_url || undefined} />
                       <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                         {friend.username.substring(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 overflow-hidden">
                       <p className="font-semibold text-sm truncate">
                         {friend.display_name || friend.username}
                       </p>
                       <p className="text-xs text-muted-foreground truncate">
                         @{friend.username}
                       </p>
-                      <Badge variant="outline" className="text-xs mt-1">
+                      <Badge variant="outline" className="text-xs mt-1 pointer-events-none">
                         {friend.rating || 1200}
                       </Badge>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </CardContent>
