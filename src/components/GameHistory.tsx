@@ -3,9 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Clock, Calendar, Brain, Loader2 } from "lucide-react";
+import { Trophy, Clock, Calendar, Brain, Loader2, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import { GameMoveAnalysis } from "./GameMoveAnalysis";
 
 interface Game {
   id: string;
@@ -31,6 +32,8 @@ export const GameHistory = ({ userId, limit = 10, showAnalyzeButton = false }: G
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [analyzingGameId, setAnalyzingGameId] = useState<string | null>(null);
+  const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
+  const [showMoveAnalysis, setShowMoveAnalysis] = useState(false);
 
   useEffect(() => {
     fetchGames();
@@ -183,32 +186,54 @@ export const GameHistory = ({ userId, limit = 10, showAnalyzeButton = false }: G
                     </div>
                   </div>
 
-                  {showAnalyzeButton && (
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => analyzeGame(game.id)}
-                      disabled={analyzingGameId === game.id}
+                      onClick={() => {
+                        setSelectedGameId(game.id);
+                        setShowMoveAnalysis(true);
+                      }}
                     >
-                      {analyzingGameId === game.id ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Analyzing...
-                        </>
-                      ) : (
-                        <>
-                          <Brain className="h-4 w-4 mr-2" />
-                          Analyze
-                        </>
-                      )}
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Details
                     </Button>
-                  )}
+                    
+                    {showAnalyzeButton && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => analyzeGame(game.id)}
+                        disabled={analyzingGameId === game.id}
+                      >
+                        {analyzingGameId === game.id ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Analyzing...
+                          </>
+                        ) : (
+                          <>
+                            <Brain className="h-4 w-4 mr-2" />
+                            Analyze
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </Card>
             );
           })}
         </div>
       </CardContent>
+
+      {selectedGameId && (
+        <GameMoveAnalysis
+          gameId={selectedGameId}
+          open={showMoveAnalysis}
+          onOpenChange={setShowMoveAnalysis}
+        />
+      )}
     </Card>
   );
 };
