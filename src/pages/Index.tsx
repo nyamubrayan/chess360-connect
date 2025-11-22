@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 import { CommunityBar } from "@/components/CommunityBar";
 import { HeroSection } from "@/components/home/HeroSection";
-import { StatisticsSection } from "@/components/home/StatisticsSection";
 import { FeaturesSection } from "@/components/home/FeaturesSection";
 import { Footer } from "@/components/Footer";
 
@@ -33,8 +32,6 @@ const Index = () => {
         <div className="relative">
           <HeroSection />
         </div>
-
-        <StatisticsSection />
 
         <FeaturesSection />
       </div>
