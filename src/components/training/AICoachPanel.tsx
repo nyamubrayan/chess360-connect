@@ -53,6 +53,11 @@ export function AICoachPanel() {
   const [isHost, setIsHost] = useState(true);
   const [waitingForFriend, setWaitingForFriend] = useState(false);
   const [searchingForOpponent, setSearchingForOpponent] = useState(false);
+  const [opponentInfo, setOpponentInfo] = useState<{
+    username: string;
+    display_name: string | null;
+    rating: number;
+  } | null>(null);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const [moveStats, setMoveStats] = useState({
     host_good_moves: 0,
@@ -92,8 +97,24 @@ export function AICoachPanel() {
         // Load the session
         setSessionId(activeSession.id);
         setGameMode('friend');
-        setIsHost(activeSession.host_player_id === userId);
-        setWaitingForFriend(false);
+        const userIsHost = activeSession.host_player_id === userId;
+        setIsHost(userIsHost);
+        setPlayerColor(userIsHost ? 'white' : 'black');
+        setSearchingForOpponent(false);
+        
+        // Fetch opponent info
+        const opponentId = userIsHost ? activeSession.guest_player_id : activeSession.host_player_id;
+        if (opponentId) {
+          const { data: opponentProfile } = await supabase
+            .from('profiles')
+            .select('username, display_name, rating')
+            .eq('id', opponentId)
+            .single();
+          
+          if (opponentProfile) {
+            setOpponentInfo(opponentProfile);
+          }
+        }
         
         // Load the board state
         if (activeSession.current_fen) {
@@ -143,13 +164,15 @@ export function AICoachPanel() {
           .delete()
           .in('user_id', [userId, opponent.user_id]);
 
+        // Randomly assign colors
+        const userIsWhite = Math.random() > 0.5;
+        
         // Create training session
-        const isHost = Date.now() % 2 === 0;
         const { data: session, error } = await supabase
           .from('training_sessions')
           .insert({
-            host_player_id: isHost ? userId : opponent.user_id,
-            guest_player_id: isHost ? opponent.user_id : userId,
+            host_player_id: userIsWhite ? userId : opponent.user_id,
+            guest_player_id: userIsWhite ? opponent.user_id : userId,
             status: 'active',
           })
           .select()
@@ -158,9 +181,22 @@ export function AICoachPanel() {
         if (!error && session) {
           setSessionId(session.id);
           setGameMode('friend');
-          setIsHost(isHost);
+          setIsHost(userIsWhite);
+          setPlayerColor(userIsWhite ? 'white' : 'black');
           setSearchingForOpponent(false);
-          toast.success('Opponent found! Training started.');
+          
+          // Fetch opponent info
+          const { data: opponentProfile } = await supabase
+            .from('profiles')
+            .select('username, display_name, rating')
+            .eq('id', opponent.user_id)
+            .single();
+          
+          if (opponentProfile) {
+            setOpponentInfo(opponentProfile);
+          }
+          
+          toast.success(`Opponent found! You are playing as ${userIsWhite ? 'White' : 'Black'}.`);
         }
       }
     }, 2000);
@@ -413,6 +449,7 @@ export function AICoachPanel() {
     
     setSessionId(null);
     setSearchingForOpponent(false);
+    setOpponentInfo(null);
     setSessionStartTime(new Date());
     setGameMode(mode);
     await handleReset();
@@ -528,12 +565,35 @@ export function AICoachPanel() {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {/* Opponent Info */}
+              {gameMode === 'friend' && opponentInfo && (
+                <div className="mb-4 p-3 bg-muted/30 rounded-lg flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold text-foreground">
+                      {opponentInfo.display_name || opponentInfo.username}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      @{opponentInfo.username}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-primary">
+                      {opponentInfo.rating || 1200}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Rating</p>
+                  </div>
+                </div>
+              )}
+
               <div className="w-full max-w-2xl mx-auto">
                 <ChessBoardComponent
                   position={position}
                   onMove={handleMove}
-                  playerColor={gameMode === 'computer' ? playerColor : 'white'}
-                  disabled={gameMode === 'computer' && chess.turn() !== playerColor.charAt(0)}
+                  playerColor={gameMode === 'friend' ? playerColor : (gameMode === 'computer' ? playerColor : 'white')}
+                  disabled={
+                    (gameMode === 'computer' && chess.turn() !== playerColor.charAt(0)) ||
+                    (gameMode === 'friend' && chess.turn() !== playerColor.charAt(0))
+                  }
                   chess={chess}
                 />
               </div>
