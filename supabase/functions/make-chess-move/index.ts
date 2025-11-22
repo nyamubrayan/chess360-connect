@@ -52,6 +52,12 @@ async function updateEloRatings(
   blackPlayerId: string,
   result: 'white_win' | 'black_win' | 'draw'
 ) {
+  // For draws, don't change ratings at all
+  if (result === 'draw') {
+    console.log('Draw - ratings unchanged');
+    return { whiteChange: 0, blackChange: 0 };
+  }
+
   const { data: profiles } = await supabaseClient
     .from('profiles')
     .select('id, rating')
@@ -65,11 +71,13 @@ async function updateEloRatings(
       const whiteRating = whiteProfile.rating || 1200;
       const blackRating = blackProfile.rating || 1200;
 
+      // Calculate expected scores
       const expectedWhite = 1 / (1 + Math.pow(10, (blackRating - whiteRating) / 400));
       const expectedBlack = 1 / (1 + Math.pow(10, (whiteRating - blackRating) / 400));
 
-      let whiteScore = 0.5;
-      let blackScore = 0.5;
+      // Set actual scores based on result (1 for win, 0 for loss)
+      let whiteScore = 0;
+      let blackScore = 0;
 
       if (result === 'white_win') {
         whiteScore = 1;
@@ -79,6 +87,7 @@ async function updateEloRatings(
         blackScore = 1;
       }
 
+      // K-factor determines how much ratings change per game
       const K = 32;
       const newWhiteRating = Math.round(whiteRating + K * (whiteScore - expectedWhite));
       const newBlackRating = Math.round(blackRating + K * (blackScore - expectedBlack));
