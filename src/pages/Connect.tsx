@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { UserPlus, Users, Search, Check, Clock, X, Ban } from 'lucide-react';
 import { toast } from 'sonner';
+import { PuzzleChallengeDialog } from '@/components/PuzzleChallengeDialog';
 
 interface PlayerProfile {
   id: string;
@@ -36,6 +37,8 @@ export default function Connect() {
   const [friendStatuses, setFriendStatuses] = useState<Record<string, FriendStatus>>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [puzzleDialogOpen, setPuzzleDialogOpen] = useState(false);
+  const [pendingFriendRequest, setPendingFriendRequest] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -141,15 +144,20 @@ export default function Connect() {
     }
   };
 
-  const sendFriendRequest = async (friendId: string) => {
-    if (!user) return;
+  const initiateFriendRequest = (friendId: string, friendName: string) => {
+    setPendingFriendRequest({ id: friendId, name: friendName });
+    setPuzzleDialogOpen(true);
+  };
+
+  const sendFriendRequest = async () => {
+    if (!user || !pendingFriendRequest) return;
 
     try {
       const { error } = await supabase
         .from('friends')
         .insert({
           user_id: user.id,
-          friend_id: friendId,
+          friend_id: pendingFriendRequest.id,
           status: 'pending'
         });
 
@@ -157,7 +165,7 @@ export default function Connect() {
 
       // Send notification
       await supabase.from('notifications').insert({
-        user_id: friendId,
+        user_id: pendingFriendRequest.id,
         sender_id: user.id,
         type: 'friend_request',
         title: 'New Friend Request',
@@ -166,6 +174,7 @@ export default function Connect() {
 
       toast.success('Friend request sent!');
       loadPlayers(user.id);
+      setPendingFriendRequest(null);
     } catch (error: any) {
       console.error('Error sending friend request:', error);
       toast.error('Failed to send friend request');
@@ -457,7 +466,7 @@ export default function Connect() {
                           <Button
                             variant="default"
                             className="flex-1"
-                            onClick={() => sendFriendRequest(player.id)}
+                            onClick={() => initiateFriendRequest(player.id, player.display_name || player.username)}
                           >
                             <UserPlus className="w-4 h-4 mr-2" />
                             Add ChessMate
@@ -480,6 +489,13 @@ export default function Connect() {
           </div>
         )}
       </div>
+
+      <PuzzleChallengeDialog
+        open={puzzleDialogOpen}
+        onOpenChange={setPuzzleDialogOpen}
+        onSuccess={sendFriendRequest}
+        playerName={pendingFriendRequest?.name || ''}
+      />
     </div>
   );
 }
