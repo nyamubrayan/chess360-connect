@@ -107,6 +107,13 @@ export type Database = {
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "event_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       events: {
@@ -152,7 +159,15 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "events_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       friends: {
         Row: {
@@ -600,7 +615,15 @@ export type Database = {
           updated_at?: string
           views_count?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "news_articles_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
