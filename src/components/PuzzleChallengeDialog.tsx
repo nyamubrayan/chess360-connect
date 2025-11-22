@@ -46,6 +46,7 @@ export function PuzzleChallengeDialog({
   const [attempts, setAttempts] = useState(0);
   const [loading, setLoading] = useState(false);
   const [startTime, setStartTime] = useState<number | null>(null);
+  const [usedPuzzleIds, setUsedPuzzleIds] = useState<string[]>([]);
   const [leaderboardData, setLeaderboardData] = useState<{
     fastestTime: number | null;
     totalAttempts: number;
@@ -60,15 +61,31 @@ export function PuzzleChallengeDialog({
     }
   }, [open]);
 
+  // Auto-fetch new puzzle after 3 failed attempts
+  useEffect(() => {
+    if (attempts >= 3 && !solved) {
+      toast.info('Let\'s try a different puzzle!');
+      setTimeout(() => {
+        fetchRandomPuzzle();
+      }, 1500);
+    }
+  }, [attempts, solved]);
+
   const fetchRandomPuzzle = async () => {
     setLoading(true);
     try {
-      // Fetch a beginner or intermediate puzzle
-      const { data, error } = await supabase
+      // Fetch puzzles excluding already used ones
+      let query = supabase
         .from('puzzles')
         .select('*')
-        .in('difficulty', ['beginner', 'intermediate'])
-        .limit(10);
+        .in('difficulty', ['beginner', 'intermediate']);
+      
+      // Exclude recently used puzzles
+      if (usedPuzzleIds.length > 0) {
+        query = query.not('id', 'in', `(${usedPuzzleIds.join(',')})`);
+      }
+      
+      const { data, error } = await query.limit(20);
 
       if (error) throw error;
 
@@ -82,7 +99,17 @@ export function PuzzleChallengeDialog({
             : (JSON.parse(randomPuzzle.solution_moves as string) as string[]),
         };
         
+        // Track this puzzle to avoid repeats (keep last 5)
+        setUsedPuzzleIds(prev => {
+          const updated = [...prev, randomPuzzle.id];
+          return updated.slice(-5);
+        });
+        
         loadPuzzle(transformedPuzzle);
+      } else if (usedPuzzleIds.length > 0) {
+        // If no new puzzles available, reset used list and try again
+        setUsedPuzzleIds([]);
+        fetchRandomPuzzle();
       }
     } catch (error) {
       console.error('Error fetching puzzle:', error);
@@ -238,6 +265,10 @@ export function PuzzleChallengeDialog({
     }
   };
 
+  const handleNewPuzzle = () => {
+    fetchRandomPuzzle();
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -344,7 +375,17 @@ export function PuzzleChallengeDialog({
                 disabled={solved}
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
-                Restart Puzzle
+                Restart This Puzzle
+              </Button>
+
+              <Button
+                variant="default"
+                className="w-full"
+                onClick={handleNewPuzzle}
+                disabled={solved || loading}
+              >
+                <Brain className="w-4 h-4 mr-2" />
+                Try Different Puzzle
               </Button>
 
               <Button variant="ghost" className="w-full" onClick={handleClose}>
