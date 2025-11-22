@@ -112,7 +112,7 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
         <div className="flex items-center justify-between h-16 w-full">
           {/* Logo */}
           <div className="flex items-center cursor-pointer" onClick={() => navigate('/')}>
-            <img src={chessafariLogo} alt="Chessafari" className="h-10 w-auto" />
+            <img src={chessafariLogo} alt="Chessafari" className="h-10 w-auto" width="45" height="40" />
           </div>
 
           {/* Main Navigation */}
