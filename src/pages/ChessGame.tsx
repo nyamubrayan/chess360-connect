@@ -459,38 +459,24 @@ export default function ChessGame() {
     setIsProcessing(true);
 
     try {
-      // First validate the move server-side
-      const { data: validation, error: validationError } = await supabase.functions.invoke(
-        'validate-chess-move',
+      // Make the move with validation in a single call
+      const { data: result, error } = await supabase.functions.invoke(
+        'make-chess-move',
         {
           body: { 
-            gameId, 
-            move: `${from}${to}`,
+            gameId,
+            from,
+            to,
             promotionPiece 
           },
         }
       );
 
-      if (validationError || !validation.valid) {
-        throw new Error(validation?.error || 'Invalid move');
+      if (error || !result?.valid) {
+        throw new Error(result?.error || error?.message || 'Invalid move');
       }
 
-      // Then apply the move
-      const { error: moveError } = await supabase.functions.invoke(
-        'make-chess-move',
-        {
-          body: { 
-            gameId,
-            moveData: validation 
-          },
-        }
-      );
-
-      if (moveError) {
-        throw moveError;
-      }
-
-      fetchMoves();
+      const validation = result;
 
       // Play appropriate sound based on move result
       if (validation.isCheckmate) {
