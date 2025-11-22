@@ -603,7 +603,7 @@ export function AICoachPanel() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gradient">AI Coach Training</h1>
+              <h1 className="text-2xl font-bold text-gradient">Smart Chess Mentor Training</h1>
               <p className="text-sm text-muted-foreground mt-1">
                 {gameMode === 'solo' ? 'Solo practice with instant AI analysis' : 'Train with opponent - both receive AI feedback'}
               </p>

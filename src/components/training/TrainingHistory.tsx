@@ -137,7 +137,7 @@ export function TrainingHistory() {
         <CardContent className="p-8 text-center">
           <Target className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
           <p className="text-muted-foreground">
-            No training sessions yet. Complete an AI Coach Training session to see your history here.
+            No training sessions yet. Complete a Smart Chess Mentor Training session to see your history here.
           </p>
         </CardContent>
       </Card>

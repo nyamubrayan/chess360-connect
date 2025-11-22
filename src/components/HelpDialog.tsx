@@ -51,7 +51,7 @@ export const HelpDialog = ({ open, onOpenChange }: HelpDialogProps) => {
             <AccordionItem value="item-5">
               <AccordionTrigger>How does Smart Training work?</AccordionTrigger>
               <AccordionContent>
-                Smart Training includes multiple modules: Chess Basics (fundamentals), Puzzles (tactical training), Opening Theory (opening principles), Endgame Training (endgame techniques), and AI Coach (practice with analysis). Complete exercises to earn achievements, maintain streaks, and unlock new challenges.
+                Smart Training includes multiple modules: Chess Basics (fundamentals), Puzzles (tactical training), Opening Theory (opening principles), Endgame Training (endgame techniques), and Smart Chess Mentor (practice with analysis). Complete exercises to earn achievements, maintain streaks, and unlock new challenges.
               </AccordionContent>
             </AccordionItem>
 
