@@ -109,13 +109,16 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
 
     // Handle training invitations - show dialog
     if (notification.type === 'training_invite' && notification.room_id && notification.sender_id) {
+      console.log('Training invite clicked:', notification);
       try {
         // Fetch sender's profile
-        const { data: senderProfile } = await supabase
+        const { data: senderProfile, error: profileError } = await supabase
           .from('profiles')
           .select('display_name, username')
           .eq('id', notification.sender_id)
           .single();
+
+        console.log('Sender profile:', senderProfile, 'Error:', profileError);
 
         setTrainingInviteDialog({
           open: true,
@@ -327,14 +330,20 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
   const handleAcceptTrainingInvite = async () => {
     if (!trainingInviteDialog.notification?.room_id) return;
 
+    console.log('Accepting training invite:', trainingInviteDialog.notification.room_id);
+
     try {
       // Update session to active
-      const { error: updateError } = await supabase
+      const { data: updatedSession, error: updateError } = await supabase
         .from('training_sessions')
         .update({ status: 'active' })
-        .eq('id', trainingInviteDialog.notification.room_id);
+        .eq('id', trainingInviteDialog.notification.room_id)
+        .select()
+        .single();
 
       if (updateError) throw updateError;
+
+      console.log('Session updated to active:', updatedSession);
 
       toast.success('Training session joined!');
       setTrainingInviteDialog({ open: false, notification: null, senderName: null });

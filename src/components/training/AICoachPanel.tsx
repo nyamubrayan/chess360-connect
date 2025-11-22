@@ -74,14 +74,20 @@ export function AICoachPanel() {
     if (!userId) return;
 
     const checkActiveSession = async () => {
-      const { data: activeSession } = await supabase
+      console.log('Checking for active training session for user:', userId);
+      
+      const { data: activeSession, error: sessionError } = await supabase
         .from('training_sessions')
         .select('*')
         .or(`host_player_id.eq.${userId},guest_player_id.eq.${userId}`)
         .eq('status', 'active')
         .maybeSingle();
 
+      console.log('Active session check result:', activeSession, 'Error:', sessionError);
+
       if (activeSession) {
+        console.log('Loading active training session:', activeSession);
+        
         // Load the session
         setSessionId(activeSession.id);
         setGameMode('friend');
@@ -105,6 +111,8 @@ export function AICoachPanel() {
           guest_mistakes: activeSession.guest_mistakes || 0,
           guest_blunders: activeSession.guest_blunders || 0
         });
+
+        toast.success('Joined active training session');
       }
     };
 
