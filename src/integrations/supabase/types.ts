@@ -80,6 +80,80 @@ export type Database = {
           },
         ]
       }
+      event_participants: {
+        Row: {
+          event_id: string
+          id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          event_id: string
+          id?: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          event_id?: string
+          id?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_participants_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          created_at: string
+          description: string
+          event_date: string
+          id: string
+          image_url: string | null
+          location: string | null
+          max_participants: number | null
+          organizer_id: string
+          registration_deadline: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          event_date: string
+          id?: string
+          image_url?: string | null
+          location?: string | null
+          max_participants?: number | null
+          organizer_id: string
+          registration_deadline?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          event_date?: string
+          id?: string
+          image_url?: string | null
+          location?: string | null
+          max_participants?: number | null
+          organizer_id?: string
+          registration_deadline?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       friends: {
         Row: {
           created_at: string
@@ -488,6 +562,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      news_articles: {
+        Row: {
+          author_id: string
+          category: string | null
+          content: string
+          created_at: string
+          id: string
+          image_url: string | null
+          published_at: string | null
+          title: string
+          updated_at: string
+          views_count: number | null
+        }
+        Insert: {
+          author_id: string
+          category?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          published_at?: string | null
+          title: string
+          updated_at?: string
+          views_count?: number | null
+        }
+        Update: {
+          author_id?: string
+          category?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          published_at?: string | null
+          title?: string
+          updated_at?: string
+          views_count?: number | null
+        }
+        Relationships: []
       }
       notifications: {
         Row: {

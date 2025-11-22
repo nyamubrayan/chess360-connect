@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from './ui/button';
-import { Trophy, Target, UserIcon, Menu, GraduationCap, Swords, Home, Users, Sparkles } from 'lucide-react';
+import { Trophy, Target, UserIcon, Menu, GraduationCap, Swords, Home, Users, Sparkles, Newspaper } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { NotificationBell } from './NotificationBell';
 import { User } from '@supabase/supabase-js';
@@ -46,6 +46,11 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
       icon: Swords,
       label: 'Tournaments',
       path: '/tournaments'
+    },
+    {
+      icon: Newspaper,
+      label: 'News & Events',
+      path: '/news'
     },
     {
       icon: Trophy,
