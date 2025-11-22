@@ -180,12 +180,31 @@ export function PuzzleChallengeDialog({
     }
 
     const expectedMove = puzzle.solution_moves[moveIndex];
+    
+    // Normalize move notation for comparison (remove +, #, x for flexible matching)
+    const normalizedPlayerMove = move.san.replace(/[+#x]/g, '');
+    const normalizedExpectedMove = expectedMove.replace(/[+#x]/g, '');
+    
+    // Check if moves match (either exact SAN match or normalized match or UCI match)
+    const isCorrectMove = 
+      move.san === expectedMove || 
+      normalizedPlayerMove === normalizedExpectedMove ||
+      `${from}${to}` === expectedMove.toLowerCase() ||
+      move.lan === expectedMove;
 
-    if (move.san !== expectedMove) {
+    console.log('Move validation:', { 
+      playerMove: move.san, 
+      expectedMove, 
+      normalized: { player: normalizedPlayerMove, expected: normalizedExpectedMove },
+      uci: `${from}${to}`,
+      isCorrect: isCorrectMove 
+    });
+
+    if (!isCorrectMove) {
       setAttempts((prev) => prev + 1);
       chess.undo();
       sounds.playCapture();
-      toast.error(`Wrong move! Expected: ${expectedMove}. Try again!`, { duration: 3000 });
+      toast.error(`Wrong move! Try again!`, { duration: 3000 });
       return;
     }
 
