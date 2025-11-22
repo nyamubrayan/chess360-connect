@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Users, Calendar, Plus, UserPlus, Search } from "lucide-react";
+import { Trophy, Users, Calendar, Plus, UserPlus, Search, Home } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { CreateTournamentDialog } from "@/components/tournaments/CreateTournamentDialog";
 import { toast } from "sonner";
@@ -192,6 +192,9 @@ export default function Tournaments() {
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/')} title="Home">
+              <Home className="w-5 h-5" />
+            </Button>
             <div>
               <h1 className="text-4xl font-bold text-foreground mb-2">Tournaments</h1>
               <p className="text-muted-foreground">Compete against players worldwide</p>
