@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { UserPlus, Users, Search, Check, Clock, X, Ban } from 'lucide-react';
+import { UserPlus, Users, Search, Check, Clock, X, Ban, ArrowUpDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { PuzzleChallengeDialog } from '@/components/PuzzleChallengeDialog';
 import { TrainingStats } from '@/components/training/TrainingStats';
@@ -53,6 +53,7 @@ export default function Connect() {
   const [loading, setLoading] = useState(true);
   const [puzzleDialogOpen, setPuzzleDialogOpen] = useState(false);
   const [pendingFriendRequest, setPendingFriendRequest] = useState<{ id: string; name: string } | null>(null);
+  const [sortBy, setSortBy] = useState<'rating' | 'games' | 'puzzles' | 'chessmates'>('rating');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -345,10 +346,24 @@ export default function Connect() {
     }
   };
 
-  const filteredPlayers = players.filter(player => 
-    player.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    player.display_name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredPlayers = players
+    .filter(player => 
+      player.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      player.display_name?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'games':
+          return (b.total_games || 0) - (a.total_games || 0);
+        case 'puzzles':
+          return (b.puzzles_solved || 0) - (a.puzzles_solved || 0);
+        case 'chessmates':
+          return (b.chessmates_count || 0) - (a.chessmates_count || 0);
+        case 'rating':
+        default:
+          return (b.rating || 1200) - (a.rating || 1200);
+      }
+    });
 
   if (!user) {
     return (
@@ -425,18 +440,33 @@ export default function Connect() {
           </Card>
         )}
 
-        {/* Search Bar */}
+        {/* Search and Sort Bar */}
         <Card className="gradient-card mb-8">
           <CardContent className="p-6">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
-              <Input
-                type="text"
-                placeholder="Search players by username..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+                <Input
+                  type="text"
+                  placeholder="Search players by username..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="px-4 py-2 rounded-md bg-background border border-input text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="rating">Sort by Rating</option>
+                  <option value="games">Sort by Games Played</option>
+                  <option value="puzzles">Sort by Puzzles Solved</option>
+                  <option value="chessmates">Sort by ChessMates</option>
+                </select>
+              </div>
             </div>
           </CardContent>
         </Card>
