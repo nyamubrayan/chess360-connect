@@ -172,14 +172,28 @@ export function PuzzleChallengeDialog({
   const handleMove = async (from: string, to: string) => {
     if (!puzzle || solved) return;
 
+    console.log('Puzzle state:', { 
+      puzzleId: puzzle.id,
+      solutionMoves: puzzle.solution_moves,
+      currentMoveIndex: moveIndex,
+      expectedMove: puzzle.solution_moves[moveIndex]
+    });
+
     const move = chess.move({ from, to, promotion: 'q' });
 
     if (!move) {
+      console.error('Invalid chess move attempted:', { from, to });
       toast.error('Invalid move');
       return;
     }
 
     const expectedMove = puzzle.solution_moves[moveIndex];
+    
+    if (!expectedMove) {
+      console.error('No expected move found at index:', moveIndex);
+      toast.error('Puzzle configuration error');
+      return;
+    }
     
     // Normalize move notation for comparison (remove +, #, x for flexible matching)
     const normalizedPlayerMove = move.san.replace(/[+#x]/g, '');
@@ -193,11 +207,18 @@ export function PuzzleChallengeDialog({
       move.lan === expectedMove;
 
     console.log('Move validation:', { 
-      playerMove: move.san, 
+      playerMove: move.san,
+      playerMoveLAN: move.lan,
       expectedMove, 
       normalized: { player: normalizedPlayerMove, expected: normalizedExpectedMove },
       uci: `${from}${to}`,
-      isCorrect: isCorrectMove 
+      isCorrect: isCorrectMove,
+      allChecks: {
+        exactMatch: move.san === expectedMove,
+        normalizedMatch: normalizedPlayerMove === normalizedExpectedMove,
+        uciMatch: `${from}${to}` === expectedMove.toLowerCase(),
+        lanMatch: move.lan === expectedMove
+      }
     });
 
     if (!isCorrectMove) {
