@@ -854,6 +854,39 @@ export type Database = {
         }
         Relationships: []
       }
+      training_achievements: {
+        Row: {
+          badge_icon: string
+          created_at: string | null
+          description: string
+          id: string
+          name: string
+          points: number | null
+          requirement_type: string
+          requirement_value: number
+        }
+        Insert: {
+          badge_icon: string
+          created_at?: string | null
+          description: string
+          id?: string
+          name: string
+          points?: number | null
+          requirement_type: string
+          requirement_value: number
+        }
+        Update: {
+          badge_icon?: string
+          created_at?: string | null
+          description?: string
+          id?: string
+          name?: string
+          points?: number | null
+          requirement_type?: string
+          requirement_value?: number
+        }
+        Relationships: []
+      }
       user_achievements: {
         Row: {
           achievement_id: string
@@ -960,6 +993,134 @@ export type Database = {
           },
         ]
       }
+      user_streaks: {
+        Row: {
+          current_streak: number | null
+          id: string
+          last_activity_date: string | null
+          longest_streak: number | null
+          total_training_days: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          current_streak?: number | null
+          id?: string
+          last_activity_date?: string | null
+          longest_streak?: number | null
+          total_training_days?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          current_streak?: number | null
+          id?: string
+          last_activity_date?: string | null
+          longest_streak?: number | null
+          total_training_days?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_training_achievements: {
+        Row: {
+          achievement_id: string
+          earned_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          earned_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          earned_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_training_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "training_achievements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_training_progress: {
+        Row: {
+          completed: boolean | null
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          score: number | null
+          time_spent: number | null
+          training_id: string
+          training_type: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          score?: number | null
+          time_spent?: number | null
+          training_id: string
+          training_type: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          score?: number | null
+          time_spent?: number | null
+          training_id?: string
+          training_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_training_stats: {
+        Row: {
+          id: string
+          total_lessons_completed: number | null
+          total_perfect_scores: number | null
+          total_points: number | null
+          total_puzzles_solved: number | null
+          training_level: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          total_lessons_completed?: number | null
+          total_perfect_scores?: number | null
+          total_points?: number | null
+          total_puzzles_solved?: number | null
+          training_level?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          total_lessons_completed?: number | null
+          total_perfect_scores?: number | null
+          total_points?: number | null
+          total_puzzles_solved?: number | null
+          training_level?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       game_history: {
@@ -1011,6 +1172,10 @@ export type Database = {
         Args: { lat1: number; lat2: number; lon1: number; lon2: number }
         Returns: number
       }
+      check_and_award_achievements: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1019,6 +1184,7 @@ export type Database = {
         Returns: boolean
       }
       update_player_stats: { Args: { p_user_id: string }; Returns: undefined }
+      update_user_streak: { Args: { p_user_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "coach" | "player"

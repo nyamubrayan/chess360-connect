@@ -6,6 +6,7 @@ import { ChessBoardComponent } from '@/components/chess/ChessBoard';
 import { ChevronLeft, ChevronRight, RotateCcw, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useTrainingProgress } from '@/hooks/useTrainingProgress';
 
 interface EndgameLessonProps {
   scenario: {
@@ -17,15 +18,18 @@ interface EndgameLessonProps {
     solutionMoves: string[];
     keyIdeas: string[];
   };
+  user: any;
 }
 
-export const EndgameLesson = ({ scenario }: EndgameLessonProps) => {
+export const EndgameLesson = ({ scenario, user }: EndgameLessonProps) => {
   const [game, setGame] = useState<Chess>(new Chess(scenario.startingFen));
   const [position, setPosition] = useState(scenario.startingFen);
   const [currentMoveIndex, setCurrentMoveIndex] = useState(-1);
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
   const [currentExplanation, setCurrentExplanation] = useState<string>('');
   const [loadingExplanation, setLoadingExplanation] = useState(false);
+  const [completedLesson, setCompletedLesson] = useState(false);
+  const { recordProgress } = useTrainingProgress();
 
   useEffect(() => {
     resetLesson();
@@ -82,7 +86,20 @@ export const EndgameLesson = ({ scenario }: EndgameLessonProps) => {
   };
 
   const nextMove = async () => {
-    if (currentMoveIndex >= scenario.solutionMoves.length - 1) return;
+    if (currentMoveIndex >= scenario.solutionMoves.length - 1) {
+      // Lesson completed
+      if (!completedLesson && user) {
+        setCompletedLesson(true);
+        toast.success('🎉 Endgame lesson completed!');
+        recordProgress({
+          trainingType: 'endgame',
+          trainingId: scenario.id,
+          completed: true,
+          score: 100,
+        });
+      }
+      return;
+    }
 
     const newIndex = currentMoveIndex + 1;
     const moveUci = scenario.solutionMoves[newIndex];

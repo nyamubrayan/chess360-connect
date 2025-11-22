@@ -10,6 +10,7 @@ import { CommunityBar } from '@/components/CommunityBar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useTrainingProgress } from '@/hooks/useTrainingProgress';
 
 interface OpeningLessonProps {
   opening: Opening;
@@ -25,6 +26,8 @@ export const OpeningLesson = ({ opening, onBack, user }: OpeningLessonProps) => 
   const [showingVariation, setShowingVariation] = useState(false);
   const [currentExplanation, setCurrentExplanation] = useState<string>('');
   const [loadingExplanation, setLoadingExplanation] = useState(false);
+  const [completedLesson, setCompletedLesson] = useState(false);
+  const { recordProgress } = useTrainingProgress();
 
   const currentMoves = showingVariation 
     ? opening.variations[selectedVariation].moves 
@@ -99,6 +102,16 @@ export const OpeningLesson = ({ opening, onBack, user }: OpeningLessonProps) => 
   const nextMove = () => {
     if (currentMoveIndex < currentMoves.length - 1) {
       makeMove(currentMoveIndex + 1);
+    } else if (!completedLesson && currentMoveIndex === currentMoves.length - 1 && user) {
+      // Lesson completed
+      setCompletedLesson(true);
+      toast.success('🎉 Opening lesson completed!');
+      recordProgress({
+        trainingType: 'opening',
+        trainingId: opening.id,
+        completed: true,
+        score: 100,
+      });
     }
   };
 

@@ -7,8 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChessBoardComponent } from '@/components/chess/ChessBoard';
 import { toast } from 'sonner';
-import { ArrowLeft, CheckCircle, XCircle, Trophy, Target, Brain } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, Trophy, Target, Brain, Award } from 'lucide-react';
 import { useChessSounds } from '@/hooks/useChessSounds';
+import { useTrainingProgress } from '@/hooks/useTrainingProgress';
+import { TrainingStats } from '@/components/training/TrainingStats';
+import { AchievementsPanel } from '@/components/training/AchievementsPanel';
 
 interface Puzzle {
   id: string;
@@ -34,7 +37,9 @@ export default function Puzzles() {
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
+  const [showAchievements, setShowAchievements] = useState(false);
   const sounds = useChessSounds();
+  const { recordProgress } = useTrainingProgress();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -134,8 +139,9 @@ export default function Puzzles() {
       setSolved(true);
       sounds.playCheckmate();
       const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+      const score = attempts === 0 ? 100 : Math.max(50, 100 - (attempts * 10));
       
-      toast.success('🎉 Puzzle solved! Well done!', { duration: 5000 });
+      toast.success(`🎉 Puzzle solved! Score: ${score}%`, { duration: 5000 });
 
       // Save attempt
       await supabase.from('user_puzzle_attempts').insert({
@@ -145,6 +151,15 @@ export default function Puzzles() {
         attempts: attempts + 1,
         time_spent: timeSpent,
         completed_at: new Date().toISOString(),
+      });
+
+      // Record progress for gamification
+      await recordProgress({
+        trainingType: 'puzzle',
+        trainingId: currentPuzzle.id,
+        completed: true,
+        score,
+        timeSpent,
       });
 
       return;
@@ -186,7 +201,7 @@ export default function Puzzles() {
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="container mx-auto max-w-7xl">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
           <Button variant="secondary" size="sm" onClick={() => navigate('/')} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
             Home
@@ -195,8 +210,23 @@ export default function Puzzles() {
             <Brain className="w-8 h-8" />
             Tactical Puzzles
           </h1>
-          <div className="w-20" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAchievements(!showAchievements)}
+            className="gap-2"
+          >
+            <Award className="w-4 h-4" />
+            {showAchievements ? 'Hide' : 'Show'} Achievements
+          </Button>
         </div>
+
+        {user && (
+          <div className="mb-6 space-y-6">
+            <TrainingStats userId={user.id} />
+            {showAchievements && <AchievementsPanel userId={user.id} />}
+          </div>
+        )}
 
         {!currentPuzzle ? (
           <div>
