@@ -36,7 +36,7 @@ const Index = () => {
       
       <div className="flex-1">
         <div className="relative">
-          <HeroSection user={user} />
+          <HeroSection />
         </div>
 
         <FeaturesSection />

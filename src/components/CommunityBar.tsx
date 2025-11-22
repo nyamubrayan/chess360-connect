@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Trophy, Target, UserIcon, Menu, GraduationCap, Swords, Home, Users, Sparkles, Newspaper } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { NotificationBell } from './NotificationBell';
 import { User } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 import chessafariLogo from '@/assets/chessafari-logo.png';
 import {
   Sheet,
@@ -20,6 +22,22 @@ interface CommunityBarProps {
 export const CommunityBar = ({ user }: CommunityBarProps) => {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
+
+  useEffect(() => {
+    if (user) {
+      const fetchProfile = async () => {
+        const { data } = await supabase
+          .from("profiles")
+          .select("username, display_name, avatar_url, rating")
+          .eq("id", user.id)
+          .single();
+        
+        if (data) setProfile(data);
+      };
+      fetchProfile();
+    }
+  }, [user]);
 
   const mainLinks = [
     {
@@ -101,6 +119,24 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
             {user ? (
               <>
                 <NotificationBell userId={user.id} />
+                
+                {/* Profile Display */}
+                {profile && (
+                  <div 
+                    className="hidden lg:flex items-center gap-3 px-3 py-2 rounded-lg bg-card/50 border border-border cursor-pointer hover:bg-card/70 transition-all"
+                    onClick={() => navigate('/profile')}
+                  >
+                    <Avatar className="w-10 h-10 border-2 border-primary">
+                      <AvatarImage src={profile.avatar_url} alt={profile.username} />
+                      <AvatarFallback>{profile.username?.[0]?.toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div className="text-left">
+                      <p className="font-semibold text-sm leading-tight">{profile.display_name || profile.username}</p>
+                      <p className="text-xs text-muted-foreground">Rating: {profile.rating || 1200}</p>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="hidden lg:flex items-center gap-2">
                   {userLinks.map((link) => (
                     <Button
