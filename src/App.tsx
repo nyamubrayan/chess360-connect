@@ -16,6 +16,7 @@ import Training from "./pages/Training";
 import Openings from "./pages/Openings";
 import Endgames from "./pages/Endgames";
 import Lessons from "./pages/Lessons";
+import AICoach from "./pages/AICoach";
 import Connect from "./pages/Connect";
 import Chat from "./pages/Chat";
 import Tournaments from "./pages/Tournaments";
@@ -45,6 +46,7 @@ const App = () => (
           <Route path="/openings" element={<Openings />} />
           <Route path="/endgames" element={<Endgames />} />
           <Route path="/lessons" element={<Lessons />} />
+          <Route path="/ai-coach" element={<AICoach />} />
           <Route path="/connect" element={<Connect />} />
           <Route path="/chat/:friendId" element={<Chat />} />
           <Route path="/tournaments" element={<Tournaments />} />

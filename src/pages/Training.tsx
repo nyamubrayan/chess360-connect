@@ -35,6 +35,15 @@ export default function Training() {
   const trainingCards = [
     {
       icon: Brain,
+      title: 'AI Coach Training',
+      description: 'Get instant move-by-move analysis and feedback from AI as you play',
+      gradient: 'from-violet-500/20 to-purple-500/20',
+      iconColor: 'text-violet-500',
+      path: '/ai-coach',
+      available: true
+    },
+    {
+      icon: Brain,
       title: 'Tactical Puzzles',
       description: 'Sharpen your tactical vision with curated chess puzzles across all difficulty levels',
       gradient: 'from-purple-500/20 to-pink-500/20',
