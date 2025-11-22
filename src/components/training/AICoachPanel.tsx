@@ -4,7 +4,7 @@ import { ChessBoardComponent } from '@/components/chess/ChessBoard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Brain, Lightbulb, TrendingUp, AlertCircle, Loader2, RotateCcw, User, Users, Bot, Send } from 'lucide-react';
+import { Brain, Lightbulb, TrendingUp, AlertCircle, Loader2, RotateCcw, User, Users, Bot, Send, Flag, Swords } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
@@ -410,6 +410,85 @@ export function AICoachPanel() {
     toast.success('Board reset');
   };
 
+  const handleResign = async () => {
+    if (!sessionId || gameMode !== 'friend') return;
+
+    try {
+      const duration = sessionStartTime 
+        ? Math.floor((Date.now() - sessionStartTime.getTime()) / 1000)
+        : 0;
+      
+      const hostTotal = moveStats.host_good_moves + moveStats.host_mistakes + moveStats.host_blunders;
+      const guestTotal = moveStats.guest_good_moves + moveStats.guest_mistakes + moveStats.guest_blunders;
+      
+      const hostAccuracy = hostTotal > 0 
+        ? ((moveStats.host_good_moves / hostTotal) * 100)
+        : null;
+      const guestAccuracy = guestTotal > 0
+        ? ((moveStats.guest_good_moves / guestTotal) * 100)
+        : null;
+
+      await supabase
+        .from('training_sessions')
+        .update({
+          status: 'completed',
+          completed_at: new Date().toISOString(),
+          duration,
+          host_move_accuracy: hostAccuracy,
+          guest_move_accuracy: guestAccuracy
+        })
+        .eq('id', sessionId);
+
+      toast.success('Training session ended');
+      
+      // Reset state
+      setSessionId(null);
+      setOpponentInfo(null);
+      setGameMode('solo');
+      await handleReset();
+    } catch (error) {
+      console.error('Error resigning:', error);
+      toast.error('Failed to end session');
+    }
+  };
+
+  const handleChallengeToRealGame = async () => {
+    if (!userId || !opponentInfo || !sessionId) return;
+
+    try {
+      // Get opponent ID
+      const { data: session } = await supabase
+        .from('training_sessions')
+        .select('host_player_id, guest_player_id')
+        .eq('id', sessionId)
+        .single();
+
+      if (!session) return;
+
+      const opponentId = session.host_player_id === userId 
+        ? session.guest_player_id 
+        : session.host_player_id;
+
+      if (!opponentId) return;
+
+      // Create notification for opponent
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: opponentId,
+          sender_id: userId,
+          type: 'game_challenge',
+          title: 'Real Game Challenge',
+          message: `Challenge received from training match - accept to play a rated game!`,
+        });
+
+      toast.success('Challenge sent to opponent!');
+    } catch (error) {
+      console.error('Error sending challenge:', error);
+      toast.error('Failed to send challenge');
+    }
+  };
+
   const handleModeChange = async (mode: GameMode) => {
     // Complete current session if it exists
     if (sessionId && sessionStartTime && gameMode === 'friend') {
@@ -565,24 +644,48 @@ export function AICoachPanel() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {/* Opponent Info */}
+              {/* Opponent Info and Actions */}
               {gameMode === 'friend' && opponentInfo && (
-                <div className="mb-4 p-3 bg-muted/30 rounded-lg flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-foreground">
-                      {opponentInfo.display_name || opponentInfo.username}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      @{opponentInfo.username}
-                    </p>
+                <>
+                  <div className="mb-4 p-3 bg-muted/30 rounded-lg flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-foreground">
+                        {opponentInfo.display_name || opponentInfo.username}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        @{opponentInfo.username}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-primary">
+                        {opponentInfo.rating || 1200}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Rating</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-semibold text-primary">
-                      {opponentInfo.rating || 1200}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Rating</p>
+                  
+                  {/* Action Buttons */}
+                  <div className="mb-4 flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleResign}
+                      className="flex-1 flex items-center gap-2"
+                    >
+                      <Flag className="w-4 h-4" />
+                      Resign
+                    </Button>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={handleChallengeToRealGame}
+                      className="flex-1 flex items-center gap-2"
+                    >
+                      <Swords className="w-4 h-4" />
+                      Challenge to Real Game
+                    </Button>
                   </div>
-                </div>
+                </>
               )}
 
               <div className="w-full max-w-2xl mx-auto">
