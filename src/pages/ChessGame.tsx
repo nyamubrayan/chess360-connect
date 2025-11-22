@@ -439,8 +439,8 @@ export default function ChessGame() {
     }
 
     // Check if this is a pawn promotion
-    const move = chess.move({ from, to, promotion: 'q' }); // Test move
-    if (move) chess.undo(); // Undo test move
+    const testMove = chess.move({ from, to, promotion: 'q' }); // Test move
+    if (testMove) chess.undo(); // Undo test move
     
     const piece = chess.get(from as Square);
     const isPromotion = piece?.type === 'p' && 
@@ -452,12 +452,31 @@ export default function ChessGame() {
       return;
     }
 
+    // Optimistically update UI immediately
+    const move = chess.move({ from, to });
+    if (!move) {
+      toast.error('Invalid move');
+      return;
+    }
+
+    // Update position immediately for instant feedback
+    setPosition(chess.fen());
+    setIsProcessing(true);
+
+    // Play sound immediately
+    if (move.captured) {
+      sounds.playCapture();
+    } else if (move.flags.includes('k') || move.flags.includes('q')) {
+      sounds.playCastle();
+    } else {
+      sounds.playMove();
+    }
+
+    // Validate with backend in background
     await executeMove(from, to);
   };
 
   const executeMove = async (from: string, to: string, promotionPiece?: string) => {
-    setIsProcessing(true);
-
     try {
       // Make the move with validation in a single call
       const { data: result, error } = await supabase.functions.invoke(
@@ -473,12 +492,15 @@ export default function ChessGame() {
       );
 
       if (error || !result?.valid) {
+        // Revert the optimistic update on error
+        chess.load(game.current_fen);
+        setPosition(game.current_fen);
         throw new Error(result?.error || error?.message || 'Invalid move');
       }
 
       const validation = result;
 
-      // Play appropriate sound based on move result
+      // Play additional sounds based on game state
       if (validation.isCheckmate) {
         sounds.playCheckmate();
         toast.success('Checkmate!');
@@ -489,12 +511,6 @@ export default function ChessGame() {
         toast.info('Stalemate');
       } else if (validation.isDraw) {
         toast.info('Draw');
-      } else if (validation.isCastling) {
-        sounds.playCastle();
-      } else if (validation.isCapture) {
-        sounds.playCapture();
-      } else {
-        sounds.playMove();
       }
 
     } catch (error: any) {
