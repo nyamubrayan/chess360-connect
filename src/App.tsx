@@ -21,6 +21,7 @@ import Chat from "./pages/Chat";
 import Tournaments from "./pages/Tournaments";
 import TournamentDetail from "./pages/TournamentDetail";
 import Highlights from "./pages/Highlights";
+import NewsAndEvents from "./pages/NewsAndEvents";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,7 @@ const App = () => (
           <Route path="/tournaments" element={<Tournaments />} />
           <Route path="/tournaments/:id" element={<TournamentDetail />} />
           <Route path="/highlights" element={<Highlights />} />
+          <Route path="/news" element={<NewsAndEvents />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
