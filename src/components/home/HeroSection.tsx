@@ -1,10 +1,34 @@
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Play, Puzzle, Trophy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { User } from "@supabase/supabase-js";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import heroImage from "@/assets/chess-hero.jpg";
 
-export const HeroSection = () => {
+interface HeroSectionProps {
+  user: User | null;
+}
+
+export const HeroSection = ({ user }: HeroSectionProps) => {
   const navigate = useNavigate();
+  const [profile, setProfile] = useState<any>(null);
+
+  useEffect(() => {
+    if (user) {
+      const fetchProfile = async () => {
+        const { data } = await supabase
+          .from("profiles")
+          .select("username, display_name, avatar_url, rating")
+          .eq("id", user.id)
+          .single();
+        
+        if (data) setProfile(data);
+      };
+      fetchProfile();
+    }
+  }, [user]);
 
   return (
     <section className="relative overflow-hidden py-20 sm:py-32 px-4">
@@ -15,6 +39,19 @@ export const HeroSection = () => {
       ></div>
       
       <div className="container mx-auto max-w-6xl relative z-10">
+        {user && profile && (
+          <div className="flex items-center justify-center gap-4 mb-8 p-4 bg-card/50 backdrop-blur-sm rounded-lg border border-border w-fit mx-auto">
+            <Avatar className="w-16 h-16 border-2 border-primary">
+              <AvatarImage src={profile.avatar_url} alt={profile.username} />
+              <AvatarFallback>{profile.username?.[0]?.toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <div className="text-left">
+              <h2 className="text-xl font-bold">{profile.display_name || profile.username}</h2>
+              <p className="text-muted-foreground">Rating: {profile.rating || 1200}</p>
+            </div>
+          </div>
+        )}
+        
         <div className="text-center space-y-8 max-w-4xl mx-auto">
           <div className="space-y-4">
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight">
