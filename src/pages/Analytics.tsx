@@ -24,12 +24,23 @@ interface GameAnalysis {
   suggestions: string;
 }
 
+interface GameRatingHistory {
+  game_number: number;
+  rating: number;
+  result: string;
+  completed_at: string;
+  white_rating_change: number | null;
+  black_rating_change: number | null;
+  is_white: boolean;
+}
+
 export default function Analytics() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<PlayerStats | null>(null);
   const [analyses, setAnalyses] = useState<GameAnalysis[]>([]);
   const [user, setUser] = useState<any>(null);
+  const [ratingHistory, setRatingHistory] = useState<GameRatingHistory[]>([]);
 
   useEffect(() => {
     fetchUserAndData();
@@ -62,6 +73,68 @@ export default function Analytics() {
         .limit(10);
 
       setAnalyses(analysesData || []);
+
+      // Fetch rating history from all completed games
+      const { data: gamesData } = await supabase
+        .from("games")
+        .select(`
+          completed_at,
+          result,
+          white_player_id,
+          black_player_id,
+          white_rating_change,
+          black_rating_change
+        `)
+        .or(`white_player_id.eq.${user.id},black_player_id.eq.${user.id}`)
+        .eq("status", "completed")
+        .order("completed_at", { ascending: true });
+
+      if (gamesData) {
+        // Get initial rating
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("rating")
+          .eq("id", user.id)
+          .single();
+
+        const initialRating = 1200; // Starting rating
+        const currentRating = profile?.rating || 1200;
+
+        // Calculate rating progression
+        let cumulativeRating = initialRating;
+        const history: GameRatingHistory[] = [];
+
+        // Work backwards from current rating
+        const reversedGames = [...gamesData].reverse();
+        let workingRating = currentRating;
+
+        reversedGames.forEach((game) => {
+          const isWhite = game.white_player_id === user.id;
+          const ratingChange = isWhite ? game.white_rating_change : game.black_rating_change;
+          
+          // Current game shows the rating AFTER the game
+          history.unshift({
+            game_number: history.length + 1,
+            rating: workingRating,
+            result: game.result || "draw",
+            completed_at: game.completed_at || "",
+            white_rating_change: game.white_rating_change,
+            black_rating_change: game.black_rating_change,
+            is_white: isWhite
+          });
+
+          // Subtract the rating change to get the rating before this game
+          workingRating -= (ratingChange || 0);
+        });
+
+        // Reverse to chronological order and renumber
+        const chronologicalHistory = history.reverse().map((h, idx) => ({
+          ...h,
+          game_number: idx + 1
+        }));
+
+        setRatingHistory(chronologicalHistory);
+      }
     } catch (error) {
       console.error("Error fetching analytics:", error);
     } finally {
@@ -93,12 +166,11 @@ export default function Analytics() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
 
-  // Performance trend data
-  const trendData = analyses.slice(0, 7).reverse().map((analysis, index) => ({
-    game: `Game ${index + 1}`,
-    rating: analysis.overall_rating?.includes("excellent") || analysis.overall_rating?.includes("strong") ? 4 :
-            analysis.overall_rating?.includes("good") || analysis.overall_rating?.includes("solid") ? 3 :
-            analysis.overall_rating?.includes("decent") || analysis.overall_rating?.includes("average") ? 2 : 1,
+  // Rating progression data for chart
+  const ratingChartData = ratingHistory.map((h) => ({
+    game: `Game ${h.game_number}`,
+    rating: h.rating,
+    gameNumber: h.game_number
   }));
 
   if (loading) {
@@ -170,21 +242,47 @@ export default function Analytics() {
 
         </div>
 
-        {/* Performance Trend */}
-        {trendData.length > 0 && (
+        {/* Rating Progression */}
+        {ratingChartData.length > 0 && (
           <Card className="gradient-card p-6">
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
               <TrendingUp className="h-6 w-6 text-primary" />
-              Performance Trend (Last 7 Games)
+              Rating Progress (All Games)
             </h2>
-            <ChartContainer config={{ rating: { label: "Performance", color: "hsl(var(--primary))" } }}>
+            <ChartContainer config={{ rating: { label: "Rating", color: "hsl(var(--primary))" } }}>
               <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={trendData}>
+                <LineChart data={ratingChartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="game" stroke="hsl(var(--foreground))" />
-                  <YAxis stroke="hsl(var(--foreground))" domain={[0, 5]} ticks={[1, 2, 3, 4]} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Line type="monotone" dataKey="rating" stroke="hsl(var(--primary))" strokeWidth={3} dot={{ r: 6 }} />
+                  <XAxis 
+                    dataKey="game" 
+                    stroke="hsl(var(--foreground))"
+                    label={{ value: 'Game Number', position: 'insideBottom', offset: -5 }}
+                  />
+                  <YAxis 
+                    stroke="hsl(var(--foreground))"
+                    label={{ value: 'Rating', angle: -90, position: 'insideLeft' }}
+                  />
+                  <Tooltip 
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-background border border-border p-2 rounded-lg shadow-lg">
+                            <p className="text-sm font-semibold">{payload[0].payload.game}</p>
+                            <p className="text-sm">Rating: {payload[0].value}</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="rating" 
+                    stroke="hsl(var(--primary))" 
+                    strokeWidth={3} 
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </ChartContainer>
