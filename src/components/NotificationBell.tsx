@@ -57,8 +57,10 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
           table: "notifications",
           filter: `user_id=eq.${userId}`,
         },
-        (payload) => {
+        async (payload) => {
           const newNotification = payload.new as Notification;
+          console.log('Realtime notification received:', newNotification);
+
           setNotifications((prev) => [newNotification, ...prev]);
           setUnreadCount((prev) => prev + 1);
           
@@ -66,6 +68,27 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
           toast.info(newNotification.title, {
             description: newNotification.message,
           });
+
+          // Auto-open training invitation dialog
+          if (newNotification.type === 'training_invite' && newNotification.sender_id) {
+            try {
+              const { data: senderProfile, error: profileError } = await supabase
+                .from('profiles')
+                .select('display_name, username')
+                .eq('id', newNotification.sender_id)
+                .single();
+
+              console.log('Sender profile for realtime invite:', senderProfile, 'Error:', profileError);
+
+              setTrainingInviteDialog({
+                open: true,
+                notification: newNotification,
+                senderName: senderProfile?.display_name || senderProfile?.username || 'A player'
+              });
+            } catch (error) {
+              console.error('Error loading sender profile for invite:', error);
+            }
+          }
         }
       )
       .subscribe();
