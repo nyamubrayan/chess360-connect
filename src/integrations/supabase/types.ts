@@ -890,6 +890,42 @@ export type Database = {
         }
         Relationships: []
       }
+      training_sessions: {
+        Row: {
+          created_at: string
+          current_fen: string
+          guest_player_id: string | null
+          host_player_id: string
+          id: string
+          last_move: string | null
+          move_count: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_fen?: string
+          guest_player_id?: string | null
+          host_player_id: string
+          id?: string
+          last_move?: string | null
+          move_count?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_fen?: string
+          guest_player_id?: string | null
+          host_player_id?: string
+          id?: string
+          last_move?: string | null
+          move_count?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_achievements: {
         Row: {
           achievement_id: string

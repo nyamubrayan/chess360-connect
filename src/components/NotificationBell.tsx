@@ -92,6 +92,28 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
   const handleNotificationClick = async (notification: Notification) => {
     await markAsRead(notification.id);
 
+    // Handle training invitations
+    if (notification.type === 'training_invite' && notification.room_id) {
+      try {
+        // Update session to active status
+        const { error: updateError } = await supabase
+          .from('training_sessions')
+          .update({ status: 'active' })
+          .eq('id', notification.room_id);
+
+        if (updateError) throw updateError;
+
+        toast.success('Joined training session!');
+        navigate('/training');
+        setOpen(false);
+        return;
+      } catch (error) {
+        console.error('Error joining training session:', error);
+        toast.error('Failed to join training session');
+        return;
+      }
+    }
+
     // Handle rematch requests
     if (notification.type === 'rematch_request' && notification.sender_id) {
       try {
@@ -262,6 +284,8 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
+      case "training_invite":
+        return "🎓";
       case "rematch_request":
         return "🔄";
       case "game_challenge":
