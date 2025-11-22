@@ -37,32 +37,34 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/lobby" element={<GameLobby />} />
-              <Route path="/game/:gameId" element={<ChessGame />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/profile/:userId" element={<Profile />} />
-              <Route path="/leaderboard" element={<Leaderboard />} />
-              <Route path="/analytics" element={<Analytics />} />
-              <Route path="/puzzles" element={<Puzzles />} />
-              <Route path="/training" element={<Training />} />
-              <Route path="/openings" element={<Openings />} />
-              <Route path="/endgames" element={<Endgames />} />
-              <Route path="/lessons" element={<Lessons />} />
-              <Route path="/connect" element={<Connect />} />
-              <Route path="/chat/:friendId" element={<Chat />} />
-              <Route path="/tournaments" element={<Tournaments />} />
-              <Route path="/tournaments/:id" element={<TournamentDetail />} />
-              <Route path="/highlights" element={<Highlights />} />
-              <Route path="/news" element={<NewsAndEvents />} />
-              <Route path="/game-analysis/:gameId" element={<SharedGameAnalysis />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
+          <main>
+            <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/lobby" element={<GameLobby />} />
+                <Route path="/game/:gameId" element={<ChessGame />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/profile/:userId" element={<Profile />} />
+                <Route path="/leaderboard" element={<Leaderboard />} />
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/puzzles" element={<Puzzles />} />
+                <Route path="/training" element={<Training />} />
+                <Route path="/openings" element={<Openings />} />
+                <Route path="/endgames" element={<Endgames />} />
+                <Route path="/lessons" element={<Lessons />} />
+                <Route path="/connect" element={<Connect />} />
+                <Route path="/chat/:friendId" element={<Chat />} />
+                <Route path="/tournaments" element={<Tournaments />} />
+                <Route path="/tournaments/:id" element={<TournamentDetail />} />
+                <Route path="/highlights" element={<Highlights />} />
+                <Route path="/news" element={<NewsAndEvents />} />
+                <Route path="/game-analysis/:gameId" element={<SharedGameAnalysis />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </main>
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
