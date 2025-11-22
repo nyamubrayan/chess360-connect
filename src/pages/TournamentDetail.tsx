@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, Trophy, Users, Clock, Play, Timer, UserPlus } from "lucide-react";
+import { ArrowLeft, Trophy, Users, Clock, Play, Timer, UserPlus, Home } from "lucide-react";
 import { toast } from "sonner";
 import { TournamentBracket } from "@/components/tournaments/TournamentBracket";
 import { TournamentStandings } from "@/components/tournaments/TournamentStandings";
@@ -294,10 +294,15 @@ export default function TournamentDetail() {
   return (
     <div className="min-h-screen bg-background pb-20 sm:pb-8">
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-7xl">
-        <Button variant="ghost" onClick={() => navigate('/tournaments')} className="mb-4 sm:mb-6 -ml-2 sm:ml-0">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Tournaments
-        </Button>
+        <div className="flex items-center gap-2 mb-4 sm:mb-6">
+          <Button variant="ghost" onClick={() => navigate('/')} size="icon" title="Home" className="-ml-2 sm:ml-0">
+            <Home className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" onClick={() => navigate('/tournaments')} className="-ml-2">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Tournaments
+          </Button>
+        </div>
 
         {tournament.status === 'upcoming' && tournament.start_date && (
           <Card className="p-4 sm:p-6 mb-6 border-2 border-primary/50 bg-gradient-to-r from-primary/10 to-accent/10">
