@@ -65,7 +65,7 @@ export default function NewsAndEvents() {
         .from('news_articles')
         .select(`
           *,
-          author:profiles!news_articles_author_id_fkey(display_name, username)
+          author:profiles(display_name, username)
         `)
         .order('published_at', { ascending: false })
         .limit(20);
@@ -77,7 +77,7 @@ export default function NewsAndEvents() {
         .from('events')
         .select(`
           *,
-          organizer:profiles!events_organizer_id_fkey(display_name, username),
+          organizer:profiles(display_name, username),
           event_participants(count)
         `)
         .gte('event_date', new Date().toISOString())
