@@ -4,7 +4,7 @@ import { ChessBoardComponent } from '@/components/chess/ChessBoard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Brain, Lightbulb, TrendingUp, AlertCircle, Loader2, RotateCcw, User, Users, Bot, Send, Flag, Swords } from 'lucide-react';
+import { Brain, Lightbulb, TrendingUp, AlertCircle, Loader2, RotateCcw, User, Users, Flag, Swords, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
@@ -17,8 +17,25 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { TrainingTimer } from './TrainingTimer';
+import { TrainingHeatmap } from './TrainingHeatmap';
 
-type GameMode = 'solo' | 'friend' | 'computer';
+type GameMode = 'solo' | 'friend';
+
+interface TimeControl {
+  time: number;
+  increment: number;
+  label: string;
+}
+
+const TIME_CONTROLS: TimeControl[] = [
+  { time: 3, increment: 0, label: '3+0' },
+  { time: 3, increment: 2, label: '3+2' },
+  { time: 5, increment: 0, label: '5+0' },
+  { time: 5, increment: 3, label: '5+3' },
+  { time: 10, increment: 0, label: '10+0' },
+  { time: 10, increment: 5, label: '10+5' },
+];
 
 interface MoveAnalysis {
   evaluation: string;
@@ -67,6 +84,10 @@ export function AICoachPanel() {
     guest_mistakes: 0,
     guest_blunders: 0
   });
+  const [selectedTimeControl, setSelectedTimeControl] = useState<TimeControl>(TIME_CONTROLS[2]);
+  const [whiteTimeRemaining, setWhiteTimeRemaining] = useState(selectedTimeControl.time * 60);
+  const [blackTimeRemaining, setBlackTimeRemaining] = useState(selectedTimeControl.time * 60);
+  const [lastMoveTime, setLastMoveTime] = useState<string | null>(null);
 
   // Get current user
   useEffect(() => {
@@ -323,21 +344,6 @@ export function AICoachPanel() {
     }
   };
 
-  const makeComputerMove = async () => {
-    const moves = chess.moves();
-    if (moves.length === 0) return;
-    
-    // Make a random legal move
-    const randomMove = moves[Math.floor(Math.random() * moves.length)];
-    const move = chess.move(randomMove);
-    
-    if (move) {
-      const newPosition = chess.fen();
-      setPosition(newPosition);
-      setLastMove(`${move.from}${move.to}`);
-      setMoveCount(prev => prev + 1);
-    }
-  };
 
   const handleMove = async (from: string, to: string) => {
     try {
@@ -347,6 +353,18 @@ export function AICoachPanel() {
         const newPosition = chess.fen();
         setPosition(newPosition);
         setLastMove(`${move.from}${move.to}`);
+        
+        const currentTime = new Date().toISOString();
+        setLastMoveTime(currentTime);
+
+        // Update time with increment
+        if (chess.turn() === 'b') {
+          // White just moved, add increment to white's time
+          setWhiteTimeRemaining(prev => prev + selectedTimeControl.increment);
+        } else {
+          // Black just moved, add increment to black's time
+          setBlackTimeRemaining(prev => prev + selectedTimeControl.increment);
+        }
         
         // Update session if in friend mode
         if (gameMode === 'friend' && sessionId) {
@@ -364,13 +382,6 @@ export function AICoachPanel() {
         
         // Analyze the move and track stats
         await analyzeMoveInRealTime(move.san);
-
-        // If playing against computer and it's computer's turn
-        if (gameMode === 'computer' && chess.turn() !== playerColor.charAt(0)) {
-          setTimeout(async () => {
-            await makeComputerMove();
-          }, 500);
-        }
       }
     } catch (error) {
       console.error('Invalid move:', error);
@@ -384,7 +395,10 @@ export function AICoachPanel() {
     setAnalysis(null);
     setMoveCount(0);
     setLastMove(null);
+    setLastMoveTime(null);
     setSessionStartTime(new Date());
+    setWhiteTimeRemaining(selectedTimeControl.time * 60);
+    setBlackTimeRemaining(selectedTimeControl.time * 60);
     setMoveStats({
       host_good_moves: 0,
       host_mistakes: 0,
@@ -533,11 +547,15 @@ export function AICoachPanel() {
     setGameMode(mode);
     await handleReset();
     
-    if (mode === 'computer') {
-      setPlayerColor(Math.random() > 0.5 ? 'white' : 'black');
-    } else if (mode === 'friend') {
+    if (mode === 'friend') {
       startTrainingMatchmaking();
     }
+  };
+
+  const handleTimeControlChange = (timeControl: TimeControl) => {
+    setSelectedTimeControl(timeControl);
+    setWhiteTimeRemaining(timeControl.time * 60);
+    setBlackTimeRemaining(timeControl.time * 60);
   };
 
   const getMoveTypeColor = (type: string) => {
@@ -569,7 +587,6 @@ export function AICoachPanel() {
           <p className="text-muted-foreground">
             {gameMode === 'solo' && 'Play both sides and receive instant AI analysis on every move'}
             {gameMode === 'friend' && 'Play against a random opponent - both players get AI feedback separately'}
-            {gameMode === 'computer' && 'Play against computer and get AI feedback on your moves'}
           </p>
         </div>
         <Button
@@ -603,14 +620,6 @@ export function AICoachPanel() {
               <Users className="w-4 h-4" />
               Find Opponent
             </Button>
-            <Button
-              variant={gameMode === 'computer' ? 'default' : 'outline'}
-              onClick={() => handleModeChange('computer')}
-              className="flex-1 flex items-center gap-2 justify-center"
-            >
-              <Bot className="w-4 h-4" />
-              Play vs Computer
-            </Button>
           </div>
           {searchingForOpponent && (
             <div className="mt-4 flex items-center justify-center gap-2 text-muted-foreground">
@@ -626,6 +635,31 @@ export function AICoachPanel() {
               </Button>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Time Control Selector */}
+      <Card className="gradient-card">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Clock className="w-4 h-4" />
+            Time Control
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+            {TIME_CONTROLS.map((tc) => (
+              <Button
+                key={tc.label}
+                variant={selectedTimeControl.label === tc.label ? 'default' : 'outline'}
+                onClick={() => handleTimeControlChange(tc)}
+                className="text-sm"
+                disabled={gameMode === 'friend' && sessionId !== null}
+              >
+                {tc.label}
+              </Button>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
@@ -688,15 +722,27 @@ export function AICoachPanel() {
                 </>
               )}
 
+              {/* Timer */}
+              {gameMode === 'friend' && sessionId && (
+                <div className="mb-4">
+                  <TrainingTimer
+                    timeControl={selectedTimeControl.time}
+                    timeIncrement={selectedTimeControl.increment}
+                    currentTurn={chess.turn()}
+                    playerColor={playerColor}
+                    lastMoveAt={lastMoveTime}
+                    whiteTimeRemaining={whiteTimeRemaining}
+                    blackTimeRemaining={blackTimeRemaining}
+                  />
+                </div>
+              )}
+
               <div className="w-full max-w-2xl mx-auto">
                 <ChessBoardComponent
                   position={position}
                   onMove={handleMove}
-                  playerColor={gameMode === 'friend' ? playerColor : (gameMode === 'computer' ? playerColor : 'white')}
-                  disabled={
-                    (gameMode === 'computer' && chess.turn() !== playerColor.charAt(0)) ||
-                    (gameMode === 'friend' && chess.turn() !== playerColor.charAt(0))
-                  }
+                  playerColor={gameMode === 'friend' ? playerColor : 'white'}
+                  disabled={gameMode === 'friend' && chess.turn() !== playerColor.charAt(0)}
                   chess={chess}
                 />
               </div>
@@ -781,6 +827,13 @@ export function AICoachPanel() {
             </CardContent>
           </Card>
 
+          {/* Performance Heatmap */}
+          {(gameMode === 'friend' && sessionId) && (
+            <div className="mt-4">
+              <TrainingHeatmap moveStats={moveStats} isHost={isHost} />
+            </div>
+          )}
+
           {/* Instructions Card */}
           <Card className="gradient-card mt-4">
             <CardHeader>
@@ -796,16 +849,9 @@ export function AICoachPanel() {
               )}
               {gameMode === 'friend' && (
                 <>
-                  <p>• Take turns with your friend</p>
+                  <p>• Take turns with your opponent</p>
                   <p>• Each player gets AI feedback</p>
                   <p>• Learn together from analysis</p>
-                </>
-              )}
-              {gameMode === 'computer' && (
-                <>
-                  <p>• Play as {playerColor}</p>
-                  <p>• Computer makes moves for opponent</p>
-                  <p>• Get AI feedback on your moves</p>
                 </>
               )}
             </CardContent>
