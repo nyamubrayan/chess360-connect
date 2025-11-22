@@ -68,8 +68,8 @@ async function updateEloRatings(
       const expectedWhite = 1 / (1 + Math.pow(10, (blackRating - whiteRating) / 400));
       const expectedBlack = 1 / (1 + Math.pow(10, (whiteRating - blackRating) / 400));
 
-      let whiteScore = 0.5;
-      let blackScore = 0.5;
+      let whiteScore = 0.5; // Draw default
+      let blackScore = 0.5; // Draw default
 
       if (result === 'white_win') {
         whiteScore = 1;
@@ -83,6 +83,7 @@ async function updateEloRatings(
       const newWhiteRating = Math.round(whiteRating + K * (whiteScore - expectedWhite));
       const newBlackRating = Math.round(blackRating + K * (blackScore - expectedBlack));
 
+      // Update ratings in database
       await supabaseClient.from('profiles').update({ rating: newWhiteRating }).eq('id', whitePlayerId);
       await supabaseClient.from('profiles').update({ rating: newBlackRating }).eq('id', blackPlayerId);
 
@@ -90,6 +91,7 @@ async function updateEloRatings(
       const blackChange = newBlackRating - blackRating;
 
       console.log('Ratings updated:', {
+        result,
         white: { old: whiteRating, new: newWhiteRating, change: whiteChange },
         black: { old: blackRating, new: newBlackRating, change: blackChange }
       });
@@ -98,6 +100,7 @@ async function updateEloRatings(
     }
   }
   
+  console.log('Failed to update ratings - profiles not found');
   return { whiteChange: 0, blackChange: 0 };
 }
 
