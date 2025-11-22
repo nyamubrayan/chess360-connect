@@ -8,6 +8,7 @@ import { CommunityBar } from '@/components/CommunityBar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InteractivePieceDemo } from '@/components/chess/InteractivePieceDemo';
 import { AICoachPanel } from '@/components/training/AICoachPanel';
+import { TrainingHistory } from '@/components/training/TrainingHistory';
 
 export default function Training() {
   const navigate = useNavigate();
@@ -137,18 +138,26 @@ export default function Training() {
         </div>
 
         <Tabs defaultValue="modules" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8">
-            <TabsTrigger value="basics" className="text-base">
+          <TabsList className="grid w-full grid-cols-4 mb-8">
+            <TabsTrigger value="basics" className="text-sm sm:text-base">
               <GraduationCap className="w-4 h-4 mr-2" />
-              Chess Basics
+              <span className="hidden sm:inline">Chess Basics</span>
+              <span className="sm:hidden">Basics</span>
             </TabsTrigger>
-            <TabsTrigger value="modules" className="text-base">
+            <TabsTrigger value="modules" className="text-sm sm:text-base">
               <Brain className="w-4 h-4 mr-2" />
-              Training Modules
+              <span className="hidden sm:inline">Training Modules</span>
+              <span className="sm:hidden">Modules</span>
             </TabsTrigger>
-            <TabsTrigger value="ai-coach" className="text-base">
+            <TabsTrigger value="ai-coach" className="text-sm sm:text-base">
               <Brain className="w-4 h-4 mr-2" />
-              AI Coach Training
+              <span className="hidden sm:inline">AI Coach</span>
+              <span className="sm:hidden">Coach</span>
+            </TabsTrigger>
+            <TabsTrigger value="history" className="text-sm sm:text-base">
+              <TrendingUp className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">History</span>
+              <span className="sm:hidden">History</span>
             </TabsTrigger>
           </TabsList>
 
@@ -413,6 +422,11 @@ export default function Training() {
           {/* AI Coach Training Tab */}
           <TabsContent value="ai-coach" className="space-y-8">
             <AICoachPanel />
+          </TabsContent>
+
+          {/* Training History Tab */}
+          <TabsContent value="history">
+            <TrainingHistory />
           </TabsContent>
         </Tabs>
       </div>

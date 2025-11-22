@@ -892,10 +892,23 @@ export type Database = {
       }
       training_sessions: {
         Row: {
+          analysis_summary: Json | null
+          completed_at: string | null
           created_at: string
           current_fen: string
+          duration: number | null
+          guest_blunders: number | null
+          guest_good_moves: number | null
+          guest_mistakes: number | null
+          guest_move_accuracy: number | null
           guest_player_id: string | null
+          guest_questionable_moves: number | null
+          host_blunders: number | null
+          host_good_moves: number | null
+          host_mistakes: number | null
+          host_move_accuracy: number | null
           host_player_id: string
+          host_questionable_moves: number | null
           id: string
           last_move: string | null
           move_count: number
@@ -903,10 +916,23 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          analysis_summary?: Json | null
+          completed_at?: string | null
           created_at?: string
           current_fen?: string
+          duration?: number | null
+          guest_blunders?: number | null
+          guest_good_moves?: number | null
+          guest_mistakes?: number | null
+          guest_move_accuracy?: number | null
           guest_player_id?: string | null
+          guest_questionable_moves?: number | null
+          host_blunders?: number | null
+          host_good_moves?: number | null
+          host_mistakes?: number | null
+          host_move_accuracy?: number | null
           host_player_id: string
+          host_questionable_moves?: number | null
           id?: string
           last_move?: string | null
           move_count?: number
@@ -914,10 +940,23 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          analysis_summary?: Json | null
+          completed_at?: string | null
           created_at?: string
           current_fen?: string
+          duration?: number | null
+          guest_blunders?: number | null
+          guest_good_moves?: number | null
+          guest_mistakes?: number | null
+          guest_move_accuracy?: number | null
           guest_player_id?: string | null
+          guest_questionable_moves?: number | null
+          host_blunders?: number | null
+          host_good_moves?: number | null
+          host_mistakes?: number | null
+          host_move_accuracy?: number | null
           host_player_id?: string
+          host_questionable_moves?: number | null
           id?: string
           last_move?: string | null
           move_count?: number
