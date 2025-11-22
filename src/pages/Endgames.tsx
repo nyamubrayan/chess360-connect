@@ -153,7 +153,7 @@ export default function Endgames() {
             Back to Endgames
           </Button>
 
-          <EndgameLesson scenario={selectedScenario} />
+          <EndgameLesson scenario={selectedScenario} user={user} />
         </div>
       </div>
     );
