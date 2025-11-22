@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, TrendingUp, Gamepad2, Trophy, BookOpen } from "lucide-react";
+import { Users, TrendingUp, Gamepad2, Trophy, BookOpen, Brain } from "lucide-react";
 
 interface Stats {
   onlinePlayers: number;
@@ -9,6 +9,7 @@ interface Stats {
   activeGames: number;
   totalGames: number;
   availableLessons: number;
+  puzzlesSolved: number;
 }
 
 export const Footer = () => {
@@ -18,6 +19,7 @@ export const Footer = () => {
     activeGames: 0,
     totalGames: 0,
     availableLessons: 0,
+    puzzlesSolved: 0,
   });
 
   useEffect(() => {
@@ -49,12 +51,19 @@ export const Footer = () => {
           .from('training_achievements')
           .select('*', { count: 'exact', head: true });
 
+        // Fetch total puzzles solved
+        const { count: puzzlesSolved } = await supabase
+          .from('user_puzzle_attempts')
+          .select('*', { count: 'exact', head: true })
+          .eq('solved', true);
+
         setStats({
           onlinePlayers: 0, // Will be updated by presence
           totalPlayers: totalPlayers || 0,
           activeGames: activeGames || 0,
           totalGames: totalGames || 0,
           availableLessons: (puzzlesCount || 0) + (achievementsCount || 0),
+          puzzlesSolved: puzzlesSolved || 0,
         });
       } catch (error) {
         console.error('Error fetching statistics:', error);
@@ -123,13 +132,19 @@ export const Footer = () => {
       value: `${stats.availableLessons}+`,
       label: 'Lessons Available',
       color: 'text-pink-400'
+    },
+    {
+      icon: Brain,
+      value: `${stats.puzzlesSolved}+`,
+      label: 'Puzzles Solved',
+      color: 'text-cyan-400'
     }
   ];
 
   return (
     <footer className="py-16 px-4 bg-gradient-to-b from-background to-background/80 border-t border-border/40">
       <div className="container mx-auto max-w-7xl">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 lg:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-6">
           {statsData.map((stat, index) => {
             const Icon = stat.icon;
             return (
