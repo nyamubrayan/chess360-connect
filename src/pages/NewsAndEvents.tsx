@@ -5,7 +5,7 @@ import { CommunityBar } from '@/components/CommunityBar';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, MapPin, Users, Clock, Eye, Newspaper } from 'lucide-react';
+import { Calendar, MapPin, Users, Clock, Eye, Newspaper, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -160,16 +160,54 @@ export default function NewsAndEvents() {
     }
   };
 
+  const handleFetchLatestNews = async () => {
+    try {
+      setLoading(true);
+      toast.info('Fetching latest chess news...');
+      
+      const { data, error } = await supabase.functions.invoke('fetch-chess-news');
+      
+      if (error) throw error;
+      
+      if (data?.success) {
+        toast.success(`Successfully added ${data.count} new articles!`);
+        fetchNewsAndEvents();
+      } else {
+        toast.info(data?.message || 'No new articles found');
+      }
+    } catch (error: any) {
+      console.error('Error fetching news:', error);
+      toast.error('Failed to fetch latest news');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <CommunityBar user={user} />
       
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold mb-2">News & Events</h1>
-          <p className="text-muted-foreground">
-            Stay updated with the latest chess news and upcoming community events
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold mb-2">News & Events</h1>
+              <p className="text-muted-foreground">
+                Stay updated with the latest chess news and upcoming community events
+              </p>
+            </div>
+            {user && (
+              <Button
+                onClick={handleFetchLatestNews}
+                disabled={loading}
+                variant="outline"
+                className="gap-2"
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">Update News</span>
+              </Button>
+            )}
+          </div>
         </div>
 
         <Tabs defaultValue="news" className="w-full">
