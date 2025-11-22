@@ -52,6 +52,15 @@ export function AICoachPanel() {
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [isHost, setIsHost] = useState(true);
   const [waitingForFriend, setWaitingForFriend] = useState(false);
+  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
+  const [moveStats, setMoveStats] = useState({
+    host_good_moves: 0,
+    host_mistakes: 0,
+    host_blunders: 0,
+    guest_good_moves: 0,
+    guest_mistakes: 0,
+    guest_blunders: 0
+  });
 
   // Get current user
   useEffect(() => {
@@ -198,6 +207,31 @@ export function AICoachPanel() {
       if (error) throw error;
 
       setAnalysis(data.analysis);
+      
+      // Track move quality stats
+      if (data.analysis && sessionId) {
+        const isHostMove = (gameMode === 'friend' && isHost) || gameMode !== 'friend';
+        const newStats = { ...moveStats };
+        
+        if (data.analysis.type === 'good') {
+          if (isHostMove) newStats.host_good_moves++;
+          else newStats.guest_good_moves++;
+        } else if (data.analysis.type === 'mistake') {
+          if (isHostMove) newStats.host_mistakes++;
+          else newStats.guest_mistakes++;
+        } else if (data.analysis.type === 'blunder') {
+          if (isHostMove) newStats.host_blunders++;
+          else newStats.guest_blunders++;
+        }
+        
+        setMoveStats(newStats);
+        
+        // Update database with new stats
+        await supabase
+          .from('training_sessions')
+          .update(newStats)
+          .eq('id', sessionId);
+      }
     } catch (error: any) {
       console.error('Error analyzing move:', error);
       toast.error('Failed to analyze move. Please try again.');
@@ -245,7 +279,7 @@ export function AICoachPanel() {
 
         setMoveCount(prev => prev + 1);
         
-        // Analyze the move for the player who made it
+        // Analyze the move and track stats
         await analyzeMoveInRealTime(move.san);
 
         // If playing against computer and it's computer's turn
@@ -267,6 +301,15 @@ export function AICoachPanel() {
     setAnalysis(null);
     setMoveCount(0);
     setLastMove(null);
+    setSessionStartTime(new Date());
+    setMoveStats({
+      host_good_moves: 0,
+      host_mistakes: 0,
+      host_blunders: 0,
+      guest_good_moves: 0,
+      guest_mistakes: 0,
+      guest_blunders: 0
+    });
     
     // Update session if in friend mode
     if (gameMode === 'friend' && sessionId) {
@@ -276,6 +319,7 @@ export function AICoachPanel() {
           current_fen: startingFen,
           move_count: 0,
           last_move: null,
+          ...moveStats
         })
         .eq('id', sessionId);
     }
@@ -284,8 +328,31 @@ export function AICoachPanel() {
   };
 
   const handleModeChange = async (mode: GameMode) => {
-    // Clean up existing session
-    if (sessionId && gameMode === 'friend') {
+    // Complete current session if it exists
+    if (sessionId && sessionStartTime && gameMode === 'friend') {
+      const duration = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
+      const hostTotal = moveStats.host_good_moves + moveStats.host_mistakes + moveStats.host_blunders;
+      const guestTotal = moveStats.guest_good_moves + moveStats.guest_mistakes + moveStats.guest_blunders;
+      
+      const hostAccuracy = hostTotal > 0 
+        ? ((moveStats.host_good_moves / hostTotal) * 100)
+        : null;
+      const guestAccuracy = guestTotal > 0
+        ? ((moveStats.guest_good_moves / guestTotal) * 100)
+        : null;
+
+      await supabase
+        .from('training_sessions')
+        .update({
+          status: 'completed',
+          completed_at: new Date().toISOString(),
+          duration,
+          host_move_accuracy: hostAccuracy,
+          guest_move_accuracy: guestAccuracy
+        })
+        .eq('id', sessionId);
+    } else if (sessionId) {
+      // Delete incomplete sessions
       await supabase
         .from('training_sessions')
         .delete()
@@ -294,6 +361,7 @@ export function AICoachPanel() {
     
     setSessionId(null);
     setWaitingForFriend(false);
+    setSessionStartTime(new Date());
     setGameMode(mode);
     await handleReset();
     
