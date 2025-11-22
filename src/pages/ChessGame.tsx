@@ -11,7 +11,7 @@ import { PromotionDialog } from '@/components/chess/PromotionDialog';
 import { GameChat } from '@/components/chess/GameChat';
 import { PostGameActions } from '@/components/PostGameActions';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, UserPlus, User } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useChessSounds } from '@/hooks/useChessSounds';
 
@@ -569,6 +569,55 @@ export default function ChessGame() {
     toast.info('Takeback request cancelled');
   };
 
+  const handleAddChessMate = async () => {
+    if (!user || !game) return;
+    
+    const opponentId = playerColor === 'white' ? game.black_player_id : game.white_player_id;
+    
+    // Check if already friends
+    const { data: existingFriendship } = await supabase
+      .from('friends')
+      .select('*')
+      .or(`and(user_id.eq.${user.id},friend_id.eq.${opponentId}),and(user_id.eq.${opponentId},friend_id.eq.${user.id})`)
+      .maybeSingle();
+    
+    if (existingFriendship) {
+      toast.info('Already connected with this player');
+      return;
+    }
+    
+    // Send friend request
+    const { error } = await supabase
+      .from('friends')
+      .insert({
+        user_id: user.id,
+        friend_id: opponentId,
+        status: 'pending',
+      });
+    
+    if (error) {
+      toast.error('Failed to send ChessMate request');
+      return;
+    }
+    
+    // Send notification
+    await supabase.from('notifications').insert({
+      user_id: opponentId,
+      sender_id: user.id,
+      type: 'friend_request',
+      title: 'New ChessMate Request',
+      message: `${whitePlayer?.display_name || whitePlayer?.username || 'Someone'} wants to connect with you!`,
+    });
+    
+    toast.success('ChessMate request sent!');
+  };
+
+  const handleViewProfile = () => {
+    if (!game || !playerColor) return;
+    const opponentId = playerColor === 'white' ? game.black_player_id : game.white_player_id;
+    navigate(`/profile/${opponentId}`);
+  };
+
   if (!game || !user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -630,19 +679,39 @@ export default function ChessGame() {
             {/* Opponent Name (top) */}
             {playerColor && (
               <Card className="gradient-card p-2 sm:p-3 mb-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
-                    <div className={`w-2 h-2 rounded-full ${opponentOnline ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
-                    <span className="font-semibold text-sm sm:text-base">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1 sm:gap-2 flex-wrap flex-1 min-w-0">
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${opponentOnline ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
+                    <span className="font-semibold text-sm sm:text-base truncate">
                       {playerColor === 'white' ? (blackPlayer?.display_name || blackPlayer?.username || 'Opponent') : (whitePlayer?.display_name || whitePlayer?.username || 'Opponent')}
                     </span>
-                    <span className="text-xs sm:text-sm text-muted-foreground">
+                    <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
                       ({playerColor === 'white' ? (blackPlayer?.rating || 1200) : (whitePlayer?.rating || 1200)})
                     </span>
                   </div>
-                  <span className="text-xs text-muted-foreground capitalize whitespace-nowrap">
-                    {playerColor === 'white' ? 'Black' : 'White'}
-                  </span>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 sm:h-8 sm:w-8"
+                      onClick={handleViewProfile}
+                      title="View Profile"
+                    >
+                      <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 sm:h-8 sm:w-8"
+                      onClick={handleAddChessMate}
+                      title="Add ChessMate"
+                    >
+                      <UserPlus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    </Button>
+                    <span className="text-xs text-muted-foreground capitalize whitespace-nowrap hidden sm:inline">
+                      {playerColor === 'white' ? 'Black' : 'White'}
+                    </span>
+                  </div>
                 </div>
               </Card>
             )}
