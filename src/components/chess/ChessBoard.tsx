@@ -58,29 +58,34 @@ export const ChessBoardComponent = ({ position, onMove, playerColor, disabled, c
 
   const customSquareStyles: Record<string, React.CSSProperties> = {};
   
-  // Highlight last move squares
+  // Highlight last move squares with border (won't be overridden)
   if (lastMove) {
     customSquareStyles[lastMove.from] = {
-      backgroundColor: 'rgba(255, 255, 100, 0.5)',
+      backgroundColor: 'rgba(255, 255, 0, 0.35)',
+      boxShadow: 'inset 0 0 0 3px rgba(255, 255, 0, 0.7)',
     };
     customSquareStyles[lastMove.to] = {
-      backgroundColor: 'rgba(255, 255, 100, 0.5)',
+      backgroundColor: 'rgba(255, 255, 0, 0.35)',
+      boxShadow: 'inset 0 0 0 3px rgba(255, 255, 0, 0.7)',
     };
   }
   
   // Highlight selected square (overrides last move highlight if same square)
   if (selectedSquare) {
     customSquareStyles[selectedSquare] = {
-      backgroundColor: 'rgba(255, 255, 0, 0.4)',
-      boxShadow: 'inset 0 0 0 3px rgba(255, 255, 0, 0.8)',
+      backgroundColor: 'rgba(255, 255, 0, 0.5)',
+      boxShadow: 'inset 0 0 0 4px rgba(255, 255, 0, 1)',
     };
   }
 
-  // Highlight legal move squares
+  // Highlight legal move squares (add to existing styles)
   legalMoves.forEach(square => {
+    const existingStyle = customSquareStyles[square] || {};
     customSquareStyles[square] = {
-      background: 'radial-gradient(circle, rgba(0, 255, 0, 0.3) 25%, transparent 25%)',
-      borderRadius: '50%',
+      ...existingStyle,
+      background: existingStyle.backgroundColor 
+        ? `${existingStyle.backgroundColor}, radial-gradient(circle, rgba(0, 255, 0, 0.5) 25%, transparent 25%)`
+        : 'radial-gradient(circle, rgba(0, 255, 0, 0.5) 25%, transparent 25%)',
     };
   });
 
