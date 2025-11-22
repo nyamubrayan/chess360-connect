@@ -579,283 +579,317 @@ export function AICoachPanel() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h2 className="text-3xl font-bold mb-2">AI Coach Training</h2>
-          <p className="text-muted-foreground">
-            {gameMode === 'solo' && 'Play both sides and receive instant AI analysis on every move'}
-            {gameMode === 'friend' && 'Play against a random opponent - both players get AI feedback separately'}
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          onClick={handleReset}
-          className="flex items-center gap-2"
-        >
-          <RotateCcw className="w-4 h-4" />
-          Reset Board
-        </Button>
-      </div>
+    <div className="min-h-screen w-full">
+      {/* Professional Header Bar */}
+      <div className="bg-card/50 backdrop-blur-sm border-b border-border sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gradient">AI Coach Training</h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                {gameMode === 'solo' ? 'Solo practice with instant AI analysis' : 'Train with opponent - both receive AI feedback'}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              {/* Time Control Selector */}
+              <div className="flex items-center gap-2 bg-muted/30 rounded-lg px-3 py-2">
+                <Clock className="w-4 h-4 text-muted-foreground" />
+                <div className="flex gap-1">
+                  {TIME_CONTROLS.map((tc) => (
+                    <Button
+                      key={tc.label}
+                      variant={selectedTimeControl.label === tc.label ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => handleTimeControlChange(tc)}
+                      disabled={gameMode === 'friend' && sessionId !== null}
+                      className="h-8 px-3 text-xs"
+                    >
+                      {tc.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleReset}
+                className="flex items-center gap-2"
+              >
+                <RotateCcw className="w-4 h-4" />
+                Reset
+              </Button>
+            </div>
+          </div>
 
-      {/* Game Mode Selector */}
-      <Card className="gradient-card">
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-3">
+          {/* Mode Selector */}
+          <div className="mt-4 flex items-center gap-3">
             <Button
               variant={gameMode === 'solo' ? 'default' : 'outline'}
+              size="sm"
               onClick={() => handleModeChange('solo')}
-              className="flex-1 flex items-center gap-2 justify-center"
+              className="flex items-center gap-2"
             >
               <User className="w-4 h-4" />
               Solo Practice
             </Button>
             <Button
               variant={gameMode === 'friend' ? 'default' : 'outline'}
+              size="sm"
               onClick={() => handleModeChange('friend')}
-              className="flex-1 flex items-center gap-2 justify-center"
+              className="flex items-center gap-2"
               disabled={searchingForOpponent}
             >
               <Users className="w-4 h-4" />
-              Find Opponent
+              Play Online
             </Button>
-          </div>
-          {searchingForOpponent && (
-            <div className="mt-4 flex items-center justify-center gap-2 text-muted-foreground">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Searching for opponent...</span>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={cancelTrainingMatchmaking}
-                className="ml-2"
-              >
-                Cancel
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Time Control Selector */}
-      <Card className="gradient-card">
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Clock className="w-4 h-4" />
-            Time Control
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-            {TIME_CONTROLS.map((tc) => (
-              <Button
-                key={tc.label}
-                variant={selectedTimeControl.label === tc.label ? 'default' : 'outline'}
-                onClick={() => handleTimeControlChange(tc)}
-                className="text-sm"
-                disabled={gameMode === 'friend' && sessionId !== null}
-              >
-                {tc.label}
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Friend Invite Dialog - REMOVED */}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Chessboard */}
-        <div className="lg:col-span-2">
-          <Card className="gradient-card">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Practice Board</span>
-                <Badge variant="outline" className="font-mono text-xs">
-                  Move {moveCount}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* Opponent Info and Actions */}
-              {gameMode === 'friend' && opponentInfo && (
-                <>
-                  <div className="mb-4 p-3 bg-muted/30 rounded-lg flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold text-foreground">
-                        {opponentInfo.display_name || opponentInfo.username}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        @{opponentInfo.username}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-semibold text-primary">
-                        {opponentInfo.rating || 1200}
-                      </p>
-                      <p className="text-xs text-muted-foreground">Rating</p>
-                    </div>
-                  </div>
-                  
-                  {/* Action Buttons */}
-                  <div className="mb-4 flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleResign}
-                      className="flex-1 flex items-center gap-2"
-                    >
-                      <Flag className="w-4 h-4" />
-                      Resign
-                    </Button>
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={handleChallengeToRealGame}
-                      className="flex-1 flex items-center gap-2"
-                    >
-                      <Swords className="w-4 h-4" />
-                      Challenge to Real Game
-                    </Button>
-                  </div>
-                </>
-              )}
-
-              {/* Timer */}
-              {gameMode === 'friend' && sessionId && (
-                <div className="mb-4">
-                  <TrainingTimer
-                    timeControl={selectedTimeControl.time}
-                    timeIncrement={selectedTimeControl.increment}
-                    currentTurn={chess.turn()}
-                    playerColor={playerColor}
-                    lastMoveAt={lastMoveTime}
-                    whiteTimeRemaining={whiteTimeRemaining}
-                    blackTimeRemaining={blackTimeRemaining}
-                  />
-                </div>
-              )}
-
-              <div className="w-full max-w-2xl mx-auto">
-                <ChessBoardComponent
-                  position={position}
-                  onMove={handleMove}
-                  playerColor={gameMode === 'friend' ? playerColor : 'white'}
-                  disabled={gameMode === 'friend' && chess.turn() !== playerColor.charAt(0)}
-                  chess={chess}
-                />
+            {searchingForOpponent && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Finding opponent...</span>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={cancelTrainingMatchmaking}
+                >
+                  Cancel
+                </Button>
               </div>
-              
-              <div className="mt-4 text-center text-sm text-muted-foreground">
-                {chess.isCheckmate() ? (
-                  <span className="text-destructive font-semibold">Checkmate!</span>
-                ) : chess.isCheck() ? (
-                  <span className="text-yellow-500 font-semibold">Check!</span>
-                ) : chess.isDraw() ? (
-                  <span className="text-muted-foreground font-semibold">Draw</span>
-                ) : (
-                  <span>
-                    {chess.turn() === 'w' ? 'White' : 'Black'} to move
-                  </span>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
         </div>
+      </div>
 
-        {/* AI Analysis Panel */}
-        <div className="lg:col-span-1">
-          <Card className="gradient-card border-primary/20">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Brain className="w-5 h-5 text-primary" />
-                  Instant Analysis
-                </CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {isAnalyzing ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                  <span className="ml-2 text-sm text-muted-foreground">Analyzing...</span>
-                </div>
-              ) : analysis ? (
-                <>
-                  <div className="flex items-center gap-2">
-                    <Badge className={getMoveTypeColor(analysis.type)}>
-                      {getMoveTypeIcon(analysis.type)}
-                      <span className="ml-1 capitalize">{analysis.type}</span>
-                    </Badge>
+      {/* Main Content - Centered Board Layout */}
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+          
+          {/* Left Panel - Performance & Stats */}
+          <div className="xl:col-span-3 space-y-4">
+            {/* Performance Heatmap */}
+            {gameMode === 'friend' && sessionId && (
+              <TrainingHeatmap moveStats={moveStats} isHost={isHost} />
+            )}
+
+            {/* Instructions Card */}
+            <Card className="gradient-card border-primary/10">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold">Training Guide</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-xs text-muted-foreground">
+                {gameMode === 'solo' ? (
+                  <>
+                    <div className="flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5" />
+                      <span>Play moves for both sides freely</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5" />
+                      <span>Receive instant AI analysis after each move</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5" />
+                      <span>Practice various positions and tactics</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5" />
+                      <span>Play alternating turns with your opponent</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5" />
+                      <span>Both players receive separate AI feedback</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5" />
+                      <span>Track performance with live accuracy stats</span>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Move Counter */}
+            <Card className="gradient-card">
+              <CardContent className="pt-4 text-center">
+                <div className="text-3xl font-bold text-primary">{moveCount}</div>
+                <div className="text-xs text-muted-foreground mt-1">Moves Played</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Center Panel - Chess Board */}
+          <div className="xl:col-span-6">
+            <Card className="gradient-card border-primary/20">
+              <CardContent className="pt-6">
+                {/* Opponent Info Bar */}
+                {gameMode === 'friend' && opponentInfo && (
+                  <div className="mb-6 p-4 bg-gradient-to-r from-primary/5 to-accent/5 rounded-lg border border-primary/10">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10 border-2 border-primary/20">
+                          <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                            {(opponentInfo.display_name || opponentInfo.username).charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-semibold text-foreground">
+                            {opponentInfo.display_name || opponentInfo.username}
+                          </p>
+                          <p className="text-xs text-muted-foreground">@{opponentInfo.username}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <Badge variant="outline" className="font-mono">
+                          {opponentInfo.rating || 1200}
+                        </Badge>
+                        <p className="text-xs text-muted-foreground mt-1">Rating</p>
+                      </div>
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleResign}
+                        className="flex-1 flex items-center justify-center gap-2"
+                      >
+                        <Flag className="w-3 h-3" />
+                        Resign
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={handleChallengeToRealGame}
+                        className="flex-1 flex items-center justify-center gap-2"
+                      >
+                        <Swords className="w-3 h-3" />
+                        Challenge
+                      </Button>
+                    </div>
                   </div>
+                )}
 
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-1">
+                {/* Timer Display */}
+                {gameMode === 'friend' && sessionId && (
+                  <div className="mb-6">
+                    <TrainingTimer
+                      timeControl={selectedTimeControl.time}
+                      timeIncrement={selectedTimeControl.increment}
+                      currentTurn={chess.turn()}
+                      playerColor={playerColor}
+                      lastMoveAt={lastMoveTime}
+                      whiteTimeRemaining={whiteTimeRemaining}
+                      blackTimeRemaining={blackTimeRemaining}
+                    />
+                  </div>
+                )}
+
+                {/* Chessboard - Centered */}
+                <div className="w-full mx-auto flex justify-center">
+                  <div className="w-full max-w-[600px]">
+                    <ChessBoardComponent
+                      position={position}
+                      onMove={handleMove}
+                      playerColor={gameMode === 'friend' ? playerColor : 'white'}
+                      disabled={gameMode === 'friend' && chess.turn() !== playerColor.charAt(0)}
+                      chess={chess}
+                    />
+                  </div>
+                </div>
+                
+                {/* Game Status */}
+                <div className="mt-6 text-center">
+                  {chess.isCheckmate() ? (
+                    <Badge variant="destructive" className="text-sm px-4 py-1">
+                      Checkmate!
+                    </Badge>
+                  ) : chess.isCheck() ? (
+                    <Badge variant="outline" className="text-sm px-4 py-1 bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
+                      Check!
+                    </Badge>
+                  ) : chess.isDraw() ? (
+                    <Badge variant="secondary" className="text-sm px-4 py-1">
+                      Draw
+                    </Badge>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      <span className="font-semibold text-foreground">
+                        {chess.turn() === 'w' ? 'White' : 'Black'}
+                      </span>
+                      {' '}to move
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Panel - AI Analysis */}
+          <div className="xl:col-span-3 space-y-4">
+            <Card className="gradient-card border-primary/20 glow-primary">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Brain className="w-5 h-5 text-primary" />
+                  AI Analysis
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {isAnalyzing ? (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary mb-3" />
+                    <span className="text-sm text-muted-foreground">Analyzing move...</span>
+                  </div>
+                ) : analysis ? (
+                  <>
+                    {/* Move Type Badge */}
+                    <div className="flex items-center justify-center">
+                      <Badge className={`${getMoveTypeColor(analysis.type)} px-4 py-1.5 text-sm`}>
+                        {getMoveTypeIcon(analysis.type)}
+                        <span className="ml-2 capitalize font-semibold">{analysis.type}</span>
+                      </Badge>
+                    </div>
+
+                    {/* Position Evaluation */}
+                    <div className="bg-muted/30 rounded-lg p-3 border border-border">
+                      <p className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">
                         Position Evaluation
                       </p>
-                      <p className="text-sm">{analysis.evaluation}</p>
+                      <p className="text-sm leading-relaxed">{analysis.evaluation}</p>
                     </div>
 
+                    {/* Better Move Suggestion */}
                     {analysis.type !== "good" && (
-                      <div className="bg-primary/5 rounded-lg p-3 border border-primary/10">
-                        <p className="text-xs font-semibold text-primary mb-1 flex items-center gap-1">
-                          <Lightbulb className="w-3 h-3" />
-                          Better Move
+                      <div className="bg-primary/5 rounded-lg p-3 border border-primary/20">
+                        <p className="text-xs font-semibold text-primary mb-1.5 flex items-center gap-1.5 uppercase tracking-wide">
+                          <Lightbulb className="w-3.5 h-3.5" />
+                          Suggested Alternative
                         </p>
-                        <p className="text-sm">{analysis.suggestion}</p>
+                        <p className="text-sm leading-relaxed">{analysis.suggestion}</p>
                       </div>
                     )}
 
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-1">
+                    {/* Detailed Explanation */}
+                    <div className="bg-muted/30 rounded-lg p-3 border border-border">
+                      <p className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">
                         Explanation
                       </p>
-                      <p className="text-sm text-muted-foreground">{analysis.explanation}</p>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{analysis.explanation}</p>
                     </div>
+                  </>
+                ) : (
+                  <div className="text-center py-12">
+                    <Brain className="w-16 h-16 mx-auto mb-4 text-muted-foreground/20" />
+                    <p className="text-sm text-muted-foreground leading-relaxed px-4">
+                      Make your first move to receive instant AI feedback and detailed analysis
+                    </p>
                   </div>
-                </>
-              ) : (
-                <div className="text-center py-8">
-                  <Brain className="w-12 h-12 mx-auto mb-4 text-muted-foreground/30" />
-                  <p className="text-sm text-muted-foreground">
-                    Make a move to receive instant AI feedback and analysis
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Performance Heatmap */}
-          {(gameMode === 'friend' && sessionId) && (
-            <div className="mt-4">
-              <TrainingHeatmap moveStats={moveStats} isHost={isHost} />
-            </div>
-          )}
-
-          {/* Instructions Card */}
-          <Card className="gradient-card mt-4">
-            <CardHeader>
-              <CardTitle className="text-base">How It Works</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm text-muted-foreground">
-              {gameMode === 'solo' && (
-                <>
-                  <p>• Play moves for both sides</p>
-                  <p>• AI analyzes each move instantly</p>
-                  <p>• Practice different positions</p>
-                </>
-              )}
-              {gameMode === 'friend' && (
-                <>
-                  <p>• Take turns with your opponent</p>
-                  <p>• Each player gets AI feedback</p>
-                  <p>• Learn together from analysis</p>
-                </>
-              )}
-            </CardContent>
-          </Card>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>

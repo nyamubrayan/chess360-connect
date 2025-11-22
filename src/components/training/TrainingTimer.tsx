@@ -63,33 +63,33 @@ export function TrainingTimer({
   return (
     <div className="grid grid-cols-2 gap-3">
       {/* Opponent Timer */}
-      <Card className={`gradient-card p-3 ${
-        playerColor === 'white' ? (isBlackTurn ? 'ring-2 ring-primary' : '') :
-        playerColor === 'black' ? (isWhiteTurn ? 'ring-2 ring-primary' : '') : ''
+      <Card className={`gradient-card p-4 border transition-all ${
+        playerColor === 'white' ? (isBlackTurn ? 'ring-2 ring-primary border-primary/30 glow-primary' : 'border-border/50') :
+        playerColor === 'black' ? (isWhiteTurn ? 'ring-2 ring-primary border-primary/30 glow-primary' : 'border-border/50') : 'border-border/50'
       }`}>
-        <div className="flex items-center gap-2">
-          <Clock className="w-3 h-3 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">
+        <div className="flex items-center gap-2 mb-2">
+          <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="text-xs text-muted-foreground font-medium">
             {playerColor === 'white' ? 'Black' : 'White'}
           </span>
         </div>
-        <p className="text-xl font-mono font-bold mt-1">
+        <p className="text-2xl font-mono font-bold text-foreground">
           {formatTime(playerColor === 'white' ? blackTime : whiteTime)}
         </p>
       </Card>
 
       {/* Your Timer */}
-      <Card className={`gradient-card p-3 ${
-        playerColor === 'white' ? (isWhiteTurn ? 'ring-2 ring-primary' : '') :
-        playerColor === 'black' ? (isBlackTurn ? 'ring-2 ring-primary' : '') : ''
+      <Card className={`gradient-card p-4 border transition-all ${
+        playerColor === 'white' ? (isWhiteTurn ? 'ring-2 ring-primary border-primary/30 glow-primary' : 'border-border/50') :
+        playerColor === 'black' ? (isBlackTurn ? 'ring-2 ring-primary border-primary/30 glow-primary' : 'border-border/50') : 'border-border/50'
       }`}>
-        <div className="flex items-center gap-2">
-          <Clock className="w-3 h-3 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">
-            You
+        <div className="flex items-center gap-2 mb-2">
+          <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="text-xs text-muted-foreground font-medium">
+            You ({playerColor === 'white' ? 'White' : 'Black'})
           </span>
         </div>
-        <p className="text-xl font-mono font-bold mt-1">
+        <p className="text-2xl font-mono font-bold text-foreground">
           {formatTime(playerColor === 'white' ? whiteTime : blackTime)}
         </p>
       </Card>
