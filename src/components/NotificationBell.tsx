@@ -420,7 +420,7 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
           <AlertDialogHeader>
             <AlertDialogTitle>Training Invitation</AlertDialogTitle>
             <AlertDialogDescription>
-              {trainingInviteDialog.senderName} has invited you to an AI Coach Training session. 
+              {trainingInviteDialog.senderName} has invited you to a Smart Chess Mentor Training session. 
               You'll both play together and receive separate AI feedback on your moves.
             </AlertDialogDescription>
           </AlertDialogHeader>

@@ -151,8 +151,8 @@ export default function Training() {
             </TabsTrigger>
             <TabsTrigger value="ai-coach" className="text-sm sm:text-base">
               <Brain className="w-4 h-4 mr-2" />
-              <span className="hidden sm:inline">AI Coach</span>
-              <span className="sm:hidden">Coach</span>
+              <span className="hidden sm:inline">Smart Chess Mentor</span>
+              <span className="sm:hidden">Mentor</span>
             </TabsTrigger>
             <TabsTrigger value="history" className="text-sm sm:text-base">
               <TrendingUp className="w-4 h-4 mr-2" />
@@ -419,7 +419,7 @@ export default function Training() {
             </Card>
           </TabsContent>
 
-          {/* AI Coach Training Tab */}
+          {/* Smart Chess Mentor Training Tab */}
           <TabsContent value="ai-coach" className="space-y-8">
             <AICoachPanel />
           </TabsContent>
