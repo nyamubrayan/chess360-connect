@@ -167,11 +167,13 @@ export function AICoachPanel() {
     if (!searchingForOpponent || !userId) return;
 
     const pollInterval = setInterval(async () => {
-      // Check if someone else is in the training queue
+      // Check if someone else is in the training queue with matching time control
       const { data: queueEntries } = await supabase
         .from('matchmaking_queue')
         .select('*')
         .eq('mode', 'training')
+        .eq('time_control', selectedTimeControl.time)
+        .eq('time_increment', selectedTimeControl.increment)
         .neq('user_id', userId)
         .order('created_at', { ascending: true })
         .limit(1);
@@ -223,7 +225,7 @@ export function AICoachPanel() {
     }, 2000);
 
     return () => clearInterval(pollInterval);
-  }, [searchingForOpponent, userId]);
+  }, [searchingForOpponent, userId, selectedTimeControl]);
 
   // Real-time session sync for friend mode
   useEffect(() => {
@@ -262,19 +264,19 @@ export function AICoachPanel() {
     try {
       setSearchingForOpponent(true);
       
-      // Add to matchmaking queue
+      // Add to matchmaking queue with selected time control
       const { error } = await supabase
         .from('matchmaking_queue')
         .insert({
           user_id: userId,
           mode: 'training',
-          time_control: 10,
-          time_increment: 0,
+          time_control: selectedTimeControl.time,
+          time_increment: selectedTimeControl.increment,
         });
 
       if (error) throw error;
 
-      toast.info('Searching for opponent...');
+      toast.info(`Searching for opponent (${selectedTimeControl.label})...`);
     } catch (error) {
       console.error('Error joining training matchmaking:', error);
       toast.error('Failed to start matchmaking');
@@ -558,6 +560,22 @@ export function AICoachPanel() {
     setBlackTimeRemaining(timeControl.time * 60);
   };
 
+  const handleTakeback = () => {
+    if (gameMode !== 'solo') return;
+    
+    const history = chess.history();
+    if (history.length === 0) {
+      toast.info('No moves to take back');
+      return;
+    }
+    
+    chess.undo();
+    setPosition(chess.fen());
+    setMoveCount(prev => Math.max(0, prev - 1));
+    setAnalysis(null);
+    toast.success('Move taken back');
+  };
+
   const getMoveTypeColor = (type: string) => {
     switch (type) {
       case "good": return "bg-green-500/10 text-green-500 border-green-500/20";
@@ -609,15 +627,28 @@ export function AICoachPanel() {
                   ))}
                 </div>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleReset}
-                className="flex items-center gap-2"
-              >
-                <RotateCcw className="w-4 h-4" />
-                Reset
-              </Button>
+              {gameMode === 'solo' && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleTakeback}
+                    className="flex items-center gap-2"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Takeback
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleReset}
+                    className="flex items-center gap-2"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Reset
+                  </Button>
+                </>
+              )}
             </div>
           </div>
 
