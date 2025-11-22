@@ -9,10 +9,12 @@ export const HeroSection = () => {
   return (
     <section className="relative overflow-hidden py-20 sm:py-32 px-4">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5"></div>
-      <div 
-        className="absolute inset-0 opacity-5 bg-cover bg-center"
-        style={{ backgroundImage: `url(${heroImage})` }}
-      ></div>
+      <img 
+        src={heroImage}
+        alt=""
+        className="absolute inset-0 w-full h-full object-cover opacity-5"
+        fetchPriority="high"
+      />
       
       <div className="container mx-auto max-w-6xl relative z-10">
         <div className="text-center space-y-8 max-w-4xl mx-auto">
