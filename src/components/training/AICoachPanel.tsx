@@ -52,6 +52,7 @@ export function AICoachPanel() {
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [isHost, setIsHost] = useState(true);
   const [waitingForFriend, setWaitingForFriend] = useState(false);
+  const [searchingForOpponent, setSearchingForOpponent] = useState(false);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const [moveStats, setMoveStats] = useState({
     host_good_moves: 0,
@@ -119,12 +120,53 @@ export function AICoachPanel() {
     checkActiveSession();
   }, [userId]);
 
-  // Fetch friends when dialog opens
+  // Poll for training match
   useEffect(() => {
-    if (inviteDialogOpen && userId) {
-      fetchFriends();
-    }
-  }, [inviteDialogOpen, userId]);
+    if (!searchingForOpponent || !userId) return;
+
+    const pollInterval = setInterval(async () => {
+      // Check if someone else is in the training queue
+      const { data: queueEntries } = await supabase
+        .from('matchmaking_queue')
+        .select('*')
+        .eq('mode', 'training')
+        .neq('user_id', userId)
+        .order('created_at', { ascending: true })
+        .limit(1);
+
+      if (queueEntries && queueEntries.length > 0) {
+        const opponent = queueEntries[0];
+        
+        // Remove both from queue
+        await supabase
+          .from('matchmaking_queue')
+          .delete()
+          .in('user_id', [userId, opponent.user_id]);
+
+        // Create training session
+        const isHost = Date.now() % 2 === 0;
+        const { data: session, error } = await supabase
+          .from('training_sessions')
+          .insert({
+            host_player_id: isHost ? userId : opponent.user_id,
+            guest_player_id: isHost ? opponent.user_id : userId,
+            status: 'active',
+          })
+          .select()
+          .single();
+
+        if (!error && session) {
+          setSessionId(session.id);
+          setGameMode('friend');
+          setIsHost(isHost);
+          setSearchingForOpponent(false);
+          toast.success('Opponent found! Training started.');
+        }
+      }
+    }, 2000);
+
+    return () => clearInterval(pollInterval);
+  }, [searchingForOpponent, userId]);
 
   // Real-time session sync for friend mode
   useEffect(() => {
@@ -148,10 +190,6 @@ export function AICoachPanel() {
             setMoveCount(session.move_count);
             setLastMove(session.last_move);
           }
-          if (session.status === 'active' && waitingForFriend) {
-            setWaitingForFriend(false);
-            toast.success('Friend joined! Training started.');
-          }
         }
       )
       .subscribe();
@@ -159,86 +197,45 @@ export function AICoachPanel() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [gameMode, sessionId, position, waitingForFriend]);
+  }, [gameMode, sessionId, position]);
 
-  const fetchFriends = async () => {
-    if (!userId) return;
-
-    const { data: sentFriends } = await supabase
-      .from("friends")
-      .select('id, friend_id')
-      .eq("user_id", userId)
-      .eq("status", "accepted");
-
-    const { data: receivedFriends } = await supabase
-      .from("friends")
-      .select('id, user_id')
-      .eq("friend_id", userId)
-      .eq("status", "accepted");
-
-    const friendIds = [
-      ...(sentFriends || []).map(f => f.friend_id),
-      ...(receivedFriends || []).map(f => f.user_id)
-    ];
-
-    if (friendIds.length > 0) {
-      const { data: profilesData } = await supabase
-        .from('profiles')
-        .select('id, username, display_name, avatar_url')
-        .in('id', friendIds);
-
-      const friendsWithProfiles = [
-        ...(sentFriends || []).map(friend => ({
-          ...friend,
-          profiles: profilesData?.find(p => p.id === friend.friend_id) || {}
-        })),
-        ...(receivedFriends || []).map(friend => ({
-          id: friend.id,
-          friend_id: friend.user_id,
-          profiles: profilesData?.find(p => p.id === friend.user_id) || {}
-        }))
-      ];
-
-      setFriends(friendsWithProfiles as any);
-    }
-  };
-
-  const inviteFriend = async (friendId: string, friendUsername: string) => {
+  const startTrainingMatchmaking = async () => {
     if (!userId) return;
 
     try {
-      // Create training session
-      const { data: session, error: sessionError } = await supabase
-        .from('training_sessions')
+      setSearchingForOpponent(true);
+      
+      // Add to matchmaking queue
+      const { error } = await supabase
+        .from('matchmaking_queue')
         .insert({
-          host_player_id: userId,
-          guest_player_id: friendId,
-          status: 'waiting',
-        })
-        .select()
-        .single();
+          user_id: userId,
+          mode: 'training',
+          time_control: 10,
+          time_increment: 0,
+        });
 
-      if (sessionError) throw sessionError;
+      if (error) throw error;
 
-      // Send notification
-      await supabase.from('notifications').insert({
-        user_id: friendId,
-        sender_id: userId,
-        room_id: session.id,
-        type: 'training_invite',
-        title: 'AI Coach Training Invitation',
-        message: 'invited you to a training session!',
-      });
-
-      setSessionId(session.id);
-      setIsHost(true);
-      setWaitingForFriend(true);
-      setInviteDialogOpen(false);
-      toast.success(`Invitation sent to ${friendUsername}!`);
+      toast.info('Searching for opponent...');
     } catch (error) {
-      console.error('Error inviting friend:', error);
-      toast.error('Failed to send invitation');
+      console.error('Error joining training matchmaking:', error);
+      toast.error('Failed to start matchmaking');
+      setSearchingForOpponent(false);
     }
+  };
+
+  const cancelTrainingMatchmaking = async () => {
+    if (!userId) return;
+
+    await supabase
+      .from('matchmaking_queue')
+      .delete()
+      .eq('user_id', userId)
+      .eq('mode', 'training');
+
+    setSearchingForOpponent(false);
+    toast.info('Matchmaking cancelled');
   };
 
   const analyzeMoveInRealTime = async (moveNotation: string) => {
@@ -408,9 +405,14 @@ export function AICoachPanel() {
         .delete()
         .eq('id', sessionId);
     }
+
+    // Cancel any pending matchmaking
+    if (searchingForOpponent) {
+      await cancelTrainingMatchmaking();
+    }
     
     setSessionId(null);
-    setWaitingForFriend(false);
+    setSearchingForOpponent(false);
     setSessionStartTime(new Date());
     setGameMode(mode);
     await handleReset();
@@ -418,7 +420,7 @@ export function AICoachPanel() {
     if (mode === 'computer') {
       setPlayerColor(Math.random() > 0.5 ? 'white' : 'black');
     } else if (mode === 'friend') {
-      setInviteDialogOpen(true);
+      startTrainingMatchmaking();
     }
   };
 
@@ -450,7 +452,7 @@ export function AICoachPanel() {
           <h2 className="text-3xl font-bold mb-2">AI Coach Training</h2>
           <p className="text-muted-foreground">
             {gameMode === 'solo' && 'Play both sides and receive instant AI analysis on every move'}
-            {gameMode === 'friend' && 'Play with a friend - both players get AI feedback separately'}
+            {gameMode === 'friend' && 'Play against a random opponent - both players get AI feedback separately'}
             {gameMode === 'computer' && 'Play against computer and get AI feedback on your moves'}
           </p>
         </div>
@@ -480,9 +482,10 @@ export function AICoachPanel() {
               variant={gameMode === 'friend' ? 'default' : 'outline'}
               onClick={() => handleModeChange('friend')}
               className="flex-1 flex items-center gap-2 justify-center"
+              disabled={searchingForOpponent}
             >
               <Users className="w-4 h-4" />
-              Play with Friend
+              Find Opponent
             </Button>
             <Button
               variant={gameMode === 'computer' ? 'default' : 'outline'}
@@ -493,64 +496,24 @@ export function AICoachPanel() {
               Play vs Computer
             </Button>
           </div>
-          {waitingForFriend && (
+          {searchingForOpponent && (
             <div className="mt-4 flex items-center justify-center gap-2 text-muted-foreground">
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Waiting for friend to join...</span>
+              <span>Searching for opponent...</span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={cancelTrainingMatchmaking}
+                className="ml-2"
+              >
+                Cancel
+              </Button>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Friend Invite Dialog */}
-      <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Invite Friend to Training</DialogTitle>
-            <DialogDescription>
-              Select a friend to practice with. You'll both receive separate AI feedback.
-            </DialogDescription>
-          </DialogHeader>
-          <ScrollArea className="max-h-[400px]">
-            {friends.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">
-                No friends available. Add friends first!
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {friends.map((friend) => (
-                  <div
-                    key={friend.id}
-                    className="flex items-center gap-3 p-3 rounded bg-muted/30"
-                  >
-                    <Avatar>
-                      <AvatarImage src={friend.profiles.avatar_url || undefined} />
-                      <AvatarFallback>
-                        {friend.profiles.username.substring(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <p className="font-semibold">
-                        {friend.profiles.display_name || friend.profiles.username}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        @{friend.profiles.username}
-                      </p>
-                    </div>
-                    <Button
-                      size="sm"
-                      onClick={() => inviteFriend(friend.friend_id, friend.profiles.username)}
-                    >
-                      <Send className="w-4 h-4 mr-1" />
-                      Invite
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
+      {/* Friend Invite Dialog - REMOVED */}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Chessboard */}
