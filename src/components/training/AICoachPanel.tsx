@@ -69,6 +69,48 @@ export function AICoachPanel() {
     });
   }, []);
 
+  // Check for active training session on load (for guests joining)
+  useEffect(() => {
+    if (!userId) return;
+
+    const checkActiveSession = async () => {
+      const { data: activeSession } = await supabase
+        .from('training_sessions')
+        .select('*')
+        .or(`host_player_id.eq.${userId},guest_player_id.eq.${userId}`)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (activeSession) {
+        // Load the session
+        setSessionId(activeSession.id);
+        setGameMode('friend');
+        setIsHost(activeSession.host_player_id === userId);
+        setWaitingForFriend(false);
+        
+        // Load the board state
+        if (activeSession.current_fen) {
+          chess.load(activeSession.current_fen);
+          setPosition(activeSession.current_fen);
+          setMoveCount(activeSession.move_count);
+          setLastMove(activeSession.last_move);
+        }
+
+        // Load move stats
+        setMoveStats({
+          host_good_moves: activeSession.host_good_moves || 0,
+          host_mistakes: activeSession.host_mistakes || 0,
+          host_blunders: activeSession.host_blunders || 0,
+          guest_good_moves: activeSession.guest_good_moves || 0,
+          guest_mistakes: activeSession.guest_mistakes || 0,
+          guest_blunders: activeSession.guest_blunders || 0
+        });
+      }
+    };
+
+    checkActiveSession();
+  }, [userId]);
+
   // Fetch friends when dialog opens
   useEffect(() => {
     if (inviteDialogOpen && userId) {

@@ -4,6 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -24,6 +34,11 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
+  const [trainingInviteDialog, setTrainingInviteDialog] = useState<{
+    open: boolean;
+    notification: Notification | null;
+    senderName: string | null;
+  }>({ open: false, notification: null, senderName: null });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -92,24 +107,26 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
   const handleNotificationClick = async (notification: Notification) => {
     await markAsRead(notification.id);
 
-    // Handle training invitations
-    if (notification.type === 'training_invite' && notification.room_id) {
+    // Handle training invitations - show dialog
+    if (notification.type === 'training_invite' && notification.room_id && notification.sender_id) {
       try {
-        // Update session to active status
-        const { error: updateError } = await supabase
-          .from('training_sessions')
-          .update({ status: 'active' })
-          .eq('id', notification.room_id);
+        // Fetch sender's profile
+        const { data: senderProfile } = await supabase
+          .from('profiles')
+          .select('display_name, username')
+          .eq('id', notification.sender_id)
+          .single();
 
-        if (updateError) throw updateError;
-
-        toast.success('Joined training session!');
-        navigate('/training');
+        setTrainingInviteDialog({
+          open: true,
+          notification,
+          senderName: senderProfile?.display_name || senderProfile?.username || 'A player'
+        });
         setOpen(false);
         return;
       } catch (error) {
-        console.error('Error joining training session:', error);
-        toast.error('Failed to join training session');
+        console.error('Error loading training invitation:', error);
+        toast.error('Failed to load invitation');
         return;
       }
     }
@@ -307,7 +324,84 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
     }
   };
 
+  const handleAcceptTrainingInvite = async () => {
+    if (!trainingInviteDialog.notification?.room_id) return;
+
+    try {
+      // Update session to active
+      const { error: updateError } = await supabase
+        .from('training_sessions')
+        .update({ status: 'active' })
+        .eq('id', trainingInviteDialog.notification.room_id);
+
+      if (updateError) throw updateError;
+
+      toast.success('Training session joined!');
+      setTrainingInviteDialog({ open: false, notification: null, senderName: null });
+      navigate('/training');
+    } catch (error) {
+      console.error('Error accepting training invite:', error);
+      toast.error('Failed to join training session');
+    }
+  };
+
+  const handleDeclineTrainingInvite = async () => {
+    if (!trainingInviteDialog.notification?.room_id) return;
+
+    try {
+      // Delete the training session
+      const { error: deleteError } = await supabase
+        .from('training_sessions')
+        .delete()
+        .eq('id', trainingInviteDialog.notification.room_id);
+
+      if (deleteError) throw deleteError;
+
+      // Delete the notification
+      await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', trainingInviteDialog.notification.id);
+
+      toast.info('Training invitation declined');
+      setTrainingInviteDialog({ open: false, notification: null, senderName: null });
+      
+      // Refresh notifications
+      fetchNotifications();
+    } catch (error) {
+      console.error('Error declining training invite:', error);
+      toast.error('Failed to decline invitation');
+    }
+  };
+
   return (
+    <>
+      <AlertDialog 
+        open={trainingInviteDialog.open} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setTrainingInviteDialog({ open: false, notification: null, senderName: null });
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Training Invitation</AlertDialogTitle>
+            <AlertDialogDescription>
+              {trainingInviteDialog.senderName} has invited you to an AI Coach Training session. 
+              You'll both play together and receive separate AI feedback on your moves.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleDeclineTrainingInvite}>
+              Decline
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleAcceptTrainingInvite}>
+              Accept
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
@@ -378,5 +472,6 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
         </ScrollArea>
       </PopoverContent>
     </Popover>
+    </>
   );
 };
