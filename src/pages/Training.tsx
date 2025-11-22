@@ -7,6 +7,7 @@ import { Brain, Target, BookOpen, TrendingUp, ArrowRight, GraduationCap, Clock, 
 import { CommunityBar } from '@/components/CommunityBar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InteractivePieceDemo } from '@/components/chess/InteractivePieceDemo';
+import { AICoachPanel } from '@/components/training/AICoachPanel';
 
 export default function Training() {
   const navigate = useNavigate();
@@ -33,15 +34,6 @@ export default function Training() {
   }, [navigate]);
 
   const trainingCards = [
-    {
-      icon: Brain,
-      title: 'AI Coach Training',
-      description: 'Get instant move-by-move analysis and feedback from AI as you play',
-      gradient: 'from-violet-500/20 to-purple-500/20',
-      iconColor: 'text-violet-500',
-      path: '/ai-coach',
-      available: true
-    },
     {
       icon: Brain,
       title: 'Tactical Puzzles',
@@ -145,7 +137,7 @@ export default function Training() {
         </div>
 
         <Tabs defaultValue="modules" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-8">
+          <TabsList className="grid w-full grid-cols-3 mb-8">
             <TabsTrigger value="basics" className="text-base">
               <GraduationCap className="w-4 h-4 mr-2" />
               Chess Basics
@@ -153,6 +145,10 @@ export default function Training() {
             <TabsTrigger value="modules" className="text-base">
               <Brain className="w-4 h-4 mr-2" />
               Training Modules
+            </TabsTrigger>
+            <TabsTrigger value="ai-coach" className="text-base">
+              <Brain className="w-4 h-4 mr-2" />
+              AI Coach Training
             </TabsTrigger>
           </TabsList>
 
@@ -412,6 +408,11 @@ export default function Training() {
                 </div>
               </div>
             </Card>
+          </TabsContent>
+
+          {/* AI Coach Training Tab */}
+          <TabsContent value="ai-coach" className="space-y-8">
+            <AICoachPanel />
           </TabsContent>
         </Tabs>
       </div>
