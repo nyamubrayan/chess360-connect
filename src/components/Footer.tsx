@@ -1,111 +1,152 @@
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, TrendingUp, BookOpen, Clock } from "lucide-react";
+import { Users, TrendingUp, Gamepad2, Trophy, BookOpen } from "lucide-react";
 
 interface Stats {
-  activePlayers: number;
-  gamesAnalyzed: number;
-  aiLessons: number;
+  onlinePlayers: number;
+  totalPlayers: number;
+  activeGames: number;
+  totalGames: number;
+  availableLessons: number;
 }
 
 export const Footer = () => {
   const [stats, setStats] = useState<Stats>({
-    activePlayers: 0,
-    gamesAnalyzed: 0,
-    aiLessons: 0,
+    onlinePlayers: 0,
+    totalPlayers: 0,
+    activeGames: 0,
+    totalGames: 0,
+    availableLessons: 0,
   });
 
   useEffect(() => {
-    const fetchStats = async () => {
-      const { count: playersCount } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true });
+    const fetchStatistics = async () => {
+      try {
+        // Fetch total registered players
+        const { count: totalPlayers } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true });
 
-      const { count: gamesCount } = await supabase
-        .from('games')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'completed');
+        // Fetch active games
+        const { count: activeGames } = await supabase
+          .from('games')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'active');
 
-      setStats({
-        activePlayers: playersCount || 0,
-        gamesAnalyzed: gamesCount || 0,
-        aiLessons: 0,
-      });
+        // Fetch total games played
+        const { count: totalGames } = await supabase
+          .from('games')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'completed');
+
+        // Count available lessons (puzzles + training achievements)
+        const { count: puzzlesCount } = await supabase
+          .from('puzzles')
+          .select('*', { count: 'exact', head: true });
+
+        const { count: achievementsCount } = await supabase
+          .from('training_achievements')
+          .select('*', { count: 'exact', head: true });
+
+        setStats({
+          onlinePlayers: 0, // Will be updated by presence
+          totalPlayers: totalPlayers || 0,
+          activeGames: activeGames || 0,
+          totalGames: totalGames || 0,
+          availableLessons: (puzzlesCount || 0) + (achievementsCount || 0),
+        });
+      } catch (error) {
+        console.error('Error fetching statistics:', error);
+      }
     };
 
-    fetchStats();
+    fetchStatistics();
 
-    const profilesChannel = supabase
-      .channel('profiles-footer')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, fetchStats)
-      .subscribe();
+    // Set up realtime tracking for online players
+    const presenceChannel = supabase.channel('online-users-footer');
+    
+    presenceChannel
+      .on('presence', { event: 'sync' }, () => {
+        const state = presenceChannel.presenceState();
+        const onlineCount = Object.keys(state).length;
+        setStats(prev => ({ ...prev, onlinePlayers: onlineCount }));
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            await presenceChannel.track({
+              user_id: user.id,
+              online_at: new Date().toISOString(),
+            });
+          }
+        }
+      });
 
-    const gamesChannel = supabase
-      .channel('games-footer')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'games' }, fetchStats)
-      .subscribe();
+    // Refresh stats periodically
+    const interval = setInterval(fetchStatistics, 30000); // Every 30 seconds
 
     return () => {
-      supabase.removeChannel(profilesChannel);
-      supabase.removeChannel(gamesChannel);
+      presenceChannel.unsubscribe();
+      clearInterval(interval);
     };
   }, []);
-
-  const formatNumber = (num: number): string => {
-    if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-    if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
-    return num.toString();
-  };
 
   const statsData = [
     {
       icon: Users,
-      value: formatNumber(stats.activePlayers) + '+',
-      label: 'Active Players',
-      color: 'text-blue-400'
+      value: `${stats.onlinePlayers}+`,
+      label: 'Players Online',
+      color: 'text-green-400'
     },
     {
       icon: TrendingUp,
-      value: formatNumber(stats.gamesAnalyzed) + '+',
-      label: 'Games Analyzed',
-      color: 'text-white'
+      value: `${stats.totalPlayers}+`,
+      label: 'Registered Players',
+      color: 'text-blue-400'
     },
     {
-      icon: BookOpen,
-      value: formatNumber(stats.aiLessons) + '+',
-      label: 'AI Lessons',
+      icon: Gamepad2,
+      value: `${stats.activeGames}+`,
+      label: 'Active Games',
       color: 'text-purple-400'
     },
     {
-      icon: Clock,
-      value: '24/7',
-      label: 'AI Support',
-      color: 'text-white'
+      icon: Trophy,
+      value: `${stats.totalGames}+`,
+      label: 'Games Played',
+      color: 'text-orange-400'
+    },
+    {
+      icon: BookOpen,
+      value: `${stats.availableLessons}+`,
+      label: 'Lessons Available',
+      color: 'text-pink-400'
     }
   ];
 
   return (
     <footer className="py-16 px-4 bg-gradient-to-b from-background to-background/80 border-t border-border/40">
       <div className="container mx-auto max-w-7xl">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 lg:gap-6">
           {statsData.map((stat, index) => {
             const Icon = stat.icon;
             return (
               <Card 
                 key={index} 
-                className="p-6 text-center bg-card/40 backdrop-blur-sm border-border/20 hover:border-primary/20 transition-all"
+                className="p-4 lg:p-6 text-center bg-card/40 backdrop-blur-sm border-border/20 hover:border-primary/20 transition-all"
               >
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <div className="flex justify-center">
-                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Icon className={`w-6 h-6 ${stat.color}`} />
+                    <div className={`${stat.color} opacity-80`}>
+                      <Icon className="w-8 h-8 lg:w-10 lg:h-10" />
                     </div>
                   </div>
-                  <div className={`text-3xl lg:text-4xl font-bold ${stat.color}`}>
+                  <div className={`text-2xl lg:text-3xl font-bold ${stat.color}`}>
                     {stat.value}
                   </div>
-                  <div className="text-sm text-muted-foreground font-medium">
+                  <div className="text-xs lg:text-sm text-muted-foreground font-medium">
                     {stat.label}
                   </div>
                 </div>
@@ -116,7 +157,7 @@ export const Footer = () => {
         
         <div className="mt-12 pt-8 border-t border-border/20 text-center">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} ChessMaster. All rights reserved.
+            © {new Date().getFullYear()} Chessafari. All rights reserved.
           </p>
         </div>
       </div>
