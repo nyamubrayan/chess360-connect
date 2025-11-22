@@ -7,6 +7,7 @@ import { Trophy, Clock, Calendar, Brain, Loader2, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { GameMoveAnalysis } from "./GameMoveAnalysis";
+import { GamePerformanceAnalysis } from "./GamePerformanceAnalysis";
 
 interface Game {
   id: string;
@@ -31,9 +32,9 @@ interface GameHistoryProps {
 export const GameHistory = ({ userId, limit = 10, showAnalyzeButton = false }: GameHistoryProps) => {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
-  const [analyzingGameId, setAnalyzingGameId] = useState<string | null>(null);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [showMoveAnalysis, setShowMoveAnalysis] = useState(false);
+  const [showPerformanceAnalysis, setShowPerformanceAnalysis] = useState(false);
 
   useEffect(() => {
     fetchGames();
@@ -63,22 +64,9 @@ export const GameHistory = ({ userId, limit = 10, showAnalyzeButton = false }: G
     }
   };
 
-  const analyzeGame = async (gameId: string) => {
-    setAnalyzingGameId(gameId);
-    try {
-      const { data, error } = await supabase.functions.invoke('analyze-game', {
-        body: { gameId }
-      });
-
-      if (error) throw error;
-      
-      toast.success('Game analysis complete! Check your Analytics page for insights.');
-    } catch (error: any) {
-      console.error('Error analyzing game:', error);
-      toast.error(error.message || 'Failed to analyze game');
-    } finally {
-      setAnalyzingGameId(null);
-    }
+  const openPerformanceAnalysis = (gameId: string) => {
+    setSelectedGameId(gameId);
+    setShowPerformanceAnalysis(true);
   };
 
   const getResultBadge = (game: Game) => {
@@ -203,20 +191,10 @@ export const GameHistory = ({ userId, limit = 10, showAnalyzeButton = false }: G
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => analyzeGame(game.id)}
-                        disabled={analyzingGameId === game.id}
+                        onClick={() => openPerformanceAnalysis(game.id)}
                       >
-                        {analyzingGameId === game.id ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Analyzing...
-                          </>
-                        ) : (
-                          <>
-                            <Brain className="h-4 w-4 mr-2" />
-                            Analyze
-                          </>
-                        )}
+                        <Brain className="h-4 w-4 mr-2" />
+                        Analyze
                       </Button>
                     )}
                   </div>
@@ -228,11 +206,18 @@ export const GameHistory = ({ userId, limit = 10, showAnalyzeButton = false }: G
       </CardContent>
 
       {selectedGameId && (
-        <GameMoveAnalysis
-          gameId={selectedGameId}
-          open={showMoveAnalysis}
-          onOpenChange={setShowMoveAnalysis}
-        />
+        <>
+          <GameMoveAnalysis
+            gameId={selectedGameId}
+            open={showMoveAnalysis}
+            onOpenChange={setShowMoveAnalysis}
+          />
+          <GamePerformanceAnalysis
+            gameId={selectedGameId}
+            open={showPerformanceAnalysis}
+            onOpenChange={setShowPerformanceAnalysis}
+          />
+        </>
       )}
     </Card>
   );
