@@ -38,6 +38,8 @@ export default function GameLobby() {
   const [customDialogOpen, setCustomDialogOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [searchInterval, setSearchInterval] = useState<any>(null);
+  const [activeGame, setActiveGame] = useState<any>(null);
+  const [loadingActiveGame, setLoadingActiveGame] = useState(true);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -46,6 +48,7 @@ export default function GameLobby() {
         return;
       }
       setUser(user);
+      checkForActiveGame(user.id);
     });
 
     // Cleanup: remove user from queue when component unmounts
@@ -60,6 +63,39 @@ export default function GameLobby() {
       }
     };
   }, [searchInterval, isSearching]);
+
+  const checkForActiveGame = async (userId: string) => {
+    setLoadingActiveGame(true);
+    try {
+      const { data: games, error } = await supabase
+        .from('games')
+        .select(`
+          *,
+          white_player:profiles!games_white_player_id_fkey(username, rating),
+          black_player:profiles!games_black_player_id_fkey(username, rating)
+        `)
+        .or(`white_player_id.eq.${userId},black_player_id.eq.${userId}`)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+
+      if (games && games.length > 0) {
+        setActiveGame(games[0]);
+      }
+    } catch (error) {
+      console.error('Error checking for active game:', error);
+    } finally {
+      setLoadingActiveGame(false);
+    }
+  };
+
+  const resumeGame = () => {
+    if (activeGame) {
+      navigate(`/game/${activeGame.id}`);
+    }
+  };
 
   const handleTimeControlSelect = (timeControl: TimeControl) => {
     if (isSearching) return;
@@ -245,9 +281,39 @@ export default function GameLobby() {
           </div>
         </div>
 
+        {/* Active Game Card */}
+        {!loadingActiveGame && activeGame && (
+          <Card className="mb-6 p-6 bg-gradient-to-r from-primary/10 to-primary/5 border-2 border-primary animate-fade-in">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex-1 text-center sm:text-left">
+                <h3 className="text-lg font-bold mb-2 flex items-center justify-center sm:justify-start gap-2">
+                  <Clock className="w-5 h-5 animate-pulse text-primary" />
+                  Active Game in Progress
+                </h3>
+                <div className="flex items-center gap-2 justify-center sm:justify-start text-sm text-muted-foreground flex-wrap">
+                  <span className="font-semibold text-foreground">
+                    {activeGame.white_player_id === user.id ? activeGame.black_player.username : activeGame.white_player.username}
+                  </span>
+                  <span>•</span>
+                  <span>{Math.floor(activeGame.time_control / 60)}+{activeGame.time_increment} min</span>
+                  <span>•</span>
+                  <span>Playing as {activeGame.white_player_id === user.id ? 'White' : 'Black'}</span>
+                </div>
+              </div>
+              <Button 
+                onClick={resumeGame}
+                size="lg"
+                className="w-full sm:w-auto"
+              >
+                Resume Game
+              </Button>
+            </div>
+          </Card>
+        )}
+
         <div className="mb-6">
           <p className="text-center text-muted-foreground text-sm sm:text-base">
-            Select your preferred time control to find an opponent
+            {activeGame ? 'Or start a new match' : 'Select your preferred time control to find an opponent'}
           </p>
         </div>
 
