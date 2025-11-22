@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { User, Session } from "@supabase/supabase-js";
 import { ProfileEditDialog } from "@/components/ProfileEditDialog";
 import { GameHistory } from "@/components/GameHistory";
+import { TrainingStats } from "@/components/training/TrainingStats";
 
 interface Profile {
   id: string;
@@ -18,6 +19,7 @@ interface Profile {
   bio: string | null;
   rating: number | null;
   created_at: string;
+  show_training_stats: boolean | null;
 }
 
 
@@ -124,6 +126,7 @@ const Profile = () => {
                   bio: profile.bio,
                   avatar_url: profile.avatar_url,
                   username: profile.username,
+                  show_training_stats: profile.show_training_stats,
                 }}
                 onProfileUpdate={fetchProfile}
               />
@@ -196,6 +199,18 @@ const Profile = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Training Stats */}
+        {(isOwnProfile || profile.show_training_stats) && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Training Statistics</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TrainingStats userId={profile.id} />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Game History */}
         <GameHistory userId={profile.id} limit={5} showAnalyzeButton={false} />

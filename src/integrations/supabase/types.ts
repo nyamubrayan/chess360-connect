@@ -639,6 +639,7 @@ export type Database = {
           location_enabled: boolean | null
           longitude: number | null
           rating: number | null
+          show_training_stats: boolean | null
           updated_at: string | null
           username: string
         }
@@ -654,6 +655,7 @@ export type Database = {
           location_enabled?: boolean | null
           longitude?: number | null
           rating?: number | null
+          show_training_stats?: boolean | null
           updated_at?: string | null
           username: string
         }
@@ -669,6 +671,7 @@ export type Database = {
           location_enabled?: boolean | null
           longitude?: number | null
           rating?: number | null
+          show_training_stats?: boolean | null
           updated_at?: string | null
           username?: string
         }

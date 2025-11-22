@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { UserPlus, Users, Search, Check, Clock, X, Ban } from 'lucide-react';
 import { toast } from 'sonner';
 import { PuzzleChallengeDialog } from '@/components/PuzzleChallengeDialog';
+import { TrainingStats } from '@/components/training/TrainingStats';
 
 interface PlayerProfile {
   id: string;
@@ -19,6 +20,7 @@ interface PlayerProfile {
   avatar_url: string | null;
   bio: string | null;
   country: string | null;
+  show_training_stats: boolean | null;
 }
 
 interface FriendStatus {
@@ -388,6 +390,12 @@ export default function Connect() {
                       <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
                         {player.bio}
                       </p>
+                    )}
+
+                    {player.show_training_stats && (
+                      <div className="mb-4">
+                        <TrainingStats userId={player.id} />
+                      </div>
                     )}
 
                     <div className="flex gap-2">
