@@ -23,6 +23,14 @@ interface PlayerProfile {
   show_training_stats: boolean | null;
 }
 
+interface FriendProfile {
+  id: string;
+  username: string;
+  display_name: string | null;
+  rating: number | null;
+  avatar_url: string | null;
+}
+
 interface FriendStatus {
   isFriend: boolean;
   isPending: boolean;
@@ -37,6 +45,7 @@ export default function Connect() {
   const [user, setUser] = useState<any>(null);
   const [players, setPlayers] = useState<PlayerProfile[]>([]);
   const [friendStatuses, setFriendStatuses] = useState<Record<string, FriendStatus>>({});
+  const [connectedFriends, setConnectedFriends] = useState<FriendProfile[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [puzzleDialogOpen, setPuzzleDialogOpen] = useState(false);
@@ -138,6 +147,24 @@ export default function Connect() {
 
       setPlayers(profilesData || []);
       setFriendStatuses(statusMap);
+
+      // Load connected friends (accepted friendships)
+      const acceptedFriendIds = Object.entries(statusMap)
+        .filter(([_, status]) => status.isFriend)
+        .map(([userId, _]) => userId);
+
+      if (acceptedFriendIds.length > 0) {
+        const { data: friendProfilesData, error: friendProfilesError } = await supabase
+          .from('profiles')
+          .select('id, username, display_name, rating, avatar_url')
+          .in('id', acceptedFriendIds)
+          .order('username', { ascending: true });
+
+        if (friendProfilesError) throw friendProfilesError;
+        setConnectedFriends(friendProfilesData || []);
+      } else {
+        setConnectedFriends([]);
+      }
     } catch (error: any) {
       console.error('Error loading players:', error);
       toast.error('Failed to load players');
@@ -312,6 +339,55 @@ export default function Connect() {
             Discover chess players from around the world and build your network
           </p>
         </div>
+
+        {/* Connected Friends Section */}
+        {connectedFriends.length > 0 && (
+          <Card className="gradient-card mb-8 border-primary/20">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <Users className="w-5 h-5 text-primary" />
+                  My ChessMates
+                </CardTitle>
+                <Badge variant="secondary" className="text-sm font-semibold">
+                  {connectedFriends.length} Connected
+                </Badge>
+              </div>
+              <CardDescription>
+                Your chess network of {connectedFriends.length} connected {connectedFriends.length === 1 ? 'player' : 'players'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                {connectedFriends.map((friend) => (
+                  <div
+                    key={friend.id}
+                    className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
+                    onClick={() => navigate(`/profile/${friend.id}`)}
+                  >
+                    <Avatar className="w-10 h-10 border-2 border-primary/20">
+                      <AvatarImage src={friend.avatar_url || undefined} />
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                        {friend.username.substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm truncate">
+                        {friend.display_name || friend.username}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        @{friend.username}
+                      </p>
+                      <Badge variant="outline" className="text-xs mt-1">
+                        {friend.rating || 1200}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Search Bar */}
         <Card className="gradient-card mb-8">
