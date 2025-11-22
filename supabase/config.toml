@@ -36,3 +36,6 @@ verify_jwt = true
 [functions.manage-tournament]
 verify_jwt = true
 
+[functions.fetch-chess-news]
+verify_jwt = false
+
