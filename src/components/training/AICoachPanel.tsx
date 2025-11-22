@@ -600,89 +600,96 @@ export function AICoachPanel() {
     <div className="min-h-screen w-full">
       {/* Professional Header Bar */}
       <div className="bg-card/50 backdrop-blur-sm border-b border-border sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gradient">Smart Chess Mentor Training</h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                {gameMode === 'solo' ? 'Solo practice with instant AI analysis' : 'Train with opponent - both receive AI feedback'}
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              {/* Time Control Selector */}
-              <div className="flex items-center gap-2 bg-muted/30 rounded-lg px-3 py-2">
-                <Clock className="w-4 h-4 text-muted-foreground" />
-                <div className="flex gap-1">
-                  {TIME_CONTROLS.map((tc) => (
-                    <Button
-                      key={tc.label}
-                      variant={selectedTimeControl.label === tc.label ? 'default' : 'ghost'}
-                      size="sm"
-                      onClick={() => handleTimeControlChange(tc)}
-                      disabled={gameMode === 'friend' && sessionId !== null}
-                      className="h-8 px-3 text-xs"
-                    >
-                      {tc.label}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-              {gameMode === 'solo' && (
-                <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleTakeback}
-                    className="flex items-center gap-2"
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                    Takeback
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleReset}
-                    className="flex items-center gap-2"
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                    Reset
-                  </Button>
-                </>
-              )}
-            </div>
+        <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-4">
+          {/* Title */}
+          <div className="mb-3">
+            <h1 className="text-lg sm:text-2xl font-bold text-gradient">Smart Chess Mentor</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+              {gameMode === 'solo' ? 'Solo practice with instant AI analysis' : 'Train with opponent - both receive AI feedback'}
+            </p>
           </div>
 
-          {/* Mode Selector */}
-          <div className="mt-4 flex items-center gap-3">
+          {/* Mode Selector - Always visible at top */}
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
             <Button
               variant={gameMode === 'solo' ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleModeChange('solo')}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 text-xs sm:text-sm"
             >
-              <User className="w-4 h-4" />
-              Solo Practice
+              <User className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Solo Practice</span>
+              <span className="sm:hidden">Solo</span>
             </Button>
             <Button
               variant={gameMode === 'friend' ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleModeChange('friend')}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 text-xs sm:text-sm"
               disabled={searchingForOpponent}
             >
-              <Users className="w-4 h-4" />
-              Play Online
+              <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Play Online</span>
+              <span className="sm:hidden">Online</span>
             </Button>
             {searchingForOpponent && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Finding opponent...</span>
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+                <span className="hidden sm:inline">Finding opponent...</span>
+                <span className="sm:hidden">Finding...</span>
                 <Button 
                   variant="ghost" 
                   size="sm" 
                   onClick={cancelTrainingMatchmaking}
+                  className="text-xs"
                 >
                   Cancel
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Controls Row */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Time Control Selector */}
+            <div className="flex items-center gap-1 sm:gap-2 bg-muted/30 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 flex-1 min-w-0">
+              <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground flex-shrink-0" />
+              <div className="flex gap-0.5 sm:gap-1 overflow-x-auto scrollbar-hide">
+                {TIME_CONTROLS.map((tc) => (
+                  <Button
+                    key={tc.label}
+                    variant={selectedTimeControl.label === tc.label ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => handleTimeControlChange(tc)}
+                    disabled={gameMode === 'friend' && sessionId !== null}
+                    className="h-7 sm:h-8 px-2 sm:px-3 text-xs flex-shrink-0"
+                  >
+                    {tc.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Solo Mode Controls */}
+            {gameMode === 'solo' && (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleTakeback}
+                  className="flex items-center gap-1 sm:gap-2 h-7 sm:h-9 px-2 sm:px-3"
+                >
+                  <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline text-xs sm:text-sm">Takeback</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleReset}
+                  className="flex items-center gap-1 sm:gap-2 h-7 sm:h-9 px-2 sm:px-3"
+                >
+                  <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline text-xs sm:text-sm">Reset</span>
                 </Button>
               </div>
             )}
@@ -691,11 +698,11 @@ export function AICoachPanel() {
       </div>
 
       {/* Main Content - Centered Board Layout */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 sm:gap-6">
           
           {/* Left Panel - Performance & Stats */}
-          <div className="xl:col-span-3 space-y-4">
+          <div className="xl:col-span-3 space-y-3 sm:space-y-4 order-3 xl:order-1">
             {/* Performance Heatmap */}
             {gameMode === 'friend' && sessionId && (
               <TrainingHeatmap moveStats={moveStats} isHost={isHost} />
@@ -751,7 +758,7 @@ export function AICoachPanel() {
           </div>
 
           {/* Center Panel - Chess Board */}
-          <div className="xl:col-span-6">
+          <div className="xl:col-span-6 order-1 xl:order-2">
             <Card className="gradient-card border-primary/20">
               <CardContent className="pt-6">
                 {/* Opponent Info Bar */}
@@ -859,7 +866,7 @@ export function AICoachPanel() {
           </div>
 
           {/* Right Panel - AI Analysis */}
-          <div className="xl:col-span-3 space-y-4">
+          <div className="xl:col-span-3 space-y-3 sm:space-y-4 order-2 xl:order-3">
             <Card className="gradient-card border-primary/20 glow-primary">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
