@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { ChessBoardComponent } from '@/components/chess/ChessBoard';
 import { useChessSounds } from '@/hooks/useChessSounds';
 import { toast } from 'sonner';
-import { Brain, CheckCircle, XCircle, RefreshCw, Trophy } from 'lucide-react';
+import { Brain, CheckCircle, XCircle, RefreshCw, Trophy, Eye } from 'lucide-react';
 
 interface PuzzleChallengeDialogProps {
   open: boolean;
@@ -47,6 +47,7 @@ export function PuzzleChallengeDialog({
   const [loading, setLoading] = useState(false);
   const [startTime, setStartTime] = useState<number | null>(null);
   const [usedPuzzleIds, setUsedPuzzleIds] = useState<string[]>([]);
+  const [showSolution, setShowSolution] = useState(false);
   const [leaderboardData, setLeaderboardData] = useState<{
     fastestTime: number | null;
     totalAttempts: number;
@@ -128,6 +129,7 @@ export function PuzzleChallengeDialog({
     setMoveIndex(0);
     setSolved(false);
     setAttempts(0);
+    setShowSolution(false);
     setStartTime(Date.now());
     fetchLeaderboardData(puzzleData.id);
   };
@@ -294,6 +296,7 @@ export function PuzzleChallengeDialog({
     setMoveIndex(0);
     setSolved(false);
     setAttempts(0);
+    setShowSolution(false);
     setStartTime(null);
     setLeaderboardData(null);
     onOpenChange(false);
@@ -307,6 +310,10 @@ export function PuzzleChallengeDialog({
 
   const handleNewPuzzle = () => {
     fetchRandomPuzzle();
+  };
+
+  const handleShowSolution = () => {
+    setShowSolution(true);
   };
 
   return (
@@ -406,6 +413,45 @@ export function PuzzleChallengeDialog({
                     )}
                   </div>
                 </div>
+              )}
+
+              {showSolution && (
+                <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2 text-blue-400">
+                    <Eye className="w-4 h-4" />
+                    Solution Moves
+                  </h3>
+                  <div className="space-y-1">
+                    {puzzle.solution_moves.map((move, idx) => (
+                      <div 
+                        key={idx} 
+                        className={`text-sm p-2 rounded ${
+                          idx < moveIndex 
+                            ? 'bg-green-500/10 text-green-400' 
+                            : 'bg-accent/40 text-foreground'
+                        }`}
+                      >
+                        <span className="font-mono">
+                          {Math.floor(idx / 2) + 1}. {move}
+                        </span>
+                        {idx < moveIndex && (
+                          <CheckCircle className="w-3 h-3 inline ml-2" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {!showSolution && attempts >= 3 && !solved && (
+                <Button
+                  variant="secondary"
+                  className="w-full"
+                  onClick={handleShowSolution}
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  Show Solution
+                </Button>
               )}
 
               <Button
