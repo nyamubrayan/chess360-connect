@@ -758,7 +758,7 @@ export function AICoachPanel() {
       </div>
 
       {/* Main Content - Centered Board Layout */}
-      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
+      <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-8">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 sm:gap-6">
           
           {/* Left Panel - Performance & Stats */}
@@ -820,10 +820,10 @@ export function AICoachPanel() {
           {/* Center Panel - Chess Board */}
           <div className="xl:col-span-6 order-1 xl:order-2">
             <Card className="gradient-card border-primary/20">
-              <CardContent className="pt-6">
+              <CardContent className="pt-3 sm:pt-6 px-3 sm:px-6">
                 {/* Opponent Info Bar */}
                 {gameMode === 'friend' && opponentInfo && (
-                  <div className="mb-6 p-4 bg-gradient-to-r from-primary/5 to-accent/5 rounded-lg border border-primary/10">
+                  <div className="mb-3 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-primary/5 to-accent/5 rounded-lg border border-primary/10">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10 border-2 border-primary/20">
@@ -872,7 +872,7 @@ export function AICoachPanel() {
 
                 {/* Timer Display */}
                 {gameMode === 'friend' && sessionId && (
-                  <div className="mb-6">
+                  <div className="mb-3 sm:mb-6">
                     <TrainingTimer
                       timeControl={selectedTimeControl.time}
                       timeIncrement={selectedTimeControl.increment}
@@ -886,7 +886,7 @@ export function AICoachPanel() {
                 )}
 
                 {/* Chessboard - Centered */}
-                <div className="w-full mx-auto flex justify-center">
+                <div className="w-full mx-auto flex justify-center -mx-3 sm:mx-0">
                   <div className="w-full max-w-[600px]">
                     <ChessBoardComponent
                       position={position}
@@ -899,7 +899,7 @@ export function AICoachPanel() {
                 </div>
                 
                 {/* Game Status */}
-                <div className="mt-6 text-center">
+                <div className="mt-3 sm:mt-6 text-center">
                   {chess.isCheckmate() ? (
                     <Badge variant="destructive" className="text-sm px-4 py-1">
                       Checkmate!
@@ -928,59 +928,59 @@ export function AICoachPanel() {
           {/* Right Panel - AI Analysis */}
           <div className="xl:col-span-3 space-y-3 sm:space-y-4 order-2 xl:order-3">
             <Card className="gradient-card border-primary/20 glow-primary">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Brain className="w-5 h-5 text-primary" />
+              <CardHeader className="pb-2 sm:pb-3 px-4 sm:px-6 pt-4 sm:pt-6">
+                <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                  <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                   AI Analysis
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6 pb-4 sm:pb-6">
                 {isAnalyzing ? (
-                  <div className="flex flex-col items-center justify-center py-12">
-                    <Loader2 className="w-8 h-8 animate-spin text-primary mb-3" />
-                    <span className="text-sm text-muted-foreground">Analyzing move...</span>
+                  <div className="flex flex-col items-center justify-center py-8 sm:py-12">
+                    <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 animate-spin text-primary mb-2 sm:mb-3" />
+                    <span className="text-xs sm:text-sm text-muted-foreground">Analyzing move...</span>
                   </div>
                 ) : analysis ? (
                   <>
                     {/* Move Type Badge */}
                     <div className="flex items-center justify-center">
-                      <Badge className={`${getMoveTypeColor(analysis.type)} px-4 py-1.5 text-sm`}>
+                      <Badge className={`${getMoveTypeColor(analysis.type)} px-3 py-1 sm:px-4 sm:py-1.5 text-xs sm:text-sm`}>
                         {getMoveTypeIcon(analysis.type)}
-                        <span className="ml-2 capitalize font-semibold">{analysis.type}</span>
+                        <span className="ml-1.5 sm:ml-2 capitalize font-semibold">{analysis.type}</span>
                       </Badge>
                     </div>
 
                     {/* Position Evaluation */}
-                    <div className="bg-muted/30 rounded-lg p-3 border border-border">
-                      <p className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">
+                    <div className="bg-muted/30 rounded-lg p-2.5 sm:p-3 border border-border">
+                      <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground mb-1 sm:mb-1.5 uppercase tracking-wide">
                         Position Evaluation
                       </p>
-                      <p className="text-sm leading-relaxed">{analysis.evaluation}</p>
+                      <p className="text-xs sm:text-sm leading-relaxed">{analysis.evaluation}</p>
                     </div>
 
                     {/* Better Move Suggestion */}
                     {analysis.type !== "good" && (
-                      <div className="bg-primary/5 rounded-lg p-3 border border-primary/20">
-                        <p className="text-xs font-semibold text-primary mb-1.5 flex items-center gap-1.5 uppercase tracking-wide">
-                          <Lightbulb className="w-3.5 h-3.5" />
+                      <div className="bg-primary/5 rounded-lg p-2.5 sm:p-3 border border-primary/20">
+                        <p className="text-[10px] sm:text-xs font-semibold text-primary mb-1 sm:mb-1.5 flex items-center gap-1 sm:gap-1.5 uppercase tracking-wide">
+                          <Lightbulb className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                           Suggested Alternative
                         </p>
-                        <p className="text-sm leading-relaxed">{analysis.suggestion}</p>
+                        <p className="text-xs sm:text-sm leading-relaxed">{analysis.suggestion}</p>
                       </div>
                     )}
 
                     {/* Detailed Explanation */}
-                    <div className="bg-muted/30 rounded-lg p-3 border border-border">
-                      <p className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">
+                    <div className="bg-muted/30 rounded-lg p-2.5 sm:p-3 border border-border">
+                      <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground mb-1 sm:mb-1.5 uppercase tracking-wide">
                         Explanation
                       </p>
-                      <p className="text-sm text-muted-foreground leading-relaxed">{analysis.explanation}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{analysis.explanation}</p>
                     </div>
                   </>
                 ) : (
-                  <div className="text-center py-12">
-                    <Brain className="w-16 h-16 mx-auto mb-4 text-muted-foreground/20" />
-                    <p className="text-sm text-muted-foreground leading-relaxed px-4">
+                  <div className="text-center py-8 sm:py-12">
+                    <Brain className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 text-muted-foreground/20" />
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed px-3 sm:px-4">
                       Make your first move to receive instant AI feedback and detailed analysis
                     </p>
                   </div>
