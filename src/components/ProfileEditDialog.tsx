@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Loader2, Upload } from "lucide-react";
 
@@ -26,6 +27,7 @@ interface ProfileEditDialogProps {
     bio: string | null;
     avatar_url: string | null;
     username: string;
+    show_training_stats: boolean | null;
   };
   onProfileUpdate: () => void;
 }
@@ -35,6 +37,7 @@ export const ProfileEditDialog = ({ userId, currentProfile, onProfileUpdate }: P
   const [uploading, setUploading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(currentProfile.avatar_url);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [showTrainingStats, setShowTrainingStats] = useState(currentProfile.show_training_stats ?? false);
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -101,6 +104,7 @@ export const ProfileEditDialog = ({ userId, currentProfile, onProfileUpdate }: P
       const updates = {
         display_name: data.display_name || null,
         bio: data.bio || null,
+        show_training_stats: showTrainingStats,
         ...(avatarUrl && { avatar_url: avatarUrl }),
       };
 
@@ -176,6 +180,22 @@ export const ProfileEditDialog = ({ userId, currentProfile, onProfileUpdate }: P
             {errors.bio && (
               <p className="text-sm text-destructive">{errors.bio.message}</p>
             )}
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="space-y-0.5">
+              <Label htmlFor="show-training-stats" className="text-base">
+                Show Training Stats Publicly
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Display your training statistics in the Networking Zone
+              </p>
+            </div>
+            <Switch
+              id="show-training-stats"
+              checked={showTrainingStats}
+              onCheckedChange={setShowTrainingStats}
+            />
           </div>
 
           <div className="flex justify-end gap-2">
