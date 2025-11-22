@@ -36,6 +36,27 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
         if (data) setProfile(data);
       };
       fetchProfile();
+
+      // Set up online presence
+      const channel = supabase.channel('online-users');
+      
+      channel
+        .on('presence', { event: 'sync' }, () => {
+          // Online status synced
+        })
+        .subscribe(async (status) => {
+          if (status === 'SUBSCRIBED') {
+            await channel.track({
+              user_id: user.id,
+              online_at: new Date().toISOString(),
+            });
+          }
+        });
+
+      return () => {
+        channel.untrack();
+        supabase.removeChannel(channel);
+      };
     }
   }, [user]);
 
@@ -79,11 +100,6 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
 
   const userLinks = [
     {
-      icon: UserIcon,
-      label: 'Profile',
-      path: '/profile'
-    },
-    {
       icon: Target,
       label: 'Analytics',
       path: '/analytics'
@@ -126,10 +142,14 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
                     className="hidden lg:flex items-center gap-3 px-3 py-2 rounded-lg bg-card/50 border border-border cursor-pointer hover:bg-card/70 transition-all"
                     onClick={() => navigate('/profile')}
                   >
-                    <Avatar className="w-10 h-10 border-2 border-primary">
-                      <AvatarImage src={profile.avatar_url} alt={profile.username} />
-                      <AvatarFallback>{profile.username?.[0]?.toUpperCase()}</AvatarFallback>
-                    </Avatar>
+                    <div className="relative">
+                      <Avatar className="w-10 h-10 border-2 border-primary">
+                        <AvatarImage src={profile.avatar_url} alt={profile.username} />
+                        <AvatarFallback>{profile.username?.[0]?.toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      {/* Online Status Indicator */}
+                      <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-success border-2 border-background"></span>
+                    </div>
                     <div className="text-left">
                       <p className="font-semibold text-sm leading-tight">{profile.display_name || profile.username}</p>
                       <p className="text-xs text-muted-foreground">Rating: {profile.rating || 1200}</p>
