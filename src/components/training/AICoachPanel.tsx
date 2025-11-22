@@ -672,8 +672,7 @@ export function AICoachPanel() {
               className="flex items-center gap-2 text-xs sm:text-sm"
             >
               <User className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">Solo Practice</span>
-              <span className="sm:hidden">Solo</span>
+              <span>Solo Practice</span>
             </Button>
             <Dialog open={timeControlDialogOpen} onOpenChange={setTimeControlDialogOpen}>
               <DialogTrigger asChild>
@@ -685,8 +684,7 @@ export function AICoachPanel() {
                   disabled={searchingForOpponent}
                 >
                   <Users className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">Play Online</span>
-                  <span className="sm:hidden">Online</span>
+                  <span>Play Online</span>
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
@@ -717,8 +715,7 @@ export function AICoachPanel() {
             {searchingForOpponent && (
               <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                 <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
-                <span className="hidden sm:inline">Finding opponent...</span>
-                <span className="sm:hidden">Finding...</span>
+                <span>Finding opponent...</span>
                 <Button 
                   variant="ghost" 
                   size="sm" 
