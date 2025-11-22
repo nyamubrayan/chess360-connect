@@ -23,6 +23,7 @@ import Tournaments from "./pages/Tournaments";
 import TournamentDetail from "./pages/TournamentDetail";
 import Highlights from "./pages/Highlights";
 import NewsAndEvents from "./pages/NewsAndEvents";
+import SharedGameAnalysis from "./pages/SharedGameAnalysis";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -54,6 +55,7 @@ const App = () => (
           <Route path="/tournaments/:id" element={<TournamentDetail />} />
           <Route path="/highlights" element={<Highlights />} />
           <Route path="/news" element={<NewsAndEvents />} />
+          <Route path="/game-analysis/:gameId" element={<SharedGameAnalysis />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
