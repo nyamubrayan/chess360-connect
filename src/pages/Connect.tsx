@@ -21,6 +21,9 @@ interface PlayerProfile {
   bio: string | null;
   country: string | null;
   show_training_stats: boolean | null;
+  total_games?: number;
+  puzzles_solved?: number;
+  chessmates_count?: number;
 }
 
 interface FriendProfile {
@@ -107,6 +110,39 @@ export default function Connect() {
 
       if (profilesError) throw profilesError;
 
+      // Fetch additional stats for each player
+      const enrichedProfiles = await Promise.all(
+        (profilesData || []).map(async (profile) => {
+          // Get games played
+          const { data: statsData } = await supabase
+            .from('player_stats')
+            .select('total_games')
+            .eq('user_id', profile.id)
+            .maybeSingle();
+
+          // Get puzzles solved
+          const { data: trainingData } = await supabase
+            .from('user_training_stats')
+            .select('total_puzzles_solved')
+            .eq('user_id', profile.id)
+            .maybeSingle();
+
+          // Get chessmates count
+          const { count: chessmatesCount } = await supabase
+            .from('friends')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'accepted')
+            .or(`user_id.eq.${profile.id},friend_id.eq.${profile.id}`);
+
+          return {
+            ...profile,
+            total_games: statsData?.total_games || 0,
+            puzzles_solved: trainingData?.total_puzzles_solved || 0,
+            chessmates_count: chessmatesCount || 0
+          };
+        })
+      );
+
       // Fetch friend statuses
       const { data: friendsData, error: friendsError } = await supabase
         .from('friends')
@@ -145,7 +181,7 @@ export default function Connect() {
         }
       });
 
-      setPlayers(profilesData || []);
+      setPlayers(enrichedProfiles);
       setFriendStatuses(statusMap);
 
       // Load connected friends (accepted friendships)
@@ -467,6 +503,22 @@ export default function Connect() {
                         {player.bio}
                       </p>
                     )}
+
+                    {/* Player Stats */}
+                    <div className="grid grid-cols-3 gap-2 mb-4 p-3 bg-muted/30 rounded-lg">
+                      <div className="text-center">
+                        <p className="text-xs text-muted-foreground mb-1">Games</p>
+                        <p className="text-sm font-bold text-foreground">{player.total_games || 0}</p>
+                      </div>
+                      <div className="text-center border-x border-border/50">
+                        <p className="text-xs text-muted-foreground mb-1">Puzzles</p>
+                        <p className="text-sm font-bold text-foreground">{player.puzzles_solved || 0}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xs text-muted-foreground mb-1">ChessMates</p>
+                        <p className="text-sm font-bold text-foreground">{player.chessmates_count || 0}</p>
+                      </div>
+                    </div>
 
                     {player.show_training_stats && (
                       <div className="mb-4">
