@@ -53,15 +53,6 @@ export const HeaderActions = ({ user }: HeaderActionsProps) => {
               <Users className="mr-2 w-4 h-4" />
               Leaderboard
             </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="hidden md:flex border border-border/50 hover:border-primary/50"
-              onClick={() => navigate('/chess-clock')}
-            >
-              <Clock className="mr-2 w-4 h-4" />
-              Clock
-            </Button>
           </>
         ) : (
           <Button size="sm" onClick={() => navigate('/auth')}>

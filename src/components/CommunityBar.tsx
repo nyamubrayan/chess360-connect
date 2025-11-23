@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Trophy, Target, UserIcon, Menu, GraduationCap, Swords, Home, Users, Sparkles, Newspaper } from 'lucide-react';
+import { Trophy, Target, UserIcon, Menu, GraduationCap, Swords, Home, Users, Sparkles, Newspaper, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { NotificationBell } from './NotificationBell';
 import { User } from '@supabase/supabase-js';
@@ -103,6 +103,11 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
       icon: Target,
       label: 'Analytics',
       path: '/analytics'
+    },
+    {
+      icon: Clock,
+      label: 'Chess Clock',
+      path: '/chess-clock'
     }
   ];
 
