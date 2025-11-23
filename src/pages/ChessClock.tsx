@@ -613,6 +613,37 @@ const ChessClock = () => {
         )}
       </AnimatePresence>
 
+      {/* Black to Start Indicator */}
+      <AnimatePresence>
+        {whiteMoves === 0 && blackMoves === 0 && !isActive && isConfigured && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: -20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none"
+          >
+            <motion.div
+              animate={{
+                scale: [1, 1.05, 1],
+              }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              className="bg-gradient-to-r from-primary via-primary to-accent text-primary-foreground px-8 py-6 rounded-2xl shadow-2xl border-2 border-primary-foreground/20"
+            >
+              <div className="flex items-center gap-3">
+                <motion.div 
+                  className="w-6 h-6 rounded-full bg-primary-foreground"
+                  animate={{ opacity: [1, 0.5, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                />
+                <span className="text-3xl font-bold">Black Starts First</span>
+              </div>
+              <p className="text-sm opacity-90 mt-2 text-center">Press Black's clock to begin</p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Code Display Dialog */}
       <Dialog open={showCodeDialog} onOpenChange={setShowCodeDialog}>
         <DialogContent className="gradient-card border-2 border-primary/20 shadow-2xl max-w-md">
