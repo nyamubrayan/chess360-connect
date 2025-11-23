@@ -324,8 +324,15 @@ export default function ChessGame() {
         .from('games')
         .update({
           status: 'completed',
-          result: 'inactivity',
-          winner_id: inactivePlayerId === user.id ? (playerColor === 'white' ? game.black_player_id : game.white_player_id) : user.id,
+          result: 'timeout',
+          winner_id:
+            inactivePlayerId === user.id
+              ? playerColor === 'white'
+                ? game.black_player_id
+                : game.white_player_id
+              : user.id,
+          white_rating_change: 0,
+          black_rating_change: 0,
           completed_at: new Date().toISOString(),
         })
         .eq('id', game.id);
