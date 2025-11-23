@@ -727,107 +727,181 @@ const ChessClock = () => {
 
       {/* Vertical Clock Display */}
       <div className="flex-1 flex flex-col relative">
-        {/* Show only the player's assigned clock in multi-device mode */}
-        {(!multiDeviceMode || playerSide === 'black') && (
-          /* Black Player Clock */
-          <motion.div
-            className={`${multiDeviceMode ? 'h-full' : 'flex-1'} flex items-center justify-center cursor-pointer relative overflow-hidden transition-all duration-500 ${
-              !isWhiteTurn && isActive 
-                ? "bg-gradient-to-br from-primary/30 via-accent/20 to-primary/10" 
-                : "bg-gradient-to-br from-muted/20 to-background"
-            }`}
-            onClick={() => handleClockPress("black")}
-            whileTap={{ scale: 0.98 }}
-            animate={!isWhiteTurn && isActive ? {
-              boxShadow: [
-                "inset 0 0 60px rgba(var(--primary), 0.2)",
-                "inset 0 0 80px rgba(var(--primary), 0.4)",
-                "inset 0 0 60px rgba(var(--primary), 0.2)"
-              ]
-            } : {}}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
-          <AnimatePresence>
-            {!isWhiteTurn && isActive && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 border-4 border-primary shadow-[0_0_30px_rgba(var(--primary),0.5)]"
-              />
-            )}
-          </AnimatePresence>
-
-          {!isWhiteTurn && isActive && (
-            <motion.div
-              className="absolute inset-0 opacity-10"
-              animate={{
-                backgroundPosition: ["0% 0%", "100% 100%"],
-              }}
-              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              style={{
-                backgroundImage: "radial-gradient(circle, hsl(var(--primary)) 1px, transparent 1px)",
-                backgroundSize: "50px 50px",
-              }}
-            />
-          )}
-
-          <div className="text-center space-y-6 p-8 z-10">
-            <motion.div 
-              className="flex items-center justify-center gap-3"
-              animate={!isWhiteTurn && isActive ? { y: [0, -5, 0] } : {}}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              <div className="w-10 h-10 rounded-full bg-foreground shadow-xl border-4 border-background" />
-              <span className="text-3xl font-bold tracking-wide">Black</span>
-            </motion.div>
-            
-            <motion.div 
-              className={`text-8xl md:text-9xl font-mono font-black tracking-tighter ${getTimeColor(blackTime, !isWhiteTurn && isActive)}`}
-              animate={!isWhiteTurn && isActive ? { scale: [1, 1.03, 1] } : {}}
-              transition={{ duration: 1, repeat: Infinity }}
-              style={{ textShadow: !isWhiteTurn && isActive ? "0 0 30px rgba(var(--primary), 0.5)" : "none" }}
-            >
-              {formatTime(blackTime)}
-            </motion.div>
-
-            {increment > 0 && (
-              <div className="text-sm text-muted-foreground flex items-center justify-center gap-2 font-medium">
-                <Zap className="w-5 h-5 text-gold" />
-                +{increment}s increment
-              </div>
-            )}
-          </div>
-        </motion.div>
-        )}
-
-        {/* Divider - only show in single device mode */}
+        {/* Single device mode - show both clocks */}
         {!multiDeviceMode && (
-          <motion.div 
-            className="h-2 relative"
-            animate={{
-              background: [
-                "linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent)))",
-                "linear-gradient(to right, hsl(var(--accent)), hsl(var(--primary)))",
-              ]
-            }}
-            transition={{ duration: 3, repeat: Infinity }}
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-primary via-accent to-primary animate-pulse opacity-50" />
-          </motion.div>
+          <>
+            {/* Black Player Clock */}
+            <motion.div
+              className="flex-1 flex items-center justify-center cursor-pointer relative overflow-hidden transition-all duration-500"
+              style={{
+                background: !isWhiteTurn && isActive 
+                  ? "linear-gradient(135deg, hsl(var(--primary) / 0.3), hsl(var(--accent) / 0.2), hsl(var(--primary) / 0.1))"
+                  : "linear-gradient(135deg, hsl(var(--muted) / 0.2), hsl(var(--background)))"
+              }}
+              onClick={() => handleClockPress("black")}
+              whileTap={{ scale: 0.98 }}
+              animate={!isWhiteTurn && isActive ? {
+                boxShadow: [
+                  "inset 0 0 60px rgba(var(--primary), 0.2)",
+                  "inset 0 0 80px rgba(var(--primary), 0.4)",
+                  "inset 0 0 60px rgba(var(--primary), 0.2)"
+                ]
+              } : {}}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <AnimatePresence>
+                {!isWhiteTurn && isActive && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 border-4 border-primary shadow-[0_0_30px_rgba(var(--primary),0.5)]"
+                  />
+                )}
+              </AnimatePresence>
+
+              {!isWhiteTurn && isActive && (
+                <motion.div
+                  className="absolute inset-0 opacity-10"
+                  animate={{
+                    backgroundPosition: ["0% 0%", "100% 100%"],
+                  }}
+                  transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                  style={{
+                    backgroundImage: "radial-gradient(circle, hsl(var(--primary)) 1px, transparent 1px)",
+                    backgroundSize: "50px 50px",
+                  }}
+                />
+              )}
+
+              <div className="text-center space-y-6 p-8 z-10">
+                <motion.div 
+                  className="flex items-center justify-center gap-3"
+                  animate={!isWhiteTurn && isActive ? { y: [0, -5, 0] } : {}}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <div className="w-10 h-10 rounded-full bg-foreground shadow-xl border-4 border-background" />
+                  <span className="text-3xl font-bold tracking-wide">Black</span>
+                </motion.div>
+                
+                <motion.div 
+                  className={`text-8xl md:text-9xl font-mono font-black tracking-tighter ${getTimeColor(blackTime, !isWhiteTurn && isActive)}`}
+                  animate={!isWhiteTurn && isActive ? { scale: [1, 1.03, 1] } : {}}
+                  transition={{ duration: 1, repeat: Infinity }}
+                  style={{ textShadow: !isWhiteTurn && isActive ? "0 0 30px rgba(var(--primary), 0.5)" : "none" }}
+                >
+                  {formatTime(blackTime)}
+                </motion.div>
+
+                {increment > 0 && (
+                  <div className="text-sm text-muted-foreground flex items-center justify-center gap-2 font-medium">
+                    <Zap className="w-5 h-5 text-gold" />
+                    +{increment}s increment
+                  </div>
+                )}
+              </div>
+            </motion.div>
+
+            {/* Divider */}
+            <motion.div 
+              className="h-2 relative"
+              animate={{
+                background: [
+                  "linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent)))",
+                  "linear-gradient(to right, hsl(var(--accent)), hsl(var(--primary)))",
+                ]
+              }}
+              transition={{ duration: 3, repeat: Infinity }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-primary via-accent to-primary animate-pulse opacity-50" />
+            </motion.div>
+
+            {/* White Player Clock */}
+            <motion.div
+              className="flex-1 flex items-center justify-center cursor-pointer relative overflow-hidden transition-all duration-500"
+              style={{
+                background: isWhiteTurn && isActive 
+                  ? "linear-gradient(135deg, hsl(var(--primary) / 0.3), hsl(var(--accent) / 0.2), hsl(var(--primary) / 0.1))"
+                  : "linear-gradient(135deg, hsl(var(--muted) / 0.2), hsl(var(--background)))"
+              }}
+              onClick={() => handleClockPress("white")}
+              whileTap={{ scale: 0.98 }}
+              animate={isWhiteTurn && isActive ? {
+                boxShadow: [
+                  "inset 0 0 60px rgba(var(--primary), 0.2)",
+                  "inset 0 0 80px rgba(var(--primary), 0.4)",
+                  "inset 0 0 60px rgba(var(--primary), 0.2)"
+                ]
+              } : {}}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <AnimatePresence>
+                {isWhiteTurn && isActive && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 border-4 border-primary shadow-[0_0_30px_rgba(var(--primary),0.5)]"
+                  />
+                )}
+              </AnimatePresence>
+
+              {isWhiteTurn && isActive && (
+                <motion.div
+                  className="absolute inset-0 opacity-10"
+                  animate={{
+                    backgroundPosition: ["0% 0%", "100% 100%"],
+                  }}
+                  transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                  style={{
+                    backgroundImage: "radial-gradient(circle, hsl(var(--primary)) 1px, transparent 1px)",
+                    backgroundSize: "50px 50px",
+                  }}
+                />
+              )}
+
+              <div className="text-center space-y-6 p-8 z-10">
+                <motion.div 
+                  className="flex items-center justify-center gap-3"
+                  animate={isWhiteTurn && isActive ? { y: [0, -5, 0] } : {}}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <div className="w-6 h-6 rounded-full border-4 border-current" />
+                  <span className="text-3xl font-bold tracking-wide">White</span>
+                </motion.div>
+                
+                <motion.div 
+                  className={`text-8xl md:text-9xl font-mono font-black tracking-tighter ${getTimeColor(whiteTime, isWhiteTurn && isActive)}`}
+                  animate={isWhiteTurn && isActive ? { scale: [1, 1.03, 1] } : {}}
+                  transition={{ duration: 1, repeat: Infinity }}
+                  style={{ textShadow: isWhiteTurn && isActive ? "0 0 30px rgba(var(--primary), 0.5)" : "none" }}
+                >
+                  {formatTime(whiteTime)}
+                </motion.div>
+
+                {increment > 0 && (
+                  <div className="text-sm text-muted-foreground flex items-center justify-center gap-2 font-medium">
+                    <Zap className="w-5 h-5 text-gold" />
+                    +{increment}s increment
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </>
         )}
 
-        {/* White Player Clock */}
-        {(!multiDeviceMode || playerSide === 'white') && (
+        {/* Multi-device mode - show ONLY player's own clock fullscreen */}
+        {multiDeviceMode && (
           <motion.div
-            className={`${multiDeviceMode ? 'h-full' : 'flex-1'} flex items-center justify-center cursor-pointer relative overflow-hidden transition-all duration-500 ${
-              isWhiteTurn && isActive 
-                ? "bg-gradient-to-br from-primary/30 via-accent/20 to-primary/10" 
-                : "bg-gradient-to-br from-muted/20 to-background"
-            }`}
-            onClick={() => handleClockPress("white")}
+            className="h-full flex items-center justify-center cursor-pointer relative overflow-hidden transition-all duration-500"
+            style={{
+              background: ((playerSide === 'white' && isWhiteTurn) || (playerSide === 'black' && !isWhiteTurn)) && isActive
+                ? "linear-gradient(135deg, hsl(var(--primary) / 0.3), hsl(var(--accent) / 0.2), hsl(var(--primary) / 0.1))"
+                : "linear-gradient(135deg, hsl(var(--muted) / 0.2), hsl(var(--background)))"
+            }}
+            onClick={() => handleClockPress(playerSide)}
             whileTap={{ scale: 0.98 }}
-            animate={isWhiteTurn && isActive ? {
+            animate={((playerSide === 'white' && isWhiteTurn) || (playerSide === 'black' && !isWhiteTurn)) && isActive ? {
               boxShadow: [
                 "inset 0 0 60px rgba(var(--primary), 0.2)",
                 "inset 0 0 80px rgba(var(--primary), 0.4)",
@@ -836,58 +910,80 @@ const ChessClock = () => {
             } : {}}
             transition={{ duration: 2, repeat: Infinity }}
           >
-          <AnimatePresence>
-            {isWhiteTurn && isActive && (
+            <AnimatePresence>
+              {((playerSide === 'white' && isWhiteTurn) || (playerSide === 'black' && !isWhiteTurn)) && isActive && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 border-4 border-primary shadow-[0_0_30px_rgba(var(--primary),0.5)]"
+                />
+              )}
+            </AnimatePresence>
+
+            {((playerSide === 'white' && isWhiteTurn) || (playerSide === 'black' && !isWhiteTurn)) && isActive && (
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 border-4 border-primary shadow-[0_0_30px_rgba(var(--primary),0.5)]"
+                className="absolute inset-0 opacity-10"
+                animate={{
+                  backgroundPosition: ["0% 0%", "100% 100%"],
+                }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                style={{
+                  backgroundImage: "radial-gradient(circle, hsl(var(--primary)) 1px, transparent 1px)",
+                  backgroundSize: "50px 50px",
+                }}
               />
             )}
-          </AnimatePresence>
 
-          {isWhiteTurn && isActive && (
-            <motion.div
-              className="absolute inset-0 opacity-10"
-              animate={{
-                backgroundPosition: ["0% 0%", "100% 100%"],
-              }}
-              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              style={{
-                backgroundImage: "radial-gradient(circle, hsl(var(--primary)) 1px, transparent 1px)",
-                backgroundSize: "50px 50px",
-              }}
-            />
-          )}
+            <div className="text-center space-y-8 p-8 z-10">
+              <motion.div 
+                className="flex items-center justify-center gap-4"
+                animate={((playerSide === 'white' && isWhiteTurn) || (playerSide === 'black' && !isWhiteTurn)) && isActive ? { y: [0, -5, 0] } : {}}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                {playerSide === 'white' ? (
+                  <div className="w-12 h-12 rounded-full border-4 border-current shadow-xl" />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-foreground shadow-xl border-4 border-background" />
+                )}
+                <span className="text-4xl font-bold tracking-wide capitalize">{playerSide}</span>
+              </motion.div>
+              
+              <motion.div 
+                className={`text-9xl md:text-[12rem] font-mono font-black tracking-tighter ${
+                  getTimeColor(
+                    playerSide === 'white' ? whiteTime : blackTime,
+                    ((playerSide === 'white' && isWhiteTurn) || (playerSide === 'black' && !isWhiteTurn)) && isActive
+                  )
+                }`}
+                animate={((playerSide === 'white' && isWhiteTurn) || (playerSide === 'black' && !isWhiteTurn)) && isActive ? { scale: [1, 1.03, 1] } : {}}
+                transition={{ duration: 1, repeat: Infinity }}
+                style={{ 
+                  textShadow: ((playerSide === 'white' && isWhiteTurn) || (playerSide === 'black' && !isWhiteTurn)) && isActive 
+                    ? "0 0 30px rgba(var(--primary), 0.5)" 
+                    : "none" 
+                }}
+              >
+                {formatTime(playerSide === 'white' ? whiteTime : blackTime)}
+              </motion.div>
 
-          <div className="text-center space-y-6 p-8 z-10">
-            <motion.div 
-              className="flex items-center justify-center gap-3"
-              animate={isWhiteTurn && isActive ? { y: [0, -5, 0] } : {}}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              <div className="w-6 h-6 rounded-full border-4 border-current" />
-              <span className="text-3xl font-bold tracking-wide">White</span>
-            </motion.div>
-            
-            <motion.div 
-              className={`text-8xl md:text-9xl font-mono font-black tracking-tighter ${getTimeColor(whiteTime, isWhiteTurn && isActive)}`}
-              animate={isWhiteTurn && isActive ? { scale: [1, 1.03, 1] } : {}}
-              transition={{ duration: 1, repeat: Infinity }}
-              style={{ textShadow: isWhiteTurn && isActive ? "0 0 30px rgba(var(--primary), 0.5)" : "none" }}
-            >
-              {formatTime(whiteTime)}
-            </motion.div>
+              {increment > 0 && (
+                <div className="text-lg text-muted-foreground flex items-center justify-center gap-2 font-medium">
+                  <Zap className="w-6 h-6 text-gold" />
+                  +{increment}s increment
+                </div>
+              )}
 
-            {increment > 0 && (
-              <div className="text-sm text-muted-foreground flex items-center justify-center gap-2 font-medium">
-                <Zap className="w-5 h-5 text-gold" />
-                +{increment}s increment
+              {/* Show turn indicator */}
+              <div className="text-xl font-semibold">
+                {((playerSide === 'white' && isWhiteTurn) || (playerSide === 'black' && !isWhiteTurn)) ? (
+                  <span className="text-primary animate-pulse">Your Turn - Tap to Move</span>
+                ) : (
+                  <span className="text-muted-foreground">Opponent's Turn</span>
+                )}
               </div>
-            )}
-          </div>
-        </motion.div>
+            </div>
+          </motion.div>
         )}
       </div>
 
