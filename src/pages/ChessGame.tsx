@@ -10,6 +10,7 @@ import { ChessTimer } from '@/components/chess/ChessTimer';
 import { PromotionDialog } from '@/components/chess/PromotionDialog';
 import { GameChat } from '@/components/chess/GameChat';
 import { PostGameActions } from '@/components/PostGameActions';
+import { PostGameSummary } from '@/components/PostGameSummary';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, UserPlus, User } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -34,6 +35,7 @@ export default function ChessGame() {
   const [firstMoveCountdown, setFirstMoveCountdown] = useState<number | null>(null);
   const [lastMove, setLastMove] = useState<{ from: string; to: string } | null>(null);
   const [timeoutHandled, setTimeoutHandled] = useState(false);
+  const [showPostGameSummary, setShowPostGameSummary] = useState(false);
   
   const sounds = useChessSounds();
 
@@ -360,17 +362,43 @@ export default function ChessGame() {
       }
     }
     
-    // Fetch player profiles
+    // Fetch player profiles with ratings
     const { data: profiles } = await supabase
       .from('profiles')
-      .select('id, username, display_name, avatar_url')
+      .select('id, username, display_name, avatar_url, bullet_rating, blitz_rating, rapid_rating')
       .in('id', [gameData.white_player_id, gameData.black_player_id]);
     
     if (profiles) {
       const white = profiles.find(p => p.id === gameData.white_player_id);
       const black = profiles.find(p => p.id === gameData.black_player_id);
-      setWhitePlayer(white);
-      setBlackPlayer(black);
+      
+      // Determine game category for correct rating display
+      const getGameCategory = (timeControl: number) => {
+        if (timeControl < 3) return 'bullet';
+        if (timeControl < 10) return 'blitz';
+        return 'rapid';
+      };
+      
+      const category = getGameCategory(gameData.time_control);
+      
+      // Add the appropriate rating to each player object
+      if (white) {
+        setWhitePlayer({
+          ...white,
+          rating: white[`${category}_rating` as keyof typeof white] || 1200
+        });
+      }
+      if (black) {
+        setBlackPlayer({
+          ...black,
+          rating: black[`${category}_rating` as keyof typeof black] || 1200
+        });
+      }
+    }
+    
+    // Open post-game summary when game completes
+    if (wasActive && nowCompleted) {
+      setShowPostGameSummary(true);
     }
   };
 
@@ -817,6 +845,17 @@ export default function ChessGame() {
             setPendingMove(null);
           }}
         />
+        
+        {/* Post-Game Summary Dialog */}
+        {game.status === 'completed' && playerColor && (
+          <PostGameSummary
+            open={showPostGameSummary}
+            onOpenChange={setShowPostGameSummary}
+            gameId={gameId!}
+            result={game.result}
+            playerColor={playerColor}
+          />
+        )}
       </div>
     </div>
   );

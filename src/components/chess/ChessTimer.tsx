@@ -68,15 +68,15 @@ export const ChessTimer = ({ game, playerColor, className, timeoutHandled, setTi
 
   const handleTimeout = async (color: 'white' | 'black') => {
     // Prevent multiple timeout calls
-    if (timeoutHandled) {
-      console.log('Timeout already handled, skipping');
+    if (timeoutHandled || game.status !== 'active') {
+      console.log('Timeout already handled or game not active, skipping');
       return;
     }
     
     // Only apply rating changes if both players have made their first moves
     const bothMadeFirstMove = game.move_count >= 2;
     
-    console.log(`Timeout for ${color}. Both made first move: ${bothMadeFirstMove}`);
+    console.log(`⏰ TIMEOUT TRIGGERED for ${color}. Both made first move: ${bothMadeFirstMove}. Move count: ${game.move_count}`);
     
     setTimeoutHandled(true);
     
