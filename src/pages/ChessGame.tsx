@@ -36,6 +36,8 @@ export default function ChessGame() {
   const [lastMove, setLastMove] = useState<{ from: string; to: string } | null>(null);
   const [timeoutHandled, setTimeoutHandled] = useState(false);
   const [showPostGameSummary, setShowPostGameSummary] = useState(false);
+  const [rematchCooldown, setRematchCooldown] = useState<number>(0);
+  const [isRematchOnCooldown, setIsRematchOnCooldown] = useState(false);
   
   const sounds = useChessSounds();
 
@@ -912,6 +914,11 @@ export default function ChessGame() {
                   return;
                 }
 
+                if (isRematchOnCooldown) {
+                  toast.error(`Please wait ${rematchCooldown} seconds before sending another request`);
+                  return;
+                }
+
                 const opponentId = playerColor === 'white' ? game.black_player_id : game.white_player_id;
                 const currentPlayer = playerColor === 'white' ? whitePlayer : blackPlayer;
                 const currentPlayerName = currentPlayer?.display_name || currentPlayer?.username || 'A player';
@@ -930,12 +937,29 @@ export default function ChessGame() {
                   throw error;
                 }
                 
+                // Start 30-second cooldown
+                setIsRematchOnCooldown(true);
+                setRematchCooldown(30);
+                
+                const cooldownInterval = setInterval(() => {
+                  setRematchCooldown((prev) => {
+                    if (prev <= 1) {
+                      clearInterval(cooldownInterval);
+                      setIsRematchOnCooldown(false);
+                      return 0;
+                    }
+                    return prev - 1;
+                  });
+                }, 1000);
+                
                 toast.success('Rematch request sent!');
               } catch (error: any) {
                 console.error('Error sending rematch:', error);
                 toast.error(error?.message || 'Failed to send rematch request');
               }
             }}
+            isRematchOnCooldown={isRematchOnCooldown}
+            rematchCooldown={rematchCooldown}
             onFindNewMatch={() => navigate('/lobby')}
           />
         )}
