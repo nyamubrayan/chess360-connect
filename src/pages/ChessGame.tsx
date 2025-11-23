@@ -908,16 +908,14 @@ export default function ChessGame() {
             onRequestRematch={async () => {
               try {
                 const opponentId = playerColor === 'white' ? game.black_player_id : game.white_player_id;
-                const opponentName = playerColor === 'white' 
-                  ? (blackPlayer?.display_name || blackPlayer?.username) 
-                  : (whitePlayer?.display_name || whitePlayer?.username);
+                const currentPlayerName = user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'A player';
 
                 const { error } = await supabase.from('notifications').insert({
                   user_id: opponentId,
                   sender_id: user.id,
                   type: 'rematch_request',
                   title: 'Rematch Request',
-                  message: `${opponentName} wants a rematch!`,
+                  message: `${currentPlayerName} wants a rematch!`,
                   room_id: gameId,
                 });
 
