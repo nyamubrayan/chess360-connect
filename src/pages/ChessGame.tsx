@@ -47,15 +47,15 @@ export default function ChessGame() {
 
     // Fetch user FIRST, then fetch game to ensure playerColor is set correctly
     const initializeGame = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data: { user: fetchedUser } } = await supabase.auth.getUser();
+      if (!fetchedUser) {
         navigate('/auth');
         return;
       }
-      setUser(user);
+      setUser(fetchedUser);
       
-      // Now fetch game after user is set
-      await fetchGame();
+      // Now fetch game with user already available
+      await fetchGameWithUser(fetchedUser);
     };
 
     initializeGame();
@@ -264,6 +264,24 @@ export default function ChessGame() {
     handleFirstMoveTimeout,
   ]);
 
+  const fetchGameWithUser = async (currentUser: any) => {
+    const { data, error } = await supabase
+      .from('games')
+      .select('*')
+      .eq('id', gameId)
+      .maybeSingle();
+
+    if (error || !data) {
+      console.error('Error fetching game:', error);
+      toast.error('Failed to load game');
+      navigate('/');
+      return;
+    }
+
+    handleGameUpdateWithUser(data, currentUser);
+    fetchMoves();
+  };
+
   const fetchGame = async () => {
     const { data, error } = await supabase
       .from('games')
@@ -305,7 +323,7 @@ export default function ChessGame() {
     }
   };
 
-  const handleGameUpdate = async (gameData: any) => {
+  const handleGameUpdateWithUser = async (gameData: any, currentUser: any) => {
     const wasWaiting = game?.status === 'waiting';
     const nowActive = gameData.status === 'active';
     const wasActive = game?.status === 'active';
@@ -316,14 +334,15 @@ export default function ChessGame() {
     setPosition(gameData.current_fen);
     
     // Set player color based on user ID - critical for board perspective
-    if (user && !playerColor) {
-      if (gameData.white_player_id === user.id) {
+    // Use currentUser parameter instead of state to avoid race conditions
+    if (currentUser && !playerColor) {
+      if (gameData.white_player_id === currentUser.id) {
         setPlayerColor('white');
         console.log('✓ Player assigned WHITE - board will display from White perspective');
         console.log('  Game ID:', gameData.id);
         console.log('  White player ID:', gameData.white_player_id);
         console.log('  Black player ID:', gameData.black_player_id);
-      } else if (gameData.black_player_id === user.id) {
+      } else if (gameData.black_player_id === currentUser.id) {
         setPlayerColor('black');
         console.log('✓ Player assigned BLACK - board will display from Black perspective');
         console.log('  Game ID:', gameData.id);
@@ -331,7 +350,7 @@ export default function ChessGame() {
         console.log('  Black player ID:', gameData.black_player_id);
       } else {
         console.error('❌ User is neither white nor black player in this game');
-        console.error('  User ID:', user.id);
+        console.error('  User ID:', currentUser.id);
         console.error('  White player ID:', gameData.white_player_id);
         console.error('  Black player ID:', gameData.black_player_id);
       }
@@ -357,11 +376,11 @@ export default function ChessGame() {
       const wasAborted = gameData.result === 'draw' && gameData.move_count <= 1;
       
       const resultMessage = gameData.result === 'checkmate' 
-        ? (gameData.winner_id === user?.id ? 'You won by checkmate!' : 'Checkmate! You lost.')
+        ? (gameData.winner_id === currentUser?.id ? 'You won by checkmate!' : 'Checkmate! You lost.')
         : gameData.result === 'resignation'
-        ? (gameData.winner_id === user?.id ? 'Opponent resigned. You win!' : 'You resigned.')
+        ? (gameData.winner_id === currentUser?.id ? 'Opponent resigned. You win!' : 'You resigned.')
         : gameData.result === 'timeout'
-        ? (gameData.winner_id === user?.id ? 'Opponent ran out of time. You win!' : 'Time out! You lost.')
+        ? (gameData.winner_id === currentUser?.id ? 'Opponent ran out of time. You win!' : 'Time out! You lost.')
         : wasAborted
         ? 'Game aborted - no first move within 30 seconds. No rating changes.'
         : `Game drawn by ${gameData.result}`;
@@ -416,6 +435,11 @@ export default function ChessGame() {
     if (wasActive && nowCompleted) {
       setShowPostGameSummary(true);
     }
+  };
+
+  const handleGameUpdate = async (gameData: any) => {
+    // Use the user state for regular updates
+    handleGameUpdateWithUser(gameData, user);
   };
 
   const handleMove = async (from: string, to: string) => {
