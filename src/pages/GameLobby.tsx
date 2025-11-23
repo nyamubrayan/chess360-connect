@@ -4,11 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { ArrowLeft, Clock, Loader2 } from 'lucide-react';
+import { ArrowLeft, Clock, Loader2, Zap } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell';
 import { FriendsDialog } from '@/components/FriendsDialog';
 import { CustomTimeDialog } from '@/components/CustomTimeDialog';
 import { SpinningWheel } from '@/components/SpinningWheel';
+import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 
 interface TimeControl {
@@ -341,35 +342,41 @@ export default function GameLobby() {
         )}
 
         {/* Spinning Wheel */}
-        <div className="flex flex-col items-center mb-8">
+        <div className="flex flex-col items-center mb-8 w-full">
           <SpinningWheel onSelect={handleWheelSelect} disabled={isSearching} />
           
           {/* Find Opponent Button - appears below wheel */}
-          <div className="mt-8 w-full max-w-md mx-auto space-y-4">
+          <div className="mt-12 w-full max-w-md mx-auto space-y-4">
             {!isSearching ? (
               <>
                 {selectedCategory !== 'CUSTOM MATCH' && (
-                  <Button
-                    onClick={handleQuickMatch}
-                    disabled={!selectedTimeControl}
-                    variant="outline"
-                    className="w-full gap-2 h-14 text-lg font-bold tracking-wider border-2 border-primary/60 bg-primary/10 hover:bg-primary/20 hover:border-primary shadow-lg hover:shadow-xl transition-all animate-fade-in rounded-xl"
-                    size="lg"
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
                   >
-                    FIND OPPONENT
-                  </Button>
+                    <Button
+                      onClick={handleQuickMatch}
+                      disabled={!selectedTimeControl}
+                      className="w-full gap-3 h-16 text-xl font-bold tracking-wide bg-gradient-to-r from-primary via-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all rounded-2xl border-2 border-primary/50"
+                      size="lg"
+                    >
+                      <Zap className="w-6 h-6" />
+                      FIND OPPONENT
+                    </Button>
+                  </motion.div>
                 )}
               </>
             ) : (
               <>
-                <div className="flex items-center justify-center gap-3 py-4">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                  <span className="text-muted-foreground">Searching for opponent...</span>
+                <div className="flex items-center justify-center gap-3 py-4 animate-pulse">
+                  <Loader2 className="w-7 h-7 animate-spin text-primary" />
+                  <span className="text-lg font-semibold text-muted-foreground">Searching for opponent...</span>
                 </div>
                 <Button
                   onClick={handleCancelSearch}
                   variant="destructive"
-                  className="w-full gap-2 h-14 text-lg font-bold tracking-wider rounded-xl"
+                  className="w-full gap-2 h-14 text-lg font-bold tracking-wider rounded-2xl shadow-lg hover:shadow-xl"
                   size="lg"
                 >
                   CANCEL SEARCH

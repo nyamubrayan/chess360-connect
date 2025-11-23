@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { motion, useMotionValue, animate } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useChessSounds } from '@/hooks/useChessSounds';
-import { Crown, Zap, Castle, Clock, Sparkles } from 'lucide-react';
+import { Crown, Zap, Castle, Clock, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface SpinningWheelProps {
   onSelect: (option: string) => void;
@@ -10,161 +10,225 @@ interface SpinningWheelProps {
 
 interface WheelOption {
   name: string;
+  displayName: string;
   timeRange: string;
   icon: any;
-  color: string;
+  gradient: string;
+  description: string;
 }
 
 const OPTIONS: WheelOption[] = [
-  { name: 'BULLET', timeRange: '1-2 min', icon: Zap, color: '#8B6914' }, // brown/gold
-  { name: 'BLITZ', timeRange: '3-5 min', icon: Zap, color: '#B8860B' }, // lighter brown
-  { name: 'RAPID', timeRange: '10-15 min', icon: Castle, color: '#2F5D62' }, // teal
-  { name: 'CLASSIC', timeRange: '30-60 min', icon: Crown, color: '#4169AB' }, // blue
-  { name: 'CUSTOM MATCH', timeRange: 'Custom', icon: Sparkles, color: '#6B46C1' }, // purple
+  { 
+    name: 'BULLET', 
+    displayName: 'Bullet',
+    timeRange: '1-2 min', 
+    icon: Zap, 
+    gradient: 'from-orange-500 via-red-500 to-pink-500',
+    description: 'Lightning fast games'
+  },
+  { 
+    name: 'BLITZ', 
+    displayName: 'Blitz',
+    timeRange: '3-5 min', 
+    icon: Zap, 
+    gradient: 'from-yellow-500 via-orange-500 to-red-500',
+    description: 'Quick tactical battles'
+  },
+  { 
+    name: 'RAPID', 
+    displayName: 'Rapid',
+    timeRange: '10-15 min', 
+    icon: Castle, 
+    gradient: 'from-emerald-500 via-teal-500 to-cyan-500',
+    description: 'Balanced gameplay'
+  },
+  { 
+    name: 'CLASSIC', 
+    displayName: 'Classic',
+    timeRange: '30-60 min', 
+    icon: Crown, 
+    gradient: 'from-blue-500 via-indigo-500 to-purple-500',
+    description: 'Deep strategic games'
+  },
+  { 
+    name: 'CUSTOM MATCH', 
+    displayName: 'Custom',
+    timeRange: 'Your choice', 
+    icon: Sparkles, 
+    gradient: 'from-purple-500 via-pink-500 to-rose-500',
+    description: 'Create your rules'
+  },
 ];
 
 export function SpinningWheel({ onSelect, disabled }: SpinningWheelProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [isSpinning, setIsSpinning] = useState(false);
-  const rotation = useMotionValue(0);
   const { playWheelSpin, playWheelLock } = useChessSounds();
   
-  const segmentAngle = 360 / OPTIONS.length;
-  
-  const getSegmentPath = () => {
-    const angleRad = (segmentAngle * Math.PI) / 180;
-    const radius = 50; // percentage
-    const x1 = 50 + radius * Math.sin(-angleRad / 2);
-    const y1 = 50 - radius * Math.cos(-angleRad / 2);
-    const x2 = 50 + radius * Math.sin(angleRad / 2);
-    const y2 = 50 - radius * Math.cos(angleRad / 2);
-    
-    return `M 50 50 L ${x1} ${y1} A ${radius} ${radius} 0 0 1 ${x2} ${y2} Z`;
+  const handleNext = () => {
+    if (disabled) return;
+    const nextIndex = (selectedIndex + 1) % OPTIONS.length;
+    playWheelSpin();
+    setSelectedIndex(nextIndex);
+    setTimeout(() => {
+      playWheelLock();
+      onSelect(OPTIONS[nextIndex].name);
+    }, 300);
   };
   
-  const handleCenterClick = () => {
-    if (disabled || isSpinning) return;
-    
-    const nextIndex = (selectedIndex + 1) % OPTIONS.length;
-    const currentRotation = rotation.get();
-    
-    // Calculate rotation to bring next segment to top
-    const targetRotation = currentRotation + segmentAngle;
-    
-    setIsSpinning(true);
+  const handlePrev = () => {
+    if (disabled) return;
+    const prevIndex = (selectedIndex - 1 + OPTIONS.length) % OPTIONS.length;
     playWheelSpin();
-    
-    animate(rotation, targetRotation, {
-      type: "spring",
-      damping: 20,
-      stiffness: 100,
-      onComplete: () => {
-        setIsSpinning(false);
-        setSelectedIndex(nextIndex);
-        playWheelLock();
-        onSelect(OPTIONS[nextIndex].name);
-      }
-    });
+    setSelectedIndex(prevIndex);
+    setTimeout(() => {
+      playWheelLock();
+      onSelect(OPTIONS[prevIndex].name);
+    }, 300);
+  };
+  
+  const handleSelect = (index: number) => {
+    if (disabled || index === selectedIndex) return;
+    playWheelSpin();
+    setSelectedIndex(index);
+    setTimeout(() => {
+      playWheelLock();
+      onSelect(OPTIONS[index].name);
+    }, 300);
   };
 
+  const currentOption = OPTIONS[selectedIndex];
+  const Icon = currentOption.icon;
+  
   return (
-    <div className="flex flex-col items-center gap-8">
-      {/* Wheel Container */}
-      <div className="relative w-[320px] h-[320px] sm:w-[380px] sm:h-[380px]">
-        {/* Pointer/Arrow at top */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-3 z-20">
-          <div className="w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[20px] border-t-primary drop-shadow-lg" />
-        </div>
-        
-        {/* Wheel */}
-        <motion.div
-          className="relative w-full h-full rounded-full shadow-2xl"
-          style={{ rotate: rotation, backgroundColor: '#0a0a0a' }}
+    <div className="flex flex-col items-center gap-6 w-full max-w-4xl mx-auto px-4">
+      {/* Main Display Card */}
+      <div className="relative w-full">
+        {/* Navigation Arrows */}
+        <button
+          onClick={handlePrev}
+          disabled={disabled}
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-background/80 backdrop-blur-sm border-2 border-primary/30 flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
         >
-          {/* Golden outer ring */}
-          <div className="absolute inset-0 rounded-full border-[3px] border-yellow-600/80 pointer-events-none" 
-               style={{ boxShadow: '0 0 20px rgba(202, 138, 4, 0.3)' }} />
-          
-          {/* Wheel segments */}
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
-            {OPTIONS.map((option, index) => {
-              const angle = index * segmentAngle - 90; // Start from top
-              const isAtTop = index === selectedIndex;
-              const Icon = option.icon;
-              
-              return (
-                <g key={option.name} transform={`rotate(${angle} 50 50)`}>
-                  <path
-                    d={getSegmentPath()}
-                    fill={option.color}
-                    stroke="#000"
-                    strokeWidth="0.5"
-                    className="transition-all duration-300"
-                    style={{
-                      filter: isAtTop ? 'brightness(1.2)' : 'brightness(1)',
-                    }}
-                  />
-                </g>
-              );
-            })}
-          </svg>
-          
-          {/* Text and icons overlays */}
-          {OPTIONS.map((option, index) => {
-            const angle = index * segmentAngle;
-            const isAtTop = index === selectedIndex;
-            const Icon = option.icon;
-            
-            return (
-              <div
-                key={`text-${option.name}`}
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  transform: `rotate(${angle}deg)`,
-                }}
-              >
-                <div className="absolute left-1/2 top-[25%] -translate-x-1/2 flex flex-col items-center gap-1">
-                  <Icon className={`w-6 h-6 sm:w-7 sm:h-7 text-yellow-500/90 transition-all duration-300 ${isAtTop ? 'scale-110' : ''}`} />
-                  <div className="text-center">
-                    <div className={`text-xs sm:text-sm font-bold text-yellow-500/90 tracking-wider transition-all duration-300 ${isAtTop ? 'scale-105' : ''}`}>
-                      {option.name}
-                    </div>
-                    <div className="text-[10px] sm:text-xs text-yellow-500/60 font-medium mt-0.5">
-                      {option.timeRange}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-          
-          {/* Center circle - clickable */}
-          <button
-            onClick={handleCenterClick}
-            disabled={disabled || isSpinning}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 disabled:opacity-50"
-          >
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-gray-900 to-black border-3 border-yellow-600/60 shadow-lg flex items-center justify-center hover:scale-110 transition-transform cursor-pointer"
-                 style={{ boxShadow: '0 0 15px rgba(202, 138, 4, 0.4)' }}>
-              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-yellow-600 to-yellow-700 animate-pulse" />
-            </div>
-          </button>
-          
-          {/* Inner segment dividers */}
-          {OPTIONS.map((_, index) => (
-            <div
-              key={`divider-${index}`}
-              className="absolute top-1/2 left-1/2 w-full h-[1px] origin-left pointer-events-none"
-              style={{
-                transform: `rotate(${index * segmentAngle}deg)`,
-                background: 'rgba(0, 0, 0, 0.6)',
-              }}
-            />
-          ))}
-        </motion.div>
+          <ChevronLeft className="w-6 h-6 text-primary" />
+        </button>
         
-        {/* Outer glow effect */}
-        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-yellow-600/10 via-transparent to-yellow-600/10 blur-2xl -z-10" />
+        <button
+          onClick={handleNext}
+          disabled={disabled}
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-background/80 backdrop-blur-sm border-2 border-primary/30 flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+        >
+          <ChevronRight className="w-6 h-6 text-primary" />
+        </button>
+
+        {/* Center Display */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={selectedIndex}
+            initial={{ opacity: 0, scale: 0.8, rotateY: -90 }}
+            animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+            exit={{ opacity: 0, scale: 0.8, rotateY: 90 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="relative mx-auto w-full max-w-md"
+          >
+            {/* Glassmorphic Card */}
+            <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-white/20">
+              {/* Gradient Background */}
+              <div className={`absolute inset-0 bg-gradient-to-br ${currentOption.gradient} opacity-90`} />
+              
+              {/* Glass Effect Overlay */}
+              <div className="absolute inset-0 bg-white/10 backdrop-blur-xl" />
+              
+              {/* Animated Glow */}
+              <div className={`absolute inset-0 bg-gradient-to-br ${currentOption.gradient} opacity-30 blur-2xl animate-pulse`} />
+              
+              {/* Content */}
+              <div className="relative p-8 sm:p-12 text-center">
+                {/* Icon */}
+                <motion.div
+                  initial={{ scale: 0, rotate: -180 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                  className="mb-6 flex justify-center"
+                >
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/30 flex items-center justify-center shadow-xl">
+                    <Icon className="w-10 h-10 sm:w-12 sm:h-12 text-white drop-shadow-lg" />
+                  </div>
+                </motion.div>
+                
+                {/* Title */}
+                <motion.h2
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg tracking-tight"
+                >
+                  {currentOption.displayName}
+                </motion.h2>
+                
+                {/* Time Range */}
+                <motion.p
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-lg sm:text-xl text-white/90 font-semibold mb-2"
+                >
+                  {currentOption.timeRange}
+                </motion.p>
+                
+                {/* Description */}
+                <motion.p
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                  className="text-sm sm:text-base text-white/70 font-medium"
+                >
+                  {currentOption.description}
+                </motion.p>
+              </div>
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* Option Pills */}
+      <div className="flex flex-wrap justify-center gap-2 sm:gap-3 w-full">
+        {OPTIONS.map((option, index) => {
+          const OptionIcon = option.icon;
+          const isSelected = index === selectedIndex;
+          
+          return (
+            <motion.button
+              key={option.name}
+              onClick={() => handleSelect(index)}
+              disabled={disabled}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`
+                relative px-4 py-2 sm:px-6 sm:py-3 rounded-full transition-all duration-300
+                ${isSelected 
+                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/50 scale-105' 
+                  : 'bg-muted/50 backdrop-blur-sm border border-border hover:bg-muted hover:border-primary/50'
+                }
+                disabled:opacity-50 disabled:cursor-not-allowed
+              `}
+            >
+              <div className="flex items-center gap-2">
+                <OptionIcon className={`w-4 h-4 ${isSelected ? '' : 'opacity-70'}`} />
+                <span className="text-xs sm:text-sm font-semibold whitespace-nowrap">
+                  {option.displayName}
+                </span>
+              </div>
+              
+              {isSelected && (
+                <motion.div
+                  layoutId="activeIndicator"
+                  className="absolute inset-0 rounded-full border-2 border-primary"
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                />
+              )}
+            </motion.button>
+          );
+        })}
       </div>
     </div>
   );
