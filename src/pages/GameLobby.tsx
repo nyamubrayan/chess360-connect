@@ -100,7 +100,7 @@ export default function GameLobby() {
     }
   };
 
-  const handleWheelSelect = (category: string, timeControl?: { time: number; increment: number; label: string }) => {
+  const handleWheelSelect = async (category: string, timeControl?: { time: number; increment: number; label: string }) => {
     if (isSearching) return;
     setSelectedCategory(category);
     
@@ -120,12 +120,96 @@ export default function GameLobby() {
       
       const mappedCategory = categoryMap[category] || category;
       
-      setSelectedTimeControl({
+      const newTimeControl = {
         time: timeControl.time,
         increment: timeControl.increment,
         category: mappedCategory,
         label: timeControl.label
-      });
+      };
+      
+      setSelectedTimeControl(newTimeControl);
+      
+      // Automatically start matchmaking
+      setIsSearching(true);
+      
+      try {
+        // Join matchmaking queue
+        const { data: joinData, error: joinError } = await supabase.functions.invoke('find-match', {
+          body: {
+            action: 'join',
+            timeControl: newTimeControl.time,
+            timeIncrement: newTimeControl.increment,
+          },
+        });
+
+        if (joinError) {
+          console.error('Join error:', joinError);
+          toast.error(joinError.message || 'Failed to find match');
+          setIsSearching(false);
+          return;
+        }
+
+        // Check if user already has an active game
+        if (joinData?.hasActiveGame && joinData.gameId) {
+          toast.info(joinData.message || 'You already have an active game. Redirecting...');
+          navigate(`/game/${joinData.gameId}`);
+          setIsSearching(false);
+          return;
+        }
+
+        if (joinData.matched) {
+          triggerMatchFoundCelebration();
+          toast.success('Match found! 🎉');
+          setTimeout(() => {
+            navigate(`/game/${joinData.game.id}`);
+          }, 500);
+          return;
+        }
+
+        toast.info('Searching for opponent...');
+
+        // Poll for match every 2 seconds
+        const interval = setInterval(async () => {
+          const { data: pollData, error: pollError } = await supabase.functions.invoke('find-match', {
+            body: {
+              action: 'join',
+              timeControl: newTimeControl.time,
+              timeIncrement: newTimeControl.increment,
+            },
+          });
+
+          if (pollError) {
+            console.error('Poll error:', pollError);
+            return;
+          }
+
+          // Check if user already has an active game during polling
+          if (pollData?.hasActiveGame && pollData.gameId) {
+            clearInterval(interval);
+            setIsSearching(false);
+            toast.info('Redirecting to your active game...');
+            navigate(`/game/${pollData.gameId}`);
+            return;
+          }
+
+          if (pollData.matched) {
+            clearInterval(interval);
+            setIsSearching(false);
+            triggerMatchFoundCelebration();
+            toast.success('Match found! 🎉');
+            setTimeout(() => {
+              navigate(`/game/${pollData.game.id}`);
+            }, 500);
+          }
+        }, 2000);
+
+        setSearchInterval(interval);
+
+      } catch (error: any) {
+        console.error('Error finding match:', error);
+        toast.error(error.message || 'Failed to find match');
+        setIsSearching(false);
+      }
     }
   };
 
@@ -347,45 +431,23 @@ export default function GameLobby() {
         <div className="flex flex-col items-center mb-8 w-full">
           <SpinningWheel onSelect={handleWheelSelect} disabled={isSearching} />
           
-          {/* Find Opponent Button */}
-          <div className="mt-8 w-full max-w-2xl mx-auto space-y-4">
-            {!isSearching ? (
-              <>
-                {selectedCategory !== 'CUSTOM MATCH' && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                  >
-                    <Button
-                      onClick={handleQuickMatch}
-                      disabled={!selectedTimeControl}
-                      className="w-full gap-3 h-16 text-xl font-bold tracking-wide bg-gradient-to-r from-primary via-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all rounded-2xl border-2 border-primary/50"
-                      size="lg"
-                    >
-                      <Zap className="w-6 h-6" />
-                      FIND OPPONENT
-                    </Button>
-                  </motion.div>
-                )}
-              </>
-            ) : (
-              <>
-                <div className="flex items-center justify-center gap-3 py-4 animate-pulse">
-                  <Loader2 className="w-7 h-7 animate-spin text-primary" />
-                  <span className="text-lg font-semibold text-muted-foreground">Searching for opponent...</span>
-                </div>
-                <Button
-                  onClick={handleCancelSearch}
-                  variant="destructive"
-                  className="w-full gap-2 h-14 text-lg font-bold tracking-wider rounded-2xl shadow-lg hover:shadow-xl"
-                  size="lg"
-                >
-                  CANCEL SEARCH
-                </Button>
-              </>
-            )}
-          </div>
+          {/* Searching Status */}
+          {isSearching && (
+            <div className="mt-8 w-full max-w-2xl mx-auto space-y-4">
+              <div className="flex items-center justify-center gap-3 py-4 animate-pulse">
+                <Loader2 className="w-7 h-7 animate-spin text-primary" />
+                <span className="text-lg font-semibold text-muted-foreground">Searching for opponent...</span>
+              </div>
+              <Button
+                onClick={handleCancelSearch}
+                variant="destructive"
+                className="w-full gap-2 h-14 text-lg font-bold tracking-wider rounded-2xl shadow-lg hover:shadow-xl"
+                size="lg"
+              >
+                CANCEL SEARCH
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
