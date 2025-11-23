@@ -4,13 +4,22 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { ArrowLeft, Clock, Loader2, Zap } from 'lucide-react';
+import { ArrowLeft, Clock, Loader2, Zap, Users, Swords } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell';
 import { FriendsDialog } from '@/components/FriendsDialog';
 import { CustomTimeDialog } from '@/components/CustomTimeDialog';
 import { SpinningWheel } from '@/components/SpinningWheel';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
+
+interface GameTypeStats {
+  bulletPlayers: number;
+  bulletGames: number;
+  blitzPlayers: number;
+  blitzGames: number;
+  rapidPlayers: number;
+  rapidGames: number;
+}
 
 interface TimeControl {
   time: number;
@@ -44,6 +53,14 @@ export default function GameLobby() {
   const [searchInterval, setSearchInterval] = useState<any>(null);
   const [activeGame, setActiveGame] = useState<any>(null);
   const [loadingActiveGame, setLoadingActiveGame] = useState(true);
+  const [gameStats, setGameStats] = useState<GameTypeStats>({
+    bulletPlayers: 0,
+    bulletGames: 0,
+    blitzPlayers: 0,
+    blitzGames: 0,
+    rapidPlayers: 0,
+    rapidGames: 0,
+  });
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -56,6 +73,28 @@ export default function GameLobby() {
       checkForActiveGame(user.id);
     });
 
+    // Fetch initial stats
+    fetchGameStats();
+
+    // Set up real-time subscriptions for stats
+    const gamesChannel = supabase
+      .channel('games-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'games' },
+        () => fetchGameStats()
+      )
+      .subscribe();
+
+    const queueChannel = supabase
+      .channel('queue-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'matchmaking_queue' },
+        () => fetchGameStats()
+      )
+      .subscribe();
+
     // Cleanup: remove user from queue when component unmounts
     return () => {
       if (searchInterval) clearInterval(searchInterval);
@@ -66,6 +105,9 @@ export default function GameLobby() {
           body: { action: 'leave' },
         }).catch(console.error);
       }
+
+      supabase.removeChannel(gamesChannel);
+      supabase.removeChannel(queueChannel);
     };
   }, [searchInterval, isSearching]);
 
@@ -83,6 +125,65 @@ export default function GameLobby() {
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
+    }
+  };
+
+  const fetchGameStats = async () => {
+    try {
+      // Fetch active games count by category
+      const { data: activeGames, error: gamesError } = await supabase
+        .from('games')
+        .select('time_control, time_increment')
+        .eq('status', 'active');
+
+      if (gamesError) throw gamesError;
+
+      // Count games by category
+      let bulletGames = 0;
+      let blitzGames = 0;
+      let rapidGames = 0;
+
+      activeGames?.forEach(game => {
+        if (game.time_control < 3) {
+          bulletGames++;
+        } else if (game.time_control < 10) {
+          blitzGames++;
+        } else {
+          rapidGames++;
+        }
+      });
+
+      // Fetch players in queue by category
+      const { data: queueData, error: queueError } = await supabase
+        .from('matchmaking_queue')
+        .select('time_control');
+
+      if (queueError) throw queueError;
+
+      let bulletPlayers = 0;
+      let blitzPlayers = 0;
+      let rapidPlayers = 0;
+
+      queueData?.forEach(entry => {
+        if (entry.time_control < 3) {
+          bulletPlayers++;
+        } else if (entry.time_control < 10) {
+          blitzPlayers++;
+        } else {
+          rapidPlayers++;
+        }
+      });
+
+      setGameStats({
+        bulletPlayers,
+        bulletGames,
+        blitzPlayers,
+        blitzGames,
+        rapidPlayers,
+        rapidGames,
+      });
+    } catch (error) {
+      console.error('Error fetching game stats:', error);
     }
   };
 
@@ -445,6 +546,124 @@ export default function GameLobby() {
             </div>
           </Card>
         )}
+
+        {/* Live Stats Section */}
+        <Card className="mb-8 p-6 bg-gradient-to-br from-card via-card to-muted/30 border-2">
+          <h2 className="text-xl font-bold mb-6 text-center flex items-center justify-center gap-2">
+            <Swords className="w-5 h-5 text-primary" />
+            Live Activity
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Bullet Stats */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="relative overflow-hidden rounded-xl border-2 border-border/50 bg-gradient-to-br from-orange-500/10 to-red-500/10"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-red-500/5" />
+              <div className="relative p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
+                    <Zap className="w-5 h-5 text-white" />
+                  </div>
+                  <h3 className="text-lg font-bold">Bullet</h3>
+                </div>
+                
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-background/50 backdrop-blur-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Users className="w-4 h-4" />
+                      <span className="text-sm font-medium">Players</span>
+                    </div>
+                    <span className="text-lg font-bold text-foreground">{gameStats.bulletPlayers}</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-background/50 backdrop-blur-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Swords className="w-4 h-4" />
+                      <span className="text-sm font-medium">Games</span>
+                    </div>
+                    <span className="text-lg font-bold text-foreground">{gameStats.bulletGames}</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Blitz Stats */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="relative overflow-hidden rounded-xl border-2 border-border/50 bg-gradient-to-br from-yellow-500/10 to-orange-500/10"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 to-orange-500/5" />
+              <div className="relative p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center">
+                    <Zap className="w-5 h-5 text-white" />
+                  </div>
+                  <h3 className="text-lg font-bold">Blitz</h3>
+                </div>
+                
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-background/50 backdrop-blur-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Users className="w-4 h-4" />
+                      <span className="text-sm font-medium">Players</span>
+                    </div>
+                    <span className="text-lg font-bold text-foreground">{gameStats.blitzPlayers}</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-background/50 backdrop-blur-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Swords className="w-4 h-4" />
+                      <span className="text-sm font-medium">Games</span>
+                    </div>
+                    <span className="text-lg font-bold text-foreground">{gameStats.blitzGames}</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Rapid Stats */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="relative overflow-hidden rounded-xl border-2 border-border/50 bg-gradient-to-br from-emerald-500/10 to-teal-500/10"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-teal-500/5" />
+              <div className="relative p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+                    <Clock className="w-5 h-5 text-white" />
+                  </div>
+                  <h3 className="text-lg font-bold">Rapid</h3>
+                </div>
+                
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-background/50 backdrop-blur-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Users className="w-4 h-4" />
+                      <span className="text-sm font-medium">Players</span>
+                    </div>
+                    <span className="text-lg font-bold text-foreground">{gameStats.rapidPlayers}</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-background/50 backdrop-blur-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Swords className="w-4 h-4" />
+                      <span className="text-sm font-medium">Games</span>
+                    </div>
+                    <span className="text-lg font-bold text-foreground">{gameStats.rapidGames}</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </Card>
 
         {/* Game Type Selection */}
         <div className="flex flex-col items-center mb-8 w-full">
