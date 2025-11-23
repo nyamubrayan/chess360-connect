@@ -7,7 +7,7 @@ import heroImage from "@/assets/chess-hero.jpg";
 export const HeroSection = () => {
   const navigate = useNavigate();
   const [currentWord, setCurrentWord] = useState(0);
-  const words = ["Journey", "Adventure", "Experience", "Mastery"];
+  const words = ["Smart Training", "Play Online", "Detailed Analysis", "Chessmate Networking", "Smart Puzzles"];
 
   useEffect(() => {
     const interval = setInterval(() => {
