@@ -853,7 +853,18 @@ const ChessClock = () => {
                       Back
                     </Button>
                     <Button 
-                      onClick={() => setSetupStep(3)}
+                      onClick={() => {
+                        if (selectedTimeControl) {
+                          // Apply the time control settings
+                          const seconds = selectedTimeControl.minutes * 60;
+                          setTimeControl(seconds);
+                          setIncrement(selectedTimeControl.increment);
+                          setWhiteTime(seconds);
+                          setBlackTime(seconds);
+                          setIsConfigured(true);
+                          setSetupStep(3);
+                        }
+                      }}
                       disabled={!selectedTimeControl}
                       className="flex-1 h-12 text-base font-bold"
                     >
@@ -880,9 +891,7 @@ const ChessClock = () => {
                   <div className="space-y-3">
                     <Button
                       onClick={() => {
-                        if (selectedTimeControl) {
-                          applyPreset(selectedTimeControl.minutes, selectedTimeControl.increment);
-                        }
+                        setSettingsOpen(false);
                       }}
                       className="w-full h-16 text-base font-bold"
                     >
@@ -945,13 +954,7 @@ const ChessClock = () => {
                       <div className="space-y-3 p-4 bg-primary/5 rounded-lg border border-primary/20">
                         <p className="text-sm font-medium text-center">Generate a code to share with your opponent</p>
                         <Button 
-                          onClick={() => {
-                            if (selectedTimeControl) {
-                              setTimeControl(selectedTimeControl.minutes * 60);
-                              setIncrement(selectedTimeControl.increment);
-                              handleCreateSession();
-                            }
-                          }}
+                          onClick={handleCreateSession}
                           className="w-full h-12 font-bold"
                         >
                           <Share2 className="w-4 h-4 mr-2" />
