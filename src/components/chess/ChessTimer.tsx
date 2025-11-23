@@ -67,6 +67,43 @@ export const ChessTimer = ({ game, playerColor, className }: ChessTimerProps) =>
   const handleTimeout = async (color: 'white' | 'black') => {
     // End game due to timeout
     const winnerId = color === 'white' ? game.black_player_id : game.white_player_id;
+    const loserId = color === 'white' ? game.white_player_id : game.black_player_id;
+    
+    // Fetch both player profiles to calculate rating changes
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, bullet_rating, blitz_rating, rapid_rating')
+      .in('id', [game.white_player_id, game.black_player_id]);
+    
+    if (!profiles || profiles.length !== 2) {
+      console.error('Failed to fetch player profiles for rating calculation');
+      return;
+    }
+    
+    const whiteProfile = profiles.find(p => p.id === game.white_player_id);
+    const blackProfile = profiles.find(p => p.id === game.black_player_id);
+    
+    // Determine game category and get appropriate ratings
+    const getGameCategory = (timeControl: number) => {
+      if (timeControl < 3) return 'bullet';
+      if (timeControl < 10) return 'blitz';
+      return 'rapid';
+    };
+    
+    const category = getGameCategory(game.time_control);
+    const whiteRating = whiteProfile?.[`${category}_rating` as keyof typeof whiteProfile] as number || 1200;
+    const blackRating = blackProfile?.[`${category}_rating` as keyof typeof blackProfile] as number || 1200;
+    
+    // Calculate ELO changes (K-factor = 32)
+    const K = 32;
+    const winnerRating = color === 'white' ? blackRating : whiteRating;
+    const loserRating = color === 'white' ? whiteRating : blackRating;
+    
+    const expectedWinner = 1 / (1 + Math.pow(10, (loserRating - winnerRating) / 400));
+    const expectedLoser = 1 / (1 + Math.pow(10, (winnerRating - loserRating) / 400));
+    
+    const winnerChange = Math.round(K * (1 - expectedWinner));
+    const loserChange = Math.round(K * (0 - expectedLoser));
     
     await supabase
       .from('games')
@@ -74,6 +111,8 @@ export const ChessTimer = ({ game, playerColor, className }: ChessTimerProps) =>
         status: 'completed',
         result: color === 'white' ? '0-1' : '1-0',
         winner_id: winnerId,
+        white_rating_change: color === 'white' ? loserChange : winnerChange,
+        black_rating_change: color === 'black' ? loserChange : winnerChange,
         completed_at: new Date().toISOString()
       })
       .eq('id', game.id);
