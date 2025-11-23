@@ -60,6 +60,52 @@ const Leaderboard = () => {
     }
   }, [category, user]);
 
+  // Real-time updates for leaderboard
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('leaderboard-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles'
+        },
+        () => {
+          fetchLeaderboard();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'player_stats'
+        },
+        () => {
+          fetchLeaderboard();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_training_stats'
+        },
+        () => {
+          fetchLeaderboard();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, category]);
+
   const fetchLeaderboard = async () => {
     let query = supabase
       .from("profiles")
