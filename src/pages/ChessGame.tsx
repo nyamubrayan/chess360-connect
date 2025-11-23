@@ -198,7 +198,7 @@ export default function ChessGame() {
     [game, user, whitePlayer, blackPlayer]
   );
 
-  // Monitor first move timeout - 30s for White's and Black's first moves
+  // Monitor first move timeout - 30s for White's and Black's first moves (synchronized for both players)
   useEffect(() => {
     if (!game || game.status !== 'active') {
       setFirstMoveCountdown(null);
@@ -217,17 +217,19 @@ export default function ChessGame() {
 
     const phaseColor: 'white' | 'black' = isWhiteFirstMovePhase ? 'white' : 'black';
 
+    // Update every 100ms for smooth, synchronized countdown across both players
     const interval = setInterval(() => {
-      const phaseStartTime = isWhiteFirstMovePhase
+      // Use server timestamp for synchronization
+      const serverTimestamp = isWhiteFirstMovePhase
         ? new Date(game.created_at).getTime()
         : game.last_move_at
         ? new Date(game.last_move_at).getTime()
         : Date.now();
 
       const now = Date.now();
-      const timeSinceStart = now - phaseStartTime;
-      const remainingTime = 30000 - timeSinceStart; // 30 seconds
-      const remainingSeconds = Math.ceil(remainingTime / 1000);
+      const elapsed = now - serverTimestamp;
+      const remaining = 30000 - elapsed; // 30 seconds
+      const remainingSeconds = Math.ceil(remaining / 1000);
 
       if (remainingSeconds <= 0) {
         setFirstMoveCountdown(0);
