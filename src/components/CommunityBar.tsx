@@ -183,6 +183,30 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
                       <SheetTitle className="text-left">Menu</SheetTitle>
                     </SheetHeader>
                     <div className="flex flex-col gap-1 p-4">
+                      {/* Profile Section */}
+                      {profile && (
+                        <div 
+                          className="flex items-center gap-3 p-3 mb-4 rounded-lg bg-card/50 border border-border cursor-pointer hover:bg-card/70 transition-all"
+                          onClick={() => {
+                            navigate('/profile');
+                            setMobileMenuOpen(false);
+                          }}
+                        >
+                          <div className="relative">
+                            <Avatar className="w-12 h-12 border-2 border-primary">
+                              <AvatarImage src={profile.avatar_url} alt={profile.username} />
+                              <AvatarFallback>{profile.username?.[0]?.toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            {/* Online Status Indicator */}
+                            <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-success border-2 border-background"></span>
+                          </div>
+                          <div className="text-left">
+                            <p className="font-semibold text-base leading-tight">{profile.display_name || profile.username}</p>
+                            <p className="text-sm text-muted-foreground">Rating: {profile.rating || 1200}</p>
+                          </div>
+                        </div>
+                      )}
+                      
                       {/* Main Links */}
                       <div className="mb-4">
                         {mainLinks.map((link) => (
