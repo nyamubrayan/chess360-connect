@@ -60,6 +60,15 @@ const ChessClock = () => {
 
   // Create multi-device session
   const handleCreateSession = async () => {
+    if (!isConfigured) {
+      toast({
+        title: "Configure Clock First",
+        description: "Please select a time control before creating a session",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const code = generateCode();
       
@@ -85,6 +94,7 @@ const ChessClock = () => {
       setIsHost(true);
       setMultiDeviceMode(true);
       setShowCodeDialog(true);
+      setSettingsOpen(false);
       
       // Subscribe to session updates
       subscribeToSession(data.id);
@@ -141,6 +151,8 @@ const ChessClock = () => {
       setIsHost(false);
       setMultiDeviceMode(true);
       setShowCodeDialog(false);
+      setSettingsOpen(false);
+      setIsConfigured(true);
       
       // Set player side opposite to host
       const guestSide = data.host_player_side === 'white' ? 'black' : 'white';
@@ -160,7 +172,7 @@ const ChessClock = () => {
       
       toast({
         title: "Connected!",
-        description: "You've joined the session",
+        description: `You're playing as ${guestSide}`,
       });
     } catch (error) {
       console.error('Error joining session:', error);
@@ -534,26 +546,40 @@ const ChessClock = () => {
                     Multi-Device Mode
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Use two phones - each player clicks their own device
+                    Use two phones - each player sees only their clock
                   </p>
                   <div className="flex flex-col gap-2">
                     <Button 
                       onClick={handleCreateSession}
                       className="w-full h-12 font-bold"
                       variant="default"
+                      disabled={!isConfigured}
                     >
                       <Share2 className="w-4 h-4 mr-2" />
                       Create Session & Get Code
                     </Button>
+                    {!isConfigured && (
+                      <p className="text-xs text-muted-foreground text-center">
+                        Select a time control first
+                      </p>
+                    )}
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-muted-foreground">Or join</span>
+                      </div>
+                    </div>
                     <div className="flex gap-2">
                       <Input
                         placeholder="Enter Code"
                         value={codeInput}
                         onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
-                        className="flex-1 font-mono"
+                        className="flex-1 font-mono text-center text-lg"
                         maxLength={6}
                       />
-                      <Button onClick={handleJoinSession} variant="outline">
+                      <Button onClick={handleJoinSession} variant="outline" size="lg">
                         <Link2 className="w-4 h-4 mr-2" />
                         Join
                       </Button>
@@ -671,24 +697,26 @@ const ChessClock = () => {
 
       {/* Vertical Clock Display */}
       <div className="flex-1 flex flex-col relative">
-        {/* Black Player - Top */}
-        <motion.div
-          className={`flex-1 flex items-center justify-center ${multiDeviceMode && playerSide === 'black' ? 'cursor-pointer' : multiDeviceMode ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'} relative overflow-hidden transition-all duration-500 ${
-            !isWhiteTurn && isActive 
-              ? "bg-gradient-to-br from-primary/30 via-accent/20 to-primary/10" 
-              : "bg-gradient-to-br from-muted/20 to-background"
-          }`}
-          onClick={() => handleClockPress("black")}
-          whileTap={(!multiDeviceMode || playerSide === 'black') ? { scale: 0.98 } : {}}
-          animate={!isWhiteTurn && isActive ? {
-            boxShadow: [
-              "inset 0 0 60px rgba(var(--primary), 0.2)",
-              "inset 0 0 80px rgba(var(--primary), 0.4)",
-              "inset 0 0 60px rgba(var(--primary), 0.2)"
-            ]
-          } : {}}
-          transition={{ duration: 2, repeat: Infinity }}
-        >
+        {/* Show only the player's assigned clock in multi-device mode */}
+        {(!multiDeviceMode || playerSide === 'black') && (
+          /* Black Player Clock */
+          <motion.div
+            className={`${multiDeviceMode ? 'h-full' : 'flex-1'} flex items-center justify-center cursor-pointer relative overflow-hidden transition-all duration-500 ${
+              !isWhiteTurn && isActive 
+                ? "bg-gradient-to-br from-primary/30 via-accent/20 to-primary/10" 
+                : "bg-gradient-to-br from-muted/20 to-background"
+            }`}
+            onClick={() => handleClockPress("black")}
+            whileTap={{ scale: 0.98 }}
+            animate={!isWhiteTurn && isActive ? {
+              boxShadow: [
+                "inset 0 0 60px rgba(var(--primary), 0.2)",
+                "inset 0 0 80px rgba(var(--primary), 0.4)",
+                "inset 0 0 60px rgba(var(--primary), 0.2)"
+              ]
+            } : {}}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
           <AnimatePresence>
             {!isWhiteTurn && isActive && (
               <motion.div
@@ -741,39 +769,43 @@ const ChessClock = () => {
             )}
           </div>
         </motion.div>
+        )}
 
-        {/* Divider */}
-        <motion.div 
-          className="h-2 relative"
-          animate={{
-            background: [
-              "linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent)))",
-              "linear-gradient(to right, hsl(var(--accent)), hsl(var(--primary)))",
-            ]
-          }}
-          transition={{ duration: 3, repeat: Infinity }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-primary via-accent to-primary animate-pulse opacity-50" />
-        </motion.div>
+        {/* Divider - only show in single device mode */}
+        {!multiDeviceMode && (
+          <motion.div 
+            className="h-2 relative"
+            animate={{
+              background: [
+                "linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent)))",
+                "linear-gradient(to right, hsl(var(--accent)), hsl(var(--primary)))",
+              ]
+            }}
+            transition={{ duration: 3, repeat: Infinity }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-primary via-accent to-primary animate-pulse opacity-50" />
+          </motion.div>
+        )}
 
-        {/* White Player - Bottom */}
-        <motion.div
-          className={`flex-1 flex items-center justify-center ${multiDeviceMode && playerSide === 'white' ? 'cursor-pointer' : multiDeviceMode ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'} relative overflow-hidden transition-all duration-500 ${
-            isWhiteTurn && isActive 
-              ? "bg-gradient-to-br from-primary/30 via-accent/20 to-primary/10" 
-              : "bg-gradient-to-br from-muted/20 to-background"
-          }`}
-          onClick={() => handleClockPress("white")}
-          whileTap={(!multiDeviceMode || playerSide === 'white') ? { scale: 0.98 } : {}}
-          animate={isWhiteTurn && isActive ? {
-            boxShadow: [
-              "inset 0 0 60px rgba(var(--primary), 0.2)",
-              "inset 0 0 80px rgba(var(--primary), 0.4)",
-              "inset 0 0 60px rgba(var(--primary), 0.2)"
-            ]
-          } : {}}
-          transition={{ duration: 2, repeat: Infinity }}
-        >
+        {/* White Player Clock */}
+        {(!multiDeviceMode || playerSide === 'white') && (
+          <motion.div
+            className={`${multiDeviceMode ? 'h-full' : 'flex-1'} flex items-center justify-center cursor-pointer relative overflow-hidden transition-all duration-500 ${
+              isWhiteTurn && isActive 
+                ? "bg-gradient-to-br from-primary/30 via-accent/20 to-primary/10" 
+                : "bg-gradient-to-br from-muted/20 to-background"
+            }`}
+            onClick={() => handleClockPress("white")}
+            whileTap={{ scale: 0.98 }}
+            animate={isWhiteTurn && isActive ? {
+              boxShadow: [
+                "inset 0 0 60px rgba(var(--primary), 0.2)",
+                "inset 0 0 80px rgba(var(--primary), 0.4)",
+                "inset 0 0 60px rgba(var(--primary), 0.2)"
+              ]
+            } : {}}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
           <AnimatePresence>
             {isWhiteTurn && isActive && (
               <motion.div
@@ -826,6 +858,7 @@ const ChessClock = () => {
             )}
           </div>
         </motion.div>
+        )}
       </div>
 
       {/* Control Buttons */}
