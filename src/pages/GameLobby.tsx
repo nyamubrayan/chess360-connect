@@ -504,7 +504,7 @@ export default function GameLobby() {
 
   return (
     <div className="min-h-screen bg-background p-2 sm:p-4">
-      <div className="container mx-auto max-w-5xl">
+      <div className="container mx-auto max-w-7xl">
         <div className="flex items-center justify-between mb-6">
           <Button variant="secondary" size="sm" onClick={() => navigate('/')} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
@@ -547,160 +547,174 @@ export default function GameLobby() {
           </Card>
         )}
 
-        {/* Live Stats Section */}
-        <Card className="mb-8 p-6 bg-gradient-to-br from-card via-card to-muted/30 border-2">
-          <h2 className="text-xl font-bold mb-6 text-center flex items-center justify-center gap-2">
-            <Swords className="w-5 h-5 text-primary" />
-            Live Activity
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Bullet Stats */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="relative overflow-hidden rounded-xl border-2 border-border/50 bg-gradient-to-br from-orange-500/10 to-red-500/10"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-red-500/5" />
-              <div className="relative p-5">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
-                    <Zap className="w-5 h-5 text-white" />
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Game Selection - Left/Main Area */}
+          <div className="lg:col-span-8">
+            <div className="flex flex-col items-center w-full">
+              <SpinningWheel 
+                onSelect={handleWheelSelect} 
+                disabled={isSearching}
+                username={profile?.username}
+                bulletStats={{ rating: profile?.bullet_rating || 1200, gamesPlayed: profile?.bullet_games_played || 0 }}
+                blitzStats={{ rating: profile?.blitz_rating || 1200, gamesPlayed: profile?.blitz_games_played || 0 }}
+                rapidStats={{ rating: profile?.rapid_rating || 1200, gamesPlayed: profile?.rapid_games_played || 0 }}
+                onCategoryChange={(category) => setSelectedCategory(category)}
+              />
+              
+              {/* Searching Status */}
+              {isSearching && (
+                <div className="mt-8 w-full max-w-2xl mx-auto space-y-4">
+                  <div className="flex items-center justify-center gap-3 py-4 animate-pulse">
+                    <Loader2 className="w-7 h-7 animate-spin text-primary" />
+                    <span className="text-lg font-semibold text-muted-foreground">Searching for opponent...</span>
                   </div>
-                  <h3 className="text-lg font-bold">Bullet</h3>
+                  <Button
+                    onClick={handleCancelSearch}
+                    variant="destructive"
+                    className="w-full gap-2 h-14 text-lg font-bold tracking-wider rounded-2xl shadow-lg hover:shadow-xl"
+                    size="lg"
+                  >
+                    CANCEL SEARCH
+                  </Button>
                 </div>
-                
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-background/50 backdrop-blur-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Users className="w-4 h-4" />
-                      <span className="text-sm font-medium">Players</span>
-                    </div>
-                    <span className="text-lg font-bold text-foreground">{gameStats.bulletPlayers}</span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-background/50 backdrop-blur-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Swords className="w-4 h-4" />
-                      <span className="text-sm font-medium">Games</span>
-                    </div>
-                    <span className="text-lg font-bold text-foreground">{gameStats.bulletGames}</span>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Blitz Stats */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="relative overflow-hidden rounded-xl border-2 border-border/50 bg-gradient-to-br from-yellow-500/10 to-orange-500/10"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 to-orange-500/5" />
-              <div className="relative p-5">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center">
-                    <Zap className="w-5 h-5 text-white" />
-                  </div>
-                  <h3 className="text-lg font-bold">Blitz</h3>
-                </div>
-                
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-background/50 backdrop-blur-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Users className="w-4 h-4" />
-                      <span className="text-sm font-medium">Players</span>
-                    </div>
-                    <span className="text-lg font-bold text-foreground">{gameStats.blitzPlayers}</span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-background/50 backdrop-blur-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Swords className="w-4 h-4" />
-                      <span className="text-sm font-medium">Games</span>
-                    </div>
-                    <span className="text-lg font-bold text-foreground">{gameStats.blitzGames}</span>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Rapid Stats */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="relative overflow-hidden rounded-xl border-2 border-border/50 bg-gradient-to-br from-emerald-500/10 to-teal-500/10"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-teal-500/5" />
-              <div className="relative p-5">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
-                    <Clock className="w-5 h-5 text-white" />
-                  </div>
-                  <h3 className="text-lg font-bold">Rapid</h3>
-                </div>
-                
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-background/50 backdrop-blur-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Users className="w-4 h-4" />
-                      <span className="text-sm font-medium">Players</span>
-                    </div>
-                    <span className="text-lg font-bold text-foreground">{gameStats.rapidPlayers}</span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-background/50 backdrop-blur-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Swords className="w-4 h-4" />
-                      <span className="text-sm font-medium">Games</span>
-                    </div>
-                    <span className="text-lg font-bold text-foreground">{gameStats.rapidGames}</span>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </Card>
-
-        {/* Game Type Selection */}
-        <div className="flex flex-col items-center mb-8 w-full">
-          <SpinningWheel 
-            onSelect={handleWheelSelect} 
-            disabled={isSearching}
-            username={profile?.username}
-            bulletStats={{ rating: profile?.bullet_rating || 1200, gamesPlayed: profile?.bullet_games_played || 0 }}
-            blitzStats={{ rating: profile?.blitz_rating || 1200, gamesPlayed: profile?.blitz_games_played || 0 }}
-            rapidStats={{ rating: profile?.rapid_rating || 1200, gamesPlayed: profile?.rapid_games_played || 0 }}
-          />
-          
-          {/* Searching Status */}
-          {isSearching && (
-            <div className="mt-8 w-full max-w-2xl mx-auto space-y-4">
-              <div className="flex items-center justify-center gap-3 py-4 animate-pulse">
-                <Loader2 className="w-7 h-7 animate-spin text-primary" />
-                <span className="text-lg font-semibold text-muted-foreground">Searching for opponent...</span>
-              </div>
-              <Button
-                onClick={handleCancelSearch}
-                variant="destructive"
-                className="w-full gap-2 h-14 text-lg font-bold tracking-wider rounded-2xl shadow-lg hover:shadow-xl"
-                size="lg"
-              >
-                CANCEL SEARCH
-              </Button>
+              )}
             </div>
-          )}
-        </div>
-      </div>
+          </div>
 
-      <CustomTimeDialog
-        open={customDialogOpen}
-        onOpenChange={setCustomDialogOpen}
-        onConfirm={handleCustomTimeConfirm}
-      />
+          {/* Live Activity Stats - Right Sidebar */}
+          <div className="lg:col-span-4">
+            <Card className="sticky top-4 p-6 bg-gradient-to-br from-card via-card to-muted/30 border-2">
+              <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                <Swords className="w-5 h-5 text-primary" />
+                Live Activity
+              </h2>
+              
+              <div className="space-y-4">
+                {/* Bullet Stats */}
+                {selectedCategory === 'Bullet' && (
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="relative overflow-hidden rounded-xl border-2 border-border/50 bg-gradient-to-br from-orange-500/10 to-red-500/10"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-red-500/5" />
+                    <div className="relative p-5">
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
+                          <Zap className="w-5 h-5 text-white" />
+                        </div>
+                        <h3 className="text-lg font-bold">Bullet</h3>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-background/50 backdrop-blur-sm">
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Users className="w-4 h-4" />
+                            <span className="text-sm font-medium">Players</span>
+                          </div>
+                          <span className="text-2xl font-bold text-foreground">{gameStats.bulletPlayers}</span>
+                        </div>
+                        
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-background/50 backdrop-blur-sm">
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Swords className="w-4 h-4" />
+                            <span className="text-sm font-medium">Games</span>
+                          </div>
+                          <span className="text-2xl font-bold text-foreground">{gameStats.bulletGames}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Blitz Stats */}
+                {selectedCategory === 'Blitz' && (
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="relative overflow-hidden rounded-xl border-2 border-border/50 bg-gradient-to-br from-yellow-500/10 to-orange-500/10"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 to-orange-500/5" />
+                    <div className="relative p-5">
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center">
+                          <Zap className="w-5 h-5 text-white" />
+                        </div>
+                        <h3 className="text-lg font-bold">Blitz</h3>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-background/50 backdrop-blur-sm">
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Users className="w-4 h-4" />
+                            <span className="text-sm font-medium">Players</span>
+                          </div>
+                          <span className="text-2xl font-bold text-foreground">{gameStats.blitzPlayers}</span>
+                        </div>
+                        
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-background/50 backdrop-blur-sm">
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Swords className="w-4 h-4" />
+                            <span className="text-sm font-medium">Games</span>
+                          </div>
+                          <span className="text-2xl font-bold text-foreground">{gameStats.blitzGames}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Rapid Stats */}
+                {selectedCategory === 'Rapid' && (
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="relative overflow-hidden rounded-xl border-2 border-border/50 bg-gradient-to-br from-emerald-500/10 to-teal-500/10"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-teal-500/5" />
+                    <div className="relative p-5">
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+                          <Clock className="w-5 h-5 text-white" />
+                        </div>
+                        <h3 className="text-lg font-bold">Rapid</h3>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-background/50 backdrop-blur-sm">
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Users className="w-4 h-4" />
+                            <span className="text-sm font-medium">Players</span>
+                          </div>
+                          <span className="text-2xl font-bold text-foreground">{gameStats.rapidPlayers}</span>
+                        </div>
+                        
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-background/50 backdrop-blur-sm">
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Swords className="w-4 h-4" />
+                            <span className="text-sm font-medium">Games</span>
+                          </div>
+                          <span className="text-2xl font-bold text-foreground">{gameStats.rapidGames}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+            </Card>
+          </div>
+        </div>
+
+        <CustomTimeDialog
+          open={customDialogOpen}
+          onOpenChange={setCustomDialogOpen}
+          onConfirm={handleCustomTimeConfirm}
+        />
+      </div>
     </div>
   );
 }
