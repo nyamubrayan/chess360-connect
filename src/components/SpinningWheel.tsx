@@ -45,13 +45,6 @@ const CATEGORIES: CategoryOption[] = [
     description: 'Balanced play'
   },
   { 
-    name: 'CLASSIC', 
-    displayName: 'Classic',
-    icon: Crown, 
-    gradient: 'from-blue-500 via-indigo-500 to-purple-500',
-    description: 'Deep strategy'
-  },
-  { 
     name: 'CUSTOM MATCH', 
     displayName: 'Custom',
     icon: Sparkles, 
@@ -75,10 +68,6 @@ const TIME_VARIATIONS: Record<string, TimeVariation[]> = {
     { time: 10, increment: 0, label: '10+0' },
     { time: 10, increment: 5, label: '10+5' },
     { time: 15, increment: 10, label: '15+10' },
-  ],
-  'CLASSIC': [
-    { time: 30, increment: 0, label: '30+0' },
-    { time: 30, increment: 20, label: '30+20' },
   ],
 };
 
@@ -155,7 +144,7 @@ export function SpinningWheel({ onSelect, disabled }: SpinningWheelProps) {
       </motion.div>
 
       {/* Category Selection Buttons */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 w-full max-w-4xl">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 w-full max-w-4xl">
         {CATEGORIES.map((category) => {
           const CategoryIcon = category.icon;
           const isSelected = category.name === selectedCategory;
