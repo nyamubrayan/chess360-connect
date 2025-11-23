@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Crown, Star, Award, Medal, ArrowLeft } from "lucide-react";
 
 interface PlayerWithStats {
@@ -17,13 +18,19 @@ interface PlayerWithStats {
     wins: number;
     win_rate: number;
   } | null;
+  user_training_stats: {
+    total_puzzles_solved: number;
+  } | null;
 }
+
+type LeaderboardCategory = "rating" | "games" | "puzzles";
 
 const Leaderboard = () => {
   const navigate = useNavigate();
   const [players, setPlayers] = useState<PlayerWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+  const [category, setCategory] = useState<LeaderboardCategory>("rating");
 
   useEffect(() => {
     // Check authentication
@@ -47,8 +54,14 @@ const Leaderboard = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  useEffect(() => {
+    if (user) {
+      fetchLeaderboard();
+    }
+  }, [category, user]);
+
   const fetchLeaderboard = async () => {
-    const { data, error } = await supabase
+    let query = supabase
       .from("profiles")
       .select(
         `
@@ -57,11 +70,23 @@ const Leaderboard = () => {
           total_games,
           wins,
           win_rate
+        ),
+        user_training_stats (
+          total_puzzles_solved
         )
       `
-      )
-      .order("rating", { ascending: false })
-      .limit(50);
+      );
+
+    // Apply sorting based on category
+    if (category === "rating") {
+      query = query.order("rating", { ascending: false });
+    } else if (category === "games") {
+      query = query.order("player_stats(total_games)", { ascending: false });
+    } else if (category === "puzzles") {
+      query = query.order("user_training_stats(total_puzzles_solved)", { ascending: false });
+    }
+
+    const { data, error } = await query.limit(50);
 
     if (error) {
       console.error("Error fetching leaderboard:", error);
@@ -69,6 +94,7 @@ const Leaderboard = () => {
       const formattedData = (data || []).map((p: any) => ({
         ...p,
         player_stats: Array.isArray(p.player_stats) ? p.player_stats[0] : p.player_stats,
+        user_training_stats: Array.isArray(p.user_training_stats) ? p.user_training_stats[0] : p.user_training_stats,
       }));
       setPlayers(formattedData);
     }
@@ -108,6 +134,20 @@ const Leaderboard = () => {
   const topThree = players.slice(0, 3);
   const restOfPlayers = players.slice(3);
 
+  const getCategoryValue = (player: PlayerWithStats) => {
+    if (category === "rating") return player.rating?.toLocaleString() || '1,200';
+    if (category === "games") return player.player_stats?.total_games?.toLocaleString() || '0';
+    if (category === "puzzles") return player.user_training_stats?.total_puzzles_solved?.toLocaleString() || '0';
+    return '0';
+  };
+
+  const getCategoryLabel = () => {
+    if (category === "rating") return "Rating";
+    if (category === "games") return "Games";
+    if (category === "puzzles") return "Puzzles";
+    return "";
+  };
+
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6">
       <div className="max-w-6xl mx-auto space-y-8">
@@ -119,6 +159,15 @@ const Leaderboard = () => {
             <span className="hidden sm:inline">Home</span>
           </Button>
         </div>
+
+        {/* Category Tabs */}
+        <Tabs value={category} onValueChange={(v) => setCategory(v as LeaderboardCategory)} className="w-full">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-3">
+            <TabsTrigger value="rating">Rating</TabsTrigger>
+            <TabsTrigger value="games">Games Played</TabsTrigger>
+            <TabsTrigger value="puzzles">Puzzles Solved</TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         {/* Podium - Top 3 */}
         {topThree.length >= 3 && (
@@ -133,8 +182,9 @@ const Leaderboard = () => {
                   {topThree[1]?.display_name || topThree[1]?.username}
                 </p>
                 <p className="text-xl sm:text-2xl font-bold text-cyan-600 mt-1">
-                  {topThree[1]?.rating?.toLocaleString() || '1,200'}
+                  {getCategoryValue(topThree[1])}
                 </p>
+                <p className="text-xs text-muted-foreground mt-1">{getCategoryLabel()}</p>
               </Card>
             </div>
 
@@ -148,8 +198,9 @@ const Leaderboard = () => {
                   {topThree[0]?.display_name || topThree[0]?.username}
                 </p>
                 <p className="text-2xl sm:text-3xl font-bold text-rose-600 mt-2">
-                  {topThree[0]?.rating?.toLocaleString() || '1,200'}
+                  {getCategoryValue(topThree[0])}
                 </p>
+                <p className="text-xs text-muted-foreground mt-1">{getCategoryLabel()}</p>
               </Card>
             </div>
 
@@ -163,8 +214,9 @@ const Leaderboard = () => {
                   {topThree[2]?.display_name || topThree[2]?.username}
                 </p>
                 <p className="text-xl sm:text-2xl font-bold text-blue-600 mt-1">
-                  {topThree[2]?.rating?.toLocaleString() || '1,200'}
+                  {getCategoryValue(topThree[2])}
                 </p>
+                <p className="text-xs text-muted-foreground mt-1">{getCategoryLabel()}</p>
               </Card>
             </div>
           </div>
@@ -198,8 +250,11 @@ const Leaderboard = () => {
                     </p>
                   </div>
                   
-                  <div className="font-bold text-base sm:text-lg text-right">
-                    {player.rating?.toLocaleString() || '1,200'}
+                  <div className="text-right">
+                    <p className="font-bold text-base sm:text-lg">
+                      {getCategoryValue(player)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{getCategoryLabel()}</p>
                   </div>
                 </div>
               </Card>
