@@ -20,11 +20,11 @@ export const HeroSection = () => {
         <div className="text-center space-y-8 max-w-4xl mx-auto">
           <div className="space-y-4">
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight">
-              Master Chess with{" "}
+              Welcome to{" "}
               <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-                AI-Powered
-              </span>{" "}
-              Intelligence
+                Chessafari
+              </span>
+              {" "}– Your AI-Powered Chess Journey
             </h1>
             <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               Experience the future of chess learning. Get real-time analysis, personalized training, 
