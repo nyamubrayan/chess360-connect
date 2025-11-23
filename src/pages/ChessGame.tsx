@@ -907,8 +907,14 @@ export default function ChessGame() {
             playerColor={playerColor}
             onRequestRematch={async () => {
               try {
+                if (!user?.id) {
+                  toast.error('User not authenticated');
+                  return;
+                }
+
                 const opponentId = playerColor === 'white' ? game.black_player_id : game.white_player_id;
-                const currentPlayerName = user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'A player';
+                const currentPlayer = playerColor === 'white' ? whitePlayer : blackPlayer;
+                const currentPlayerName = currentPlayer?.display_name || currentPlayer?.username || 'A player';
 
                 const { error } = await supabase.from('notifications').insert({
                   user_id: opponentId,
@@ -919,11 +925,15 @@ export default function ChessGame() {
                   room_id: gameId,
                 });
 
-                if (error) throw error;
+                if (error) {
+                  console.error('Notification insert error:', error);
+                  throw error;
+                }
+                
                 toast.success('Rematch request sent!');
-              } catch (error) {
+              } catch (error: any) {
                 console.error('Error sending rematch:', error);
-                toast.error('Failed to send rematch request');
+                toast.error(error?.message || 'Failed to send rematch request');
               }
             }}
             onFindNewMatch={() => navigate('/lobby')}
