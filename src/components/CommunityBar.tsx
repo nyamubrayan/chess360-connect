@@ -73,6 +73,11 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
       path: '/training'
     },
     {
+      icon: Clock,
+      label: 'Smart Chess Clock',
+      path: '/chess-clock'
+    },
+    {
       icon: Sparkles,
       label: 'Highlights',
       path: '/highlights'
@@ -104,11 +109,6 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
       icon: Target,
       label: 'Analytics',
       path: '/analytics'
-    },
-    {
-      icon: Clock,
-      label: 'Smart Chess Clock',
-      path: '/chess-clock'
     }
   ];
 
