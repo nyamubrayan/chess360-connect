@@ -171,15 +171,30 @@ export default function GameLobby() {
       let blitzPlayers = 0;
       let rapidPlayers = 0;
 
-      queueData?.forEach(entry => {
-        if (entry.time_control < 3) {
-          bulletPlayers++;
-        } else if (entry.time_control < 10) {
-          blitzPlayers++;
-        } else {
-          rapidPlayers++;
-        }
-      });
+      // Only count players if there are active games in that category
+      if (bulletGames > 0) {
+        queueData?.forEach(entry => {
+          if (entry.time_control < 3) {
+            bulletPlayers++;
+          }
+        });
+      }
+
+      if (blitzGames > 0) {
+        queueData?.forEach(entry => {
+          if (entry.time_control >= 3 && entry.time_control < 10) {
+            blitzPlayers++;
+          }
+        });
+      }
+
+      if (rapidGames > 0) {
+        queueData?.forEach(entry => {
+          if (entry.time_control >= 10) {
+            rapidPlayers++;
+          }
+        });
+      }
 
       setGameStats({
         bulletPlayers,
