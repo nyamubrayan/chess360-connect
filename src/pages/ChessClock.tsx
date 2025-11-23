@@ -329,6 +329,33 @@ const ChessClock = () => {
       return;
     }
 
+    // At game start (no moves made), only Black can press to start the clock
+    if (whiteMoves === 0 && blackMoves === 0) {
+      if (player !== "black") {
+        return; // Only Black can start the game
+      }
+      
+      // Black starts the clock, which begins White's time
+      playMove();
+      setIsActive(true);
+      setLastMoveTime(Date.now());
+      const newMoves = blackMoves + 1;
+      const newTime = blackTime + increment;
+      setBlackMoves(newMoves);
+      setBlackTime(newTime);
+      setIsWhiteTurn(true); // White's clock starts running
+      
+      if (multiDeviceMode) {
+        updateSession({ 
+          black_moves: newMoves,
+          black_time: newTime,
+          is_white_turn: true,
+          is_paused: false,
+        });
+      }
+      return;
+    }
+
     if (!isActive) {
       setIsActive(true);
       setLastMoveTime(Date.now());
