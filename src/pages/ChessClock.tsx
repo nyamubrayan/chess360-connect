@@ -22,6 +22,12 @@ const ChessClock = () => {
   const [increment, setIncrement] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(true); // Show settings first
   const [isConfigured, setIsConfigured] = useState(false);
+  const [playerSide, setPlayerSide] = useState<"white" | "black">("white");
+  const [whiteMoves, setWhiteMoves] = useState(0);
+  const [blackMoves, setBlackMoves] = useState(0);
+  const [moveTimings, setMoveTimings] = useState<number[]>([]);
+  const [lastMoveTime, setLastMoveTime] = useState<number>(Date.now());
+  const [showReport, setShowReport] = useState(false);
   const { playMove } = useChessSounds();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -32,6 +38,7 @@ const ChessClock = () => {
           setWhiteTime((prev) => {
             if (prev <= 0) {
               setIsActive(false);
+              setShowReport(true);
               return 0;
             }
             return prev - 1;
@@ -40,6 +47,7 @@ const ChessClock = () => {
           setBlackTime((prev) => {
             if (prev <= 0) {
               setIsActive(false);
+              setShowReport(true);
               return 0;
             }
             return prev - 1;
@@ -64,15 +72,24 @@ const ChessClock = () => {
   const handleClockPress = (player: "white" | "black") => {
     if (!isActive) {
       setIsActive(true);
+      setLastMoveTime(Date.now());
     }
 
     if ((player === "white" && isWhiteTurn) || (player === "black" && !isWhiteTurn)) {
       playMove();
       
-      // Add increment to current player's time
+      // Track move timing
+      const currentTime = Date.now();
+      const timeSpent = (currentTime - lastMoveTime) / 1000;
+      setMoveTimings(prev => [...prev, timeSpent]);
+      setLastMoveTime(currentTime);
+      
+      // Increment move count
       if (player === "white") {
+        setWhiteMoves(prev => prev + 1);
         setWhiteTime((prev) => prev + increment);
       } else {
+        setBlackMoves(prev => prev + 1);
         setBlackTime((prev) => prev + increment);
       }
       
@@ -84,7 +101,11 @@ const ChessClock = () => {
     setIsActive(false);
     setWhiteTime(timeControl);
     setBlackTime(timeControl);
-    setIsWhiteTurn(true);
+    setIsWhiteTurn(playerSide === "white");
+    setWhiteMoves(0);
+    setBlackMoves(0);
+    setMoveTimings([]);
+    setShowReport(false);
     if (intervalRef.current) clearInterval(intervalRef.current);
   };
 
@@ -98,7 +119,11 @@ const ChessClock = () => {
     setWhiteTime(minutes * 60);
     setBlackTime(minutes * 60);
     setIsActive(false);
-    setIsWhiteTurn(true);
+    setIsWhiteTurn(playerSide === "white");
+    setWhiteMoves(0);
+    setBlackMoves(0);
+    setMoveTimings([]);
+    setShowReport(false);
     setIsConfigured(true);
     setSettingsOpen(false);
   };
@@ -110,7 +135,11 @@ const ChessClock = () => {
     setWhiteTime(seconds);
     setBlackTime(seconds);
     setIsActive(false);
-    setIsWhiteTurn(true);
+    setIsWhiteTurn(playerSide === "white");
+    setWhiteMoves(0);
+    setBlackMoves(0);
+    setMoveTimings([]);
+    setShowReport(false);
     setIsConfigured(true);
     setSettingsOpen(false);
   };
@@ -139,59 +168,95 @@ const ChessClock = () => {
               <Settings className="w-5 h-5" />
             </Button>
           </DialogTrigger>
-          <DialogContent className="gradient-card" onInteractOutside={(e) => !isConfigured && e.preventDefault()}>
-            <DialogHeader>
-              <DialogTitle>Clock Settings</DialogTitle>
+          <DialogContent className="gradient-card border-2 border-primary/20 shadow-2xl max-w-md" onInteractOutside={(e) => !isConfigured && e.preventDefault()}>
+            <DialogHeader className="space-y-3">
+              <DialogTitle className="text-2xl font-bold text-center bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                ⚙️ Clock Settings
+              </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <h3 className="font-medium flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-gold" />
+            <div className="space-y-6 py-4">
+              {/* Side Selection */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-lg flex items-center gap-2">
+                  <span className="text-xl">♟️</span>
+                  Choose Your Side
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button 
+                    variant={playerSide === "white" ? "default" : "outline"}
+                    onClick={() => setPlayerSide("white")}
+                    className="h-16 text-lg font-bold transition-all"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full border-4 border-current" />
+                      White
+                    </div>
+                  </Button>
+                  <Button 
+                    variant={playerSide === "black" ? "default" : "outline"}
+                    onClick={() => setPlayerSide("black")}
+                    className="h-16 text-lg font-bold transition-all"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-current" />
+                      Black
+                    </div>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Quick Presets */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-lg flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-gold" />
                   Quick Presets
                 </h3>
                 <div className="grid grid-cols-2 gap-2">
-                  <Button variant="outline" onClick={() => applyPreset(1, 0)} className="hover:border-primary">
+                  <Button variant="outline" onClick={() => applyPreset(1, 0)} className="hover:border-primary hover:bg-primary/10 transition-all font-semibold">
                     ⚡ Bullet (1+0)
                   </Button>
-                  <Button variant="outline" onClick={() => applyPreset(3, 0)} className="hover:border-primary">
+                  <Button variant="outline" onClick={() => applyPreset(3, 0)} className="hover:border-primary hover:bg-primary/10 transition-all font-semibold">
                     🔥 Blitz (3+0)
                   </Button>
-                  <Button variant="outline" onClick={() => applyPreset(3, 2)} className="hover:border-primary">
+                  <Button variant="outline" onClick={() => applyPreset(3, 2)} className="hover:border-primary hover:bg-primary/10 transition-all font-semibold">
                     🎯 Blitz (3+2)
                   </Button>
-                  <Button variant="outline" onClick={() => applyPreset(5, 0)} className="hover:border-primary">
+                  <Button variant="outline" onClick={() => applyPreset(5, 0)} className="hover:border-primary hover:bg-primary/10 transition-all font-semibold">
                     ⏱️ Blitz (5+0)
                   </Button>
-                  <Button variant="outline" onClick={() => applyPreset(10, 0)} className="hover:border-primary">
+                  <Button variant="outline" onClick={() => applyPreset(10, 0)} className="hover:border-primary hover:bg-primary/10 transition-all font-semibold">
                     🚀 Rapid (10+0)
                   </Button>
-                  <Button variant="outline" onClick={() => applyPreset(15, 10)} className="hover:border-primary">
+                  <Button variant="outline" onClick={() => applyPreset(15, 10)} className="hover:border-primary hover:bg-primary/10 transition-all font-semibold">
                     ♟️ Rapid (15+10)
                   </Button>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <h3 className="font-medium">Custom Time</h3>
+              {/* Custom Time */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-lg">⚙️ Custom Time</h3>
                 <div className="space-y-3">
                   <div>
-                    <Label>Minutes per side</Label>
+                    <Label className="font-medium">Minutes per side</Label>
                     <Input
                       type="number"
                       min="1"
                       max="180"
                       defaultValue="5"
                       id="custom-minutes"
+                      className="mt-1.5 h-11"
                     />
                   </div>
                   <div>
-                    <Label>Increment (seconds)</Label>
+                    <Label className="font-medium">Increment (seconds)</Label>
                     <Input
                       type="number"
                       min="0"
                       max="60"
                       defaultValue="0"
                       id="custom-increment"
+                      className="mt-1.5 h-11"
                     />
                   </div>
                   <Button
@@ -204,7 +269,7 @@ const ChessClock = () => {
                       );
                       applyCustomTime(minutes, inc);
                     }}
-                    className="w-full"
+                    className="w-full h-11 font-bold text-base"
                   >
                     Apply Custom Time
                   </Button>
@@ -405,29 +470,96 @@ const ChessClock = () => {
             </p>
           </div>
 
-          {/* Winner Message */}
+          {/* Game Report */}
           <AnimatePresence>
-            {blackTime === 0 && (
+            {showReport && (blackTime === 0 || whiteTime === 0) && (
               <motion.div 
                 initial={{ opacity: 0, y: 20, scale: 0.9 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -20, scale: 0.9 }}
-                className="mt-6 text-center p-6 bg-gradient-to-r from-success/30 via-success/20 to-success/30 border-2 border-success rounded-xl shadow-xl"
+                className="mt-6 space-y-4"
               >
-                <p className="text-3xl font-black text-success mb-2">🏆 White Wins!</p>
-                <p className="text-sm text-muted-foreground">Black ran out of time</p>
-              </motion.div>
-            )}
+                {/* Winner Banner */}
+                <div className="text-center p-6 bg-gradient-to-r from-success/30 via-success/20 to-success/30 border-2 border-success rounded-xl shadow-xl">
+                  <p className="text-3xl font-black text-success mb-2">
+                    🏆 {whiteTime === 0 ? "Black Wins!" : "White Wins!"}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {whiteTime === 0 ? "White" : "Black"} ran out of time
+                  </p>
+                </div>
 
-            {whiteTime === 0 && (
-              <motion.div 
-                initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -20, scale: 0.9 }}
-                className="mt-6 text-center p-6 bg-gradient-to-r from-success/30 via-success/20 to-success/30 border-2 border-success rounded-xl shadow-xl"
-              >
-                <p className="text-3xl font-black text-success mb-2">🏆 Black Wins!</p>
-                <p className="text-sm text-muted-foreground">White ran out of time</p>
+                {/* Game Statistics Report */}
+                <div className="p-6 bg-gradient-to-br from-card via-card to-primary/5 border-2 border-primary/20 rounded-xl shadow-xl space-y-4">
+                  <h3 className="text-2xl font-bold text-center mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                    📊 Game Statistics
+                  </h3>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* White Stats */}
+                    <div className="space-y-3 p-4 bg-background/50 rounded-lg border border-border">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-6 h-6 rounded-full border-4 border-foreground" />
+                        <span className="font-bold text-lg">White</span>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Moves:</span>
+                          <span className="font-bold text-lg">{whiteMoves}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Avg Time:</span>
+                          <span className="font-bold text-lg">
+                            {whiteMoves > 0 
+                              ? `${(moveTimings.filter((_, i) => i % 2 === 0).reduce((a, b) => a + b, 0) / whiteMoves).toFixed(1)}s`
+                              : "0s"
+                            }
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Black Stats */}
+                    <div className="space-y-3 p-4 bg-background/50 rounded-lg border border-border">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-6 h-6 rounded-full bg-foreground" />
+                        <span className="font-bold text-lg">Black</span>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Moves:</span>
+                          <span className="font-bold text-lg">{blackMoves}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Avg Time:</span>
+                          <span className="font-bold text-lg">
+                            {blackMoves > 0 
+                              ? `${(moveTimings.filter((_, i) => i % 2 === 1).reduce((a, b) => a + b, 0) / blackMoves).toFixed(1)}s`
+                              : "0s"
+                            }
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Total Stats */}
+                  <div className="p-4 bg-primary/10 rounded-lg border border-primary/30 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground font-medium">Total Moves:</span>
+                      <span className="font-bold text-xl text-primary">{whiteMoves + blackMoves}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground font-medium">Overall Avg Time:</span>
+                      <span className="font-bold text-xl text-primary">
+                        {moveTimings.length > 0 
+                          ? `${(moveTimings.reduce((a, b) => a + b, 0) / moveTimings.length).toFixed(1)}s`
+                          : "0s"
+                        }
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
