@@ -44,10 +44,10 @@ export const PostGameSummary = ({ open, onOpenChange, gameId, result, playerColo
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Fetch game data to get rating changes
+      // Fetch game data to get rating changes and time control
       const { data: game, error: gameError } = await supabase
         .from('games')
-        .select('white_player_id, black_player_id, white_rating_change, black_rating_change')
+        .select('white_player_id, black_player_id, white_rating_change, black_rating_change, time_control')
         .eq('id', gameId)
         .single();
 
@@ -58,15 +58,25 @@ export const PostGameSummary = ({ open, onOpenChange, gameId, result, playerColo
       const change = isWhite ? game.white_rating_change : game.black_rating_change;
       setRatingChange(change || 0);
 
-      // Fetch current rating
+      // Determine game category to fetch correct rating
+      const getGameCategory = (timeControl: number) => {
+        if (timeControl < 3) return 'bullet';
+        if (timeControl < 10) return 'blitz';
+        return 'rapid';
+      };
+      
+      const category = getGameCategory(game.time_control);
+      const ratingField = `${category}_rating`;
+
+      // Fetch current category-specific rating
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('rating')
+        .select(ratingField)
         .eq('id', user.id)
         .single();
 
       if (profileError) throw profileError;
-      setNewRating(profile.rating || 1200);
+      setNewRating(profile[ratingField as keyof typeof profile] as number || 1200);
     } catch (error) {
       console.error('Error fetching rating change:', error);
     }
