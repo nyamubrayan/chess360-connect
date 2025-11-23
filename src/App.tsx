@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import Index from "./pages/Index";
-import { QuickAccessFab } from "@/components/QuickAccessFab";
 
 // Lazy load route components for better code splitting
 const ChessGame = lazy(() => import("./pages/ChessGame"));
@@ -37,7 +36,6 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <QuickAccessFab />
         <BrowserRouter>
           <main>
             <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}>
