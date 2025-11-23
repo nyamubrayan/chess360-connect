@@ -17,6 +17,9 @@ interface PlayerProfile {
   username: string;
   display_name: string | null;
   rating: number | null;
+  bullet_rating: number | null;
+  blitz_rating: number | null;
+  rapid_rating: number | null;
   avatar_url: string | null;
   bio: string | null;
   country: string | null;
@@ -49,6 +52,7 @@ export default function Connect() {
   const [players, setPlayers] = useState<PlayerProfile[]>([]);
   const [friendStatuses, setFriendStatuses] = useState<Record<string, FriendStatus>>({});
   const [connectedFriends, setConnectedFriends] = useState<FriendProfile[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<{ sent: PlayerProfile[], received: PlayerProfile[] }>({ sent: [], received: [] });
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [puzzleDialogOpen, setPuzzleDialogOpen] = useState(false);
@@ -202,6 +206,36 @@ export default function Connect() {
       } else {
         setConnectedFriends([]);
       }
+
+      // Load pending requests (sent and received)
+      const sentRequestIds = Object.entries(statusMap)
+        .filter(([_, status]) => status.isPending && status.isRequester)
+        .map(([userId, _]) => userId);
+      
+      const receivedRequestIds = Object.entries(statusMap)
+        .filter(([_, status]) => status.isPending && !status.isRequester)
+        .map(([userId, _]) => userId);
+
+      const sentProfiles: PlayerProfile[] = [];
+      const receivedProfiles: PlayerProfile[] = [];
+
+      if (sentRequestIds.length > 0) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .in('id', sentRequestIds);
+        if (!error && data) sentProfiles.push(...data);
+      }
+
+      if (receivedRequestIds.length > 0) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .in('id', receivedRequestIds);
+        if (!error && data) receivedProfiles.push(...data);
+      }
+
+      setPendingRequests({ sent: sentProfiles, received: receivedProfiles });
     } catch (error: any) {
       console.error('Error loading players:', error);
       toast.error('Failed to load players');
@@ -391,6 +425,117 @@ export default function Connect() {
           </p>
         </div>
 
+        {/* Pending Requests Section */}
+        {(pendingRequests.received.length > 0 || pendingRequests.sent.length > 0) && (
+          <Card className="gradient-card mb-8 border-orange-500/20">
+            <CardHeader>
+              <CardTitle className="text-xl flex items-center gap-2">
+                <Clock className="w-5 h-5 text-orange-500" />
+                ChessMate Requests
+              </CardTitle>
+              <CardDescription>
+                Manage your pending connection requests
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Received Requests */}
+              {pendingRequests.received.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {pendingRequests.received.length}
+                    </Badge>
+                    Received Requests
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {pendingRequests.received.map((player) => {
+                      const status = friendStatuses[player.id];
+                      return (
+                        <div key={player.id} className="flex items-center gap-3 p-3 rounded-lg bg-orange-500/5 border border-orange-500/20">
+                          <Avatar className="w-10 h-10 border-2 border-orange-500/20 shrink-0">
+                            <AvatarImage src={player.avatar_url || undefined} />
+                            <AvatarFallback className="bg-orange-500/10 text-orange-600 font-semibold">
+                              {player.username.substring(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm truncate">
+                              {player.display_name || player.username}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate">@{player.username}</p>
+                            <div className="flex gap-1 mt-2">
+                              <Button
+                                size="sm"
+                                variant="default"
+                                className="h-7 text-xs px-2"
+                                onClick={() => acceptFriendRequest(status.friendshipId!)}
+                              >
+                                <Check className="w-3 h-3 mr-1" />
+                                Accept
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 text-xs px-2"
+                                onClick={() => declineFriendRequest(status.friendshipId!)}
+                              >
+                                <X className="w-3 h-3 mr-1" />
+                                Decline
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Sent Requests */}
+              {pendingRequests.sent.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {pendingRequests.sent.length}
+                    </Badge>
+                    Sent Requests
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {pendingRequests.sent.map((player) => {
+                      const status = friendStatuses[player.id];
+                      return (
+                        <div key={player.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border">
+                          <Avatar className="w-10 h-10 border-2 border-primary/20 shrink-0">
+                            <AvatarImage src={player.avatar_url || undefined} />
+                            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                              {player.username.substring(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm truncate">
+                              {player.display_name || player.username}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate">@{player.username}</p>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs px-2 mt-2"
+                              onClick={() => cancelFriendRequest(status.friendshipId!)}
+                            >
+                              <Clock className="w-3 h-3 mr-1" />
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Connected Friends Section */}
         {connectedFriends.length > 0 && (
           <Card className="gradient-card mb-8 border-primary/20">
@@ -513,16 +658,26 @@ export default function Connect() {
                           @{player.username}
                         </CardDescription>
                         
-                        <div className="flex items-center gap-2 mt-2">
-                          <Badge variant="secondary" className="text-xs">
-                            {player.rating || 1200} ELO
+                        {/* Category Ratings */}
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          <Badge variant="secondary" className="text-xs px-2 py-0.5">
+                            <span className="text-muted-foreground mr-1">Bullet:</span>
+                            {player.bullet_rating || 1200}
                           </Badge>
-                          {player.country && (
-                            <Badge variant="outline" className="text-xs">
-                              {player.country}
-                            </Badge>
-                          )}
+                          <Badge variant="secondary" className="text-xs px-2 py-0.5">
+                            <span className="text-muted-foreground mr-1">Blitz:</span>
+                            {player.blitz_rating || 1200}
+                          </Badge>
+                          <Badge variant="secondary" className="text-xs px-2 py-0.5">
+                            <span className="text-muted-foreground mr-1">Rapid:</span>
+                            {player.rapid_rating || 1200}
+                          </Badge>
                         </div>
+                        {player.country && (
+                          <Badge variant="outline" className="text-xs mt-2">
+                            {player.country}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </CardHeader>
