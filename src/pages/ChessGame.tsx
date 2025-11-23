@@ -126,84 +126,112 @@ export default function ChessGame() {
     };
   }, [gameId]);
 
-  // Handler for first move timeout
-  const handleFirstMoveTimeout = useCallback(async () => {
-    if (!game || !user || game.status !== 'active') return;
+  // Handler for first move timeout (per color)
+  const handleFirstMoveTimeout = useCallback(
+    async (color: 'white' | 'black') => {
+      if (!game || !user || game.status !== 'active') return;
 
-    console.log('First move timeout - aborting game, no rating changes...');
+      const timedOutProfile = color === 'white' ? whitePlayer : blackPlayer;
+      const timedOutName =
+        timedOutProfile?.display_name ||
+        timedOutProfile?.username ||
+        (color === 'white' ? 'White player' : 'Black player');
 
-    try {
-      // End the game as a draw (no winner, no rating changes)
-      const { error } = await supabase
-        .from('games')
-        .update({
-          status: 'completed',
-          result: 'draw',
-          completed_at: new Date().toISOString(),
-          white_rating_change: 0,
-          black_rating_change: 0,
-          // No winner_id - ensures it's treated as a draw
-        })
-        .eq('id', game.id)
-        .eq('status', 'active'); // Only update if still active
+      console.log(
+        'First move timeout - aborting game for',
+        color,
+        'no rating changes...'
+      );
 
-      if (error) {
-        console.error('Error ending game:', error);
-        throw error;
+      try {
+        // End the game as a draw (no winner, no rating changes)
+        const { error } = await supabase
+          .from('games')
+          .update({
+            status: 'completed',
+            result: 'draw',
+            completed_at: new Date().toISOString(),
+            white_rating_change: 0,
+            black_rating_change: 0,
+            // No winner_id - ensures it's treated as a draw
+          })
+          .eq('id', game.id)
+          .eq('status', 'active'); // Only update if still active
+
+        if (error) {
+          console.error('Error ending game:', error);
+          throw error;
+        }
+
+        console.log(
+          'Game ended successfully - marked as draw with no rating changes'
+        );
+
+        const message = `${timedOutName} did not make their first move within 30 seconds. No rating changes.`;
+
+        // Send notifications to both players
+        await supabase.from('notifications').insert([
+          {
+            user_id: game.white_player_id,
+            type: 'game_aborted',
+            title: 'Game Aborted',
+            message,
+          },
+          {
+            user_id: game.black_player_id,
+            type: 'game_aborted',
+            title: 'Game Aborted',
+            message,
+          },
+        ]);
+
+        toast.info(
+          `Game ended - ${timedOutName} did not make their first move within 30 seconds. No rating changes applied.`,
+          {
+            duration: 6000,
+          }
+        );
+      } catch (error) {
+        console.error('Error handling first move timeout:', error);
       }
+    },
+    [game, user, whitePlayer, blackPlayer]
+  );
 
-      console.log('Game ended successfully - marked as draw with no rating changes');
-
-      // Send notifications to both players
-      await supabase.from('notifications').insert([
-        {
-          user_id: game.white_player_id,
-          type: 'game_aborted',
-          title: 'Game Aborted',
-          message: 'Game ended - no first move was made within 30 seconds. No rating changes.',
-        },
-        {
-          user_id: game.black_player_id,
-          type: 'game_aborted',
-          title: 'Game Aborted',
-          message: 'Game ended - no first move was made within 30 seconds. No rating changes.',
-        },
-      ]);
-
-      toast.info('Game ended - no first move within 30 seconds. No rating changes applied.', {
-        duration: 6000,
-      });
-    } catch (error) {
-      console.error('Error handling first move timeout:', error);
-    }
-  }, [game, user]);
-
-  // Monitor first move timeout - cancel game if no first move within 30 seconds
+  // Monitor first move timeout - 30s for White's and Black's first moves
   useEffect(() => {
     if (!game || !user || game.status !== 'active' || !playerColor) {
       setFirstMoveCountdown(null);
       return;
     }
 
-    // Check if this is the first move (move_count === 0)
-    const isFirstMove = game.move_count === 0;
-    
-    if (!isFirstMove) {
+    // White's first move phase: game just started
+    const isWhiteFirstMovePhase = game.current_turn === 'w' && game.move_count === 0;
+    // Black's first move phase: after White's first move
+    const isBlackFirstMovePhase = game.current_turn === 'b' && game.move_count === 1;
+
+    if (!isWhiteFirstMovePhase && !isBlackFirstMovePhase) {
       setFirstMoveCountdown(null);
       return;
     }
 
-    // Update countdown every 100ms
+    const phaseColor: 'white' | 'black' = isWhiteFirstMovePhase ? 'white' : 'black';
+
     const interval = setInterval(() => {
-      const gameStartTime = new Date(game.created_at).getTime();
+      const phaseStartTime = isWhiteFirstMovePhase
+        ? new Date(game.created_at).getTime()
+        : game.last_move_at
+        ? new Date(game.last_move_at).getTime()
+        : Date.now();
+
       const now = Date.now();
-      const timeSinceStart = now - gameStartTime;
+      const timeSinceStart = now - phaseStartTime;
       const remainingTime = 30000 - timeSinceStart; // 30 seconds
       const remainingSeconds = Math.ceil(remainingTime / 1000);
 
       if (remainingSeconds <= 0) {
         setFirstMoveCountdown(0);
-        handleFirstMoveTimeout();
+        handleFirstMoveTimeout(phaseColor);
         clearInterval(interval);
       } else {
         setFirstMoveCountdown(remainingSeconds);
@@ -213,7 +241,12 @@ export default function ChessGame() {
     return () => {
       clearInterval(interval);
     };
-  }, [game?.move_count, game?.status, game?.created_at, user, playerColor, handleFirstMoveTimeout]);
+  }, [
+    game,
+    user,
+    playerColor,
+    handleFirstMoveTimeout,
+  ]);
 
   // Monitor inactivity - forfeit opponent after 20 seconds of no move (after first move)
   useEffect(() => {
@@ -389,8 +422,8 @@ export default function ChessGame() {
       console.log('Game completed:', gameData.result, 'Winner:', gameData.winner_id);
       
       // Show completion message
-      // Check if this was an aborted game (draw with 0 moves)
-      const wasAborted = gameData.result === 'draw' && gameData.move_count === 0;
+      // Check if this was an aborted game (draw with no moves or only White's first move)
+      const wasAborted = gameData.result === 'draw' && gameData.move_count <= 1;
       
       const resultMessage = gameData.result === 'checkmate' 
         ? (gameData.winner_id === user?.id ? 'You won by checkmate!' : 'Checkmate! You lost.')
