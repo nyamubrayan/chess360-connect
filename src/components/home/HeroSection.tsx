@@ -2,12 +2,23 @@ import { Button } from "@/components/ui/button";
 import { Play, Puzzle, Trophy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import heroImage from "@/assets/chess-hero.jpg";
 
 export const HeroSection = () => {
   const navigate = useNavigate();
   const [currentWord, setCurrentWord] = useState(0);
   const words = ["Smart Training", "Play Online", "Detailed Analysis", "Chessmate Networking", "Smart Puzzles"];
+  const [currentChessPiece, setCurrentChessPiece] = useState(0);
+  
+  const chessPieces = [
+    { symbol: '♔', name: 'King' },
+    { symbol: '♕', name: 'Queen' },
+    { symbol: '♖', name: 'Rook' },
+    { symbol: '♗', name: 'Bishop' },
+    { symbol: '♘', name: 'Knight' },
+    { symbol: '♙', name: 'Pawn' }
+  ];
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -15,6 +26,13 @@ export const HeroSection = () => {
     }, 3000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentChessPiece((prev) => (prev + 1) % chessPieces.length);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [chessPieces.length]);
 
   return (
     <section className="relative overflow-hidden py-20 sm:py-32 px-4">
@@ -28,6 +46,35 @@ export const HeroSection = () => {
       
       <div className="container mx-auto max-w-6xl relative z-10">
         <div className="text-center space-y-8 max-w-4xl mx-auto">
+          {/* Cycling Chess Piece Animation */}
+          <div className="flex flex-col items-center justify-center mb-6">
+            <motion.div
+              key={currentChessPiece}
+              className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl select-none"
+              initial={{ opacity: 0, scale: 0.5, rotate: -180 }}
+              animate={{ opacity: 1, scale: 1, rotate: 0 }}
+              exit={{ opacity: 0, scale: 0.5, rotate: 180 }}
+              transition={{ 
+                duration: 0.6,
+                type: "spring",
+                stiffness: 200,
+                damping: 20
+              }}
+            >
+              {chessPieces[currentChessPiece].symbol}
+            </motion.div>
+            <motion.p
+              key={`name-${currentChessPiece}`}
+              className="text-lg sm:text-xl md:text-2xl font-semibold text-primary mt-2"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.4, delay: 0.2 }}
+            >
+              {chessPieces[currentChessPiece].name}
+            </motion.p>
+          </div>
+
           <div className="space-y-4">
             <h1 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight">
               <span className="block">
