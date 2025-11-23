@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { ArrowLeft, Clock, Loader2, Zap, Users, Swords } from 'lucide-react';
+import { ArrowLeft, Clock, Loader2, Zap, Users, Swords, Volume2, VolumeX } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell';
 import { FriendsDialog } from '@/components/FriendsDialog';
 import { CustomTimeDialog } from '@/components/CustomTimeDialog';
@@ -47,12 +47,13 @@ export default function GameLobby() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [selectedTimeControl, setSelectedTimeControl] = useState<TimeControl | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string>('Bullet');
+  const [selectedCategory, setSelectedCategory] = useState<string>('BULLET');
   const [customDialogOpen, setCustomDialogOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [searchInterval, setSearchInterval] = useState<any>(null);
   const [activeGame, setActiveGame] = useState<any>(null);
   const [loadingActiveGame, setLoadingActiveGame] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const [gameStats, setGameStats] = useState<GameTypeStats>({
     bulletPlayers: 0,
     bulletGames: 0,
@@ -512,6 +513,15 @@ export default function GameLobby() {
           </Button>
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Quick Match</h1>
           <div className="flex items-center gap-1 sm:gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className="gap-2"
+            >
+              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+              <span className="hidden sm:inline">{soundEnabled ? 'Sound On' : 'Sound Off'}</span>
+            </Button>
             <NotificationBell userId={user.id} />
             <FriendsDialog userId={user.id} />
           </div>
@@ -560,6 +570,7 @@ export default function GameLobby() {
                 blitzStats={{ rating: profile?.blitz_rating || 1200, gamesPlayed: profile?.blitz_games_played || 0 }}
                 rapidStats={{ rating: profile?.rapid_rating || 1200, gamesPlayed: profile?.rapid_games_played || 0 }}
                 onCategoryChange={(category) => setSelectedCategory(category)}
+                soundEnabled={soundEnabled}
               />
               
               {/* Searching Status */}
@@ -592,7 +603,7 @@ export default function GameLobby() {
               
               <div className="space-y-4">
                 {/* Bullet Stats */}
-                {selectedCategory === 'Bullet' && (
+                {selectedCategory === 'BULLET' && (
                   <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -630,7 +641,7 @@ export default function GameLobby() {
                 )}
 
                 {/* Blitz Stats */}
-                {selectedCategory === 'Blitz' && (
+                {selectedCategory === 'BLITZ' && (
                   <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -668,7 +679,7 @@ export default function GameLobby() {
                 )}
 
                 {/* Rapid Stats */}
-                {selectedCategory === 'Rapid' && (
+                {selectedCategory === 'RAPID' && (
                   <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
