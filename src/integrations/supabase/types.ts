@@ -80,6 +80,66 @@ export type Database = {
           },
         ]
       }
+      chess_clock_sessions: {
+        Row: {
+          black_moves: number | null
+          black_time: number
+          created_at: string | null
+          game_result: string | null
+          guest_connected: boolean | null
+          host_player_side: string
+          id: string
+          is_active: boolean | null
+          is_paused: boolean | null
+          is_white_turn: boolean | null
+          last_move_at: string | null
+          move_timings: Json | null
+          session_code: string
+          time_control: number
+          time_increment: number
+          white_moves: number | null
+          white_time: number
+        }
+        Insert: {
+          black_moves?: number | null
+          black_time: number
+          created_at?: string | null
+          game_result?: string | null
+          guest_connected?: boolean | null
+          host_player_side: string
+          id?: string
+          is_active?: boolean | null
+          is_paused?: boolean | null
+          is_white_turn?: boolean | null
+          last_move_at?: string | null
+          move_timings?: Json | null
+          session_code: string
+          time_control: number
+          time_increment: number
+          white_moves?: number | null
+          white_time: number
+        }
+        Update: {
+          black_moves?: number | null
+          black_time?: number
+          created_at?: string | null
+          game_result?: string | null
+          guest_connected?: boolean | null
+          host_player_side?: string
+          id?: string
+          is_active?: boolean | null
+          is_paused?: boolean | null
+          is_white_turn?: boolean | null
+          last_move_at?: string | null
+          move_timings?: Json | null
+          session_code?: string
+          time_control?: number
+          time_increment?: number
+          white_moves?: number | null
+          white_time?: number
+        }
+        Relationships: []
+      }
       event_participants: {
         Row: {
           event_id: string

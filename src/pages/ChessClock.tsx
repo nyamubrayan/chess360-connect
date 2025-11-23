@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Clock, Play, Pause, RotateCcw, Settings, Zap } from "lucide-react";
+import { Clock, Play, Pause, RotateCcw, Settings, Zap, Users, Share2, Link2 } from "lucide-react";
 import { useChessSounds } from "@/hooks/useChessSounds";
 import {
   Dialog,
@@ -12,15 +12,19 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 const ChessClock = () => {
-  const [whiteTime, setWhiteTime] = useState(300); // 5 minutes default
+  const { toast } = useToast();
+  const [whiteTime, setWhiteTime] = useState(300);
   const [blackTime, setBlackTime] = useState(300);
   const [isWhiteTurn, setIsWhiteTurn] = useState(true);
   const [isActive, setIsActive] = useState(false);
   const [timeControl, setTimeControl] = useState(300);
   const [increment, setIncrement] = useState(0);
-  const [settingsOpen, setSettingsOpen] = useState(true); // Show settings first
+  const [settingsOpen, setSettingsOpen] = useState(true);
   const [isConfigured, setIsConfigured] = useState(false);
   const [playerSide, setPlayerSide] = useState<"white" | "black">("white");
   const [whiteMoves, setWhiteMoves] = useState(0);
@@ -30,29 +34,228 @@ const ChessClock = () => {
   const [showReport, setShowReport] = useState(false);
   const [pauseMenuOpen, setPauseMenuOpen] = useState(false);
   const [gameResult, setGameResult] = useState<"white" | "black" | "draw" | null>(null);
+  
+  // Multi-device state
+  const [multiDeviceMode, setMultiDeviceMode] = useState(false);
+  const [sessionCode, setSessionCode] = useState("");
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [showCodeDialog, setShowCodeDialog] = useState(false);
+  const [codeInput, setCodeInput] = useState("");
+  const [isHost, setIsHost] = useState(false);
+  const [guestConnected, setGuestConnected] = useState(false);
+  
   const { playMove } = useChessSounds();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
+
+  // Generate a random 6-character code
+  const generateCode = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+  };
+
+  // Create multi-device session
+  const handleCreateSession = async () => {
+    try {
+      const code = generateCode();
+      
+      const { data, error } = await supabase
+        .from('chess_clock_sessions')
+        .insert({
+          session_code: code,
+          host_player_side: playerSide,
+          time_control: timeControl,
+          time_increment: increment,
+          white_time: whiteTime,
+          black_time: blackTime,
+          is_white_turn: true,
+          guest_connected: false,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setSessionId(data.id);
+      setSessionCode(code);
+      setIsHost(true);
+      setMultiDeviceMode(true);
+      setShowCodeDialog(true);
+      
+      // Subscribe to session updates
+      subscribeToSession(data.id);
+      
+      toast({
+        title: "Session Created!",
+        description: `Share code ${code} with your opponent`,
+      });
+    } catch (error) {
+      console.error('Error creating session:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create session",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Join existing session
+  const handleJoinSession = async () => {
+    if (!codeInput.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a session code",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('chess_clock_sessions')
+        .select()
+        .eq('session_code', codeInput.toUpperCase())
+        .single();
+
+      if (error || !data) {
+        toast({
+          title: "Error",
+          description: "Invalid session code",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update session to mark guest as connected
+      await supabase
+        .from('chess_clock_sessions')
+        .update({ guest_connected: true })
+        .eq('id', data.id);
+
+      setSessionId(data.id);
+      setSessionCode(data.session_code);
+      setIsHost(false);
+      setMultiDeviceMode(true);
+      setShowCodeDialog(false);
+      
+      // Set player side opposite to host
+      const guestSide = data.host_player_side === 'white' ? 'black' : 'white';
+      setPlayerSide(guestSide);
+      
+      // Sync clock state
+      setTimeControl(data.time_control);
+      setIncrement(data.time_increment);
+      setWhiteTime(data.white_time);
+      setBlackTime(data.black_time);
+      setIsWhiteTurn(data.is_white_turn);
+      setWhiteMoves(data.white_moves);
+      setBlackMoves(data.black_moves);
+      
+      // Subscribe to session updates
+      subscribeToSession(data.id);
+      
+      toast({
+        title: "Connected!",
+        description: "You've joined the session",
+      });
+    } catch (error) {
+      console.error('Error joining session:', error);
+      toast({
+        title: "Error",
+        description: "Failed to join session",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Subscribe to realtime session updates
+  const subscribeToSession = (sessionIdParam: string) => {
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+    }
+
+    const channel = supabase
+      .channel(`clock_session_${sessionIdParam}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'chess_clock_sessions',
+          filter: `id=eq.${sessionIdParam}`,
+        },
+        (payload) => {
+          const data = payload.new as any;
+          
+          setWhiteTime(data.white_time);
+          setBlackTime(data.black_time);
+          setIsWhiteTurn(data.is_white_turn);
+          setIsActive(!data.is_paused);
+          setWhiteMoves(data.white_moves);
+          setBlackMoves(data.black_moves);
+          setGuestConnected(data.guest_connected);
+          
+          if (data.game_result) {
+            setGameResult(data.game_result);
+            setShowReport(true);
+          }
+        }
+      )
+      .subscribe();
+
+    channelRef.current = channel;
+  };
+
+  // Update session in database
+  const updateSession = async (updates: any) => {
+    if (!sessionId) return;
+    
+    try {
+      await supabase
+        .from('chess_clock_sessions')
+        .update(updates)
+        .eq('id', sessionId);
+    } catch (error) {
+      console.error('Error updating session:', error);
+    }
+  };
 
   useEffect(() => {
     if (isActive) {
       intervalRef.current = setInterval(() => {
         if (isWhiteTurn) {
           setWhiteTime((prev) => {
-            if (prev <= 0) {
+            const newTime = prev - 1;
+            if (multiDeviceMode) {
+              updateSession({ white_time: newTime });
+            }
+            if (newTime <= 0) {
               setIsActive(false);
               setShowReport(true);
-              return 0;
+              if (multiDeviceMode) {
+                updateSession({ game_result: 'black', is_paused: true });
+              }
             }
-            return prev - 1;
+            return Math.max(0, newTime);
           });
         } else {
           setBlackTime((prev) => {
-            if (prev <= 0) {
+            const newTime = prev - 1;
+            if (multiDeviceMode) {
+              updateSession({ black_time: newTime });
+            }
+            if (newTime <= 0) {
               setIsActive(false);
               setShowReport(true);
-              return 0;
+              if (multiDeviceMode) {
+                updateSession({ game_result: 'white', is_paused: true });
+              }
             }
-            return prev - 1;
+            return Math.max(0, newTime);
           });
         }
       }, 1000);
@@ -63,7 +266,16 @@ const ChessClock = () => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [isActive, isWhiteTurn]);
+  }, [isActive, isWhiteTurn, multiDeviceMode, sessionId]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+      }
+    };
+  }, []);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -72,27 +284,51 @@ const ChessClock = () => {
   };
 
   const handleClockPress = (player: "white" | "black") => {
+    // Only allow clicks on your own side in multi-device mode
+    if (multiDeviceMode && player !== playerSide) {
+      return;
+    }
+
     if (!isActive) {
       setIsActive(true);
       setLastMoveTime(Date.now());
+      if (multiDeviceMode) {
+        updateSession({ is_paused: false });
+      }
     }
 
     if ((player === "white" && isWhiteTurn) || (player === "black" && !isWhiteTurn)) {
       playMove();
       
-      // Track move timing
       const currentTime = Date.now();
       const timeSpent = (currentTime - lastMoveTime) / 1000;
       setMoveTimings(prev => [...prev, timeSpent]);
       setLastMoveTime(currentTime);
       
-      // Increment move count
       if (player === "white") {
-        setWhiteMoves(prev => prev + 1);
-        setWhiteTime((prev) => prev + increment);
+        const newMoves = whiteMoves + 1;
+        const newTime = whiteTime + increment;
+        setWhiteMoves(newMoves);
+        setWhiteTime(newTime);
+        if (multiDeviceMode) {
+          updateSession({ 
+            white_moves: newMoves,
+            white_time: newTime,
+            is_white_turn: false 
+          });
+        }
       } else {
-        setBlackMoves(prev => prev + 1);
-        setBlackTime((prev) => prev + increment);
+        const newMoves = blackMoves + 1;
+        const newTime = blackTime + increment;
+        setBlackMoves(newMoves);
+        setBlackTime(newTime);
+        if (multiDeviceMode) {
+          updateSession({ 
+            black_moves: newMoves,
+            black_time: newTime,
+            is_white_turn: true 
+          });
+        }
       }
       
       setIsWhiteTurn(!isWhiteTurn);
@@ -110,18 +346,36 @@ const ChessClock = () => {
     setShowReport(false);
     setGameResult(null);
     if (intervalRef.current) clearInterval(intervalRef.current);
+    
+    if (multiDeviceMode && sessionId) {
+      updateSession({
+        white_time: timeControl,
+        black_time: timeControl,
+        is_white_turn: true,
+        white_moves: 0,
+        black_moves: 0,
+        is_paused: false,
+        game_result: null,
+      });
+    }
   };
 
   const handlePause = () => {
     if (isActive) {
       setIsActive(false);
       setPauseMenuOpen(true);
+      if (multiDeviceMode) {
+        updateSession({ is_paused: true });
+      }
     }
   };
 
   const handleResume = () => {
     setPauseMenuOpen(false);
     setIsActive(true);
+    if (multiDeviceMode) {
+      updateSession({ is_paused: false });
+    }
   };
 
   const handleGameEnd = (result: "white" | "black" | "draw") => {
@@ -129,6 +383,9 @@ const ChessClock = () => {
     setGameResult(result);
     setShowReport(true);
     setPauseMenuOpen(false);
+    if (multiDeviceMode) {
+      updateSession({ game_result: result, is_paused: true });
+    }
   };
 
   const handlePlayAnother = () => {
@@ -140,6 +397,18 @@ const ChessClock = () => {
     setMoveTimings([]);
     setShowReport(false);
     setGameResult(null);
+    
+    if (multiDeviceMode && sessionId) {
+      updateSession({
+        white_time: timeControl,
+        black_time: timeControl,
+        is_white_turn: true,
+        white_moves: 0,
+        black_moves: 0,
+        is_paused: false,
+        game_result: null,
+      });
+    }
   };
 
   const applyPreset = (minutes: number, incrementSeconds: number) => {
@@ -180,8 +449,55 @@ const ChessClock = () => {
     return "text-foreground";
   };
 
+  // Calculate statistics
+  const calculateStats = (moves: number) => {
+    if (moves === 0) return { avgTime: 0, fastestMove: 0, slowestMove: 0 };
+    
+    const playerMoveTimings = moveTimings.filter((_, idx) => {
+      if (playerSide === "white") {
+        return idx % 2 === 0;
+      } else {
+        return idx % 2 === 1;
+      }
+    });
+    
+    if (playerMoveTimings.length === 0) return { avgTime: 0, fastestMove: 0, slowestMove: 0 };
+    
+    const avgTime = playerMoveTimings.reduce((a, b) => a + b, 0) / playerMoveTimings.length;
+    const fastestMove = Math.min(...playerMoveTimings);
+    const slowestMove = Math.max(...playerMoveTimings);
+    
+    return { avgTime, fastestMove, slowestMove };
+  };
+
+  const whiteStats = calculateStats(whiteMoves);
+  const blackStats = calculateStats(blackMoves);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex flex-col overflow-hidden">
+      {/* Code Display Dialog */}
+      <Dialog open={showCodeDialog} onOpenChange={setShowCodeDialog}>
+        <DialogContent className="gradient-card border-2 border-primary/20 shadow-2xl max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-center">Share Session Code</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="text-center space-y-2">
+              <p className="text-muted-foreground">Share this code with your opponent:</p>
+              <div className="bg-muted p-6 rounded-lg">
+                <p className="text-4xl font-mono font-bold tracking-widest text-primary">{sessionCode}</p>
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                {guestConnected ? "✓ Opponent connected!" : "Waiting for opponent..."}
+              </p>
+            </div>
+            <Button onClick={() => setShowCodeDialog(false)} className="w-full">
+              Got it!
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Header */}
       <div className="p-4 flex items-center justify-between border-b border-border/50 backdrop-blur-sm bg-background/80 z-10">
         <div className="flex items-center gap-3">
@@ -189,6 +505,12 @@ const ChessClock = () => {
             <Clock className="w-6 h-6 text-primary-foreground" />
           </div>
           <h1 className="text-2xl font-bold text-gradient">Chess Clock</h1>
+          {multiDeviceMode && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Users className="w-4 h-4" />
+              <span className="font-mono">{sessionCode}</span>
+            </div>
+          )}
         </div>
         
         <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
@@ -204,6 +526,42 @@ const ChessClock = () => {
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-6 py-4">
+              {/* Multi-Device Options */}
+              {!multiDeviceMode && (
+                <div className="space-y-3 p-4 bg-primary/5 rounded-lg border border-primary/20">
+                  <h3 className="font-semibold text-lg flex items-center gap-2">
+                    <Users className="w-5 h-5 text-primary" />
+                    Multi-Device Mode
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Use two phones - each player clicks their own device
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    <Button 
+                      onClick={handleCreateSession}
+                      className="w-full h-12 font-bold"
+                      variant="default"
+                    >
+                      <Share2 className="w-4 h-4 mr-2" />
+                      Create Session & Get Code
+                    </Button>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Enter Code"
+                        value={codeInput}
+                        onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+                        className="flex-1 font-mono"
+                        maxLength={6}
+                      />
+                      <Button onClick={handleJoinSession} variant="outline">
+                        <Link2 className="w-4 h-4 mr-2" />
+                        Join
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Side Selection */}
               <div className="space-y-3">
                 <h3 className="font-semibold text-lg flex items-center gap-2">
@@ -215,6 +573,7 @@ const ChessClock = () => {
                     variant={playerSide === "white" ? "default" : "outline"}
                     onClick={() => setPlayerSide("white")}
                     className="h-16 text-lg font-bold transition-all"
+                    disabled={multiDeviceMode}
                   >
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-full border-4 border-current" />
@@ -225,6 +584,7 @@ const ChessClock = () => {
                     variant={playerSide === "black" ? "default" : "outline"}
                     onClick={() => setPlayerSide("black")}
                     className="h-16 text-lg font-bold transition-all"
+                    disabled={multiDeviceMode}
                   >
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-full bg-current" />
@@ -311,15 +671,15 @@ const ChessClock = () => {
 
       {/* Vertical Clock Display */}
       <div className="flex-1 flex flex-col relative">
-        {/* Black Player - Top/Left */}
+        {/* Black Player - Top */}
         <motion.div
-          className={`flex-1 flex items-center justify-center cursor-pointer relative overflow-hidden transition-all duration-500 ${
+          className={`flex-1 flex items-center justify-center ${multiDeviceMode && playerSide === 'black' ? 'cursor-pointer' : multiDeviceMode ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'} relative overflow-hidden transition-all duration-500 ${
             !isWhiteTurn && isActive 
               ? "bg-gradient-to-br from-primary/30 via-accent/20 to-primary/10" 
               : "bg-gradient-to-br from-muted/20 to-background"
           }`}
           onClick={() => handleClockPress("black")}
-          whileTap={{ scale: 0.98 }}
+          whileTap={(!multiDeviceMode || playerSide === 'black') ? { scale: 0.98 } : {}}
           animate={!isWhiteTurn && isActive ? {
             boxShadow: [
               "inset 0 0 60px rgba(var(--primary), 0.2)",
@@ -329,7 +689,6 @@ const ChessClock = () => {
           } : {}}
           transition={{ duration: 2, repeat: Infinity }}
         >
-          {/* Active Glow Border */}
           <AnimatePresence>
             {!isWhiteTurn && isActive && (
               <motion.div
@@ -341,7 +700,6 @@ const ChessClock = () => {
             )}
           </AnimatePresence>
 
-          {/* Animated Background Pattern */}
           {!isWhiteTurn && isActive && (
             <motion.div
               className="absolute inset-0 opacity-10"
@@ -384,7 +742,7 @@ const ChessClock = () => {
           </div>
         </motion.div>
 
-        {/* Divider with Pulse Animation */}
+        {/* Divider */}
         <motion.div 
           className="h-2 relative"
           animate={{
@@ -398,15 +756,15 @@ const ChessClock = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-primary via-accent to-primary animate-pulse opacity-50" />
         </motion.div>
 
-        {/* White Player - Bottom/Right */}
+        {/* White Player - Bottom */}
         <motion.div
-          className={`flex-1 flex items-center justify-center cursor-pointer relative overflow-hidden transition-all duration-500 ${
+          className={`flex-1 flex items-center justify-center ${multiDeviceMode && playerSide === 'white' ? 'cursor-pointer' : multiDeviceMode ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'} relative overflow-hidden transition-all duration-500 ${
             isWhiteTurn && isActive 
               ? "bg-gradient-to-br from-primary/30 via-accent/20 to-primary/10" 
               : "bg-gradient-to-br from-muted/20 to-background"
           }`}
           onClick={() => handleClockPress("white")}
-          whileTap={{ scale: 0.98 }}
+          whileTap={(!multiDeviceMode || playerSide === 'white') ? { scale: 0.98 } : {}}
           animate={isWhiteTurn && isActive ? {
             boxShadow: [
               "inset 0 0 60px rgba(var(--primary), 0.2)",
@@ -416,7 +774,6 @@ const ChessClock = () => {
           } : {}}
           transition={{ duration: 2, repeat: Infinity }}
         >
-          {/* Active Glow Border */}
           <AnimatePresence>
             {isWhiteTurn && isActive && (
               <motion.div
@@ -428,7 +785,6 @@ const ChessClock = () => {
             )}
           </AnimatePresence>
 
-          {/* Animated Background Pattern */}
           {isWhiteTurn && isActive && (
             <motion.div
               className="absolute inset-0 opacity-10"
@@ -449,7 +805,7 @@ const ChessClock = () => {
               animate={isWhiteTurn && isActive ? { y: [0, -5, 0] } : {}}
               transition={{ duration: 2, repeat: Infinity }}
             >
-              <div className="w-10 h-10 rounded-full border-4 border-foreground shadow-xl bg-background" />
+              <div className="w-6 h-6 rounded-full border-4 border-current" />
               <span className="text-3xl font-bold tracking-wide">White</span>
             </motion.div>
             
@@ -472,236 +828,145 @@ const ChessClock = () => {
         </motion.div>
       </div>
 
-      {/* Controls Footer */}
-      <div className="p-6 border-t border-border/50 backdrop-blur-sm bg-background/90 z-10">
-        <div className="max-w-3xl mx-auto">
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
-            <Button
-              onClick={handlePause}
-              size="lg"
-              variant="default"
-              className="w-full sm:w-auto min-w-[140px] shadow-lg"
-              disabled={!isActive || whiteTime === 0 || blackTime === 0}
-            >
-              <Pause className="w-5 h-5 mr-2" />
-              Pause
-            </Button>
-            <Button onClick={handleReset} size="lg" variant="outline" className="w-full sm:w-auto min-w-[140px] shadow-lg">
-              <RotateCcw className="w-5 h-5 mr-2" />
-              Reset
-            </Button>
-          </div>
+      {/* Control Buttons */}
+      {isConfigured && (
+        <div className="p-6 flex items-center justify-center gap-4 border-t border-border/50 backdrop-blur-sm bg-background/80">
+          <Button
+            onClick={handlePause}
+            disabled={!isActive}
+            size="lg"
+            variant="outline"
+            className="h-14 px-8"
+          >
+            <Pause className="w-5 h-5 mr-2" />
+            Pause
+          </Button>
+          <Button
+            onClick={handleReset}
+            size="lg"
+            variant="outline"
+            className="h-14 px-8"
+          >
+            <RotateCcw className="w-5 h-5 mr-2" />
+            Reset
+          </Button>
+        </div>
+      )}
 
-          <div className="text-center">
-            <p className="text-sm text-muted-foreground font-medium">
-              Time Control: <span className="text-foreground font-bold">{formatTime(timeControl)}</span>
-              {increment > 0 && <span className="text-gold"> +{increment}s</span>}
-            </p>
+      {/* Pause Menu Dialog */}
+      <Dialog open={pauseMenuOpen} onOpenChange={setPauseMenuOpen}>
+        <DialogContent className="gradient-card border-2 border-primary/20 shadow-2xl max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-center">Game Paused</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-4">
+            <Button onClick={handleResume} className="w-full h-14 text-lg font-bold">
+              <Play className="w-5 h-5 mr-2" />
+              Resume
+            </Button>
+            <div className="grid grid-cols-3 gap-2">
+              <Button onClick={() => handleGameEnd("white")} variant="outline" className="h-12">
+                White Won
+              </Button>
+              <Button onClick={() => handleGameEnd("black")} variant="outline" className="h-12">
+                Black Won
+              </Button>
+              <Button onClick={() => handleGameEnd("draw")} variant="outline" className="h-12">
+                Draw
+              </Button>
+            </div>
           </div>
+        </DialogContent>
+      </Dialog>
 
-          {/* Pause Menu Dialog */}
-          <Dialog open={pauseMenuOpen} onOpenChange={setPauseMenuOpen}>
-            <DialogContent className="gradient-card border-2 border-primary/20 shadow-2xl max-w-sm">
-              <DialogHeader>
-                <DialogTitle className="text-2xl font-bold text-center bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                  ⏸️ Game Paused
-                </DialogTitle>
-              </DialogHeader>
-              <div className="space-y-3 py-4">
-                <Button
-                  onClick={handleResume}
-                  size="lg"
-                  className="w-full h-14 text-lg font-bold"
-                >
-                  <Play className="w-5 h-5 mr-2" />
-                  Resume
-                </Button>
-                
-                <div className="pt-2 border-t border-border">
-                  <p className="text-sm text-muted-foreground text-center mb-3">End Game & View Stats</p>
-                  <div className="space-y-2">
-                    <Button
-                      onClick={() => handleGameEnd("white")}
-                      variant="outline"
-                      size="lg"
-                      className="w-full h-12 font-bold hover:bg-success/20 hover:border-success"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 rounded-full border-4 border-current" />
-                        White Won
-                      </div>
-                    </Button>
-                    <Button
-                      onClick={() => handleGameEnd("black")}
-                      variant="outline"
-                      size="lg"
-                      className="w-full h-12 font-bold hover:bg-success/20 hover:border-success"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 rounded-full bg-current" />
-                        Black Won
-                      </div>
-                    </Button>
-                    <Button
-                      onClick={() => handleGameEnd("draw")}
-                      variant="outline"
-                      size="lg"
-                      className="w-full h-12 font-bold hover:bg-primary/20 hover:border-primary"
-                    >
-                      🤝 Draw
-                    </Button>
+      {/* Game Report Dialog */}
+      <Dialog open={showReport} onOpenChange={setShowReport}>
+        <DialogContent className="gradient-card border-2 border-primary/20 shadow-2xl max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-3xl font-bold text-center">
+              📊 Game Statistics
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            <div className="text-center space-y-2">
+              <p className="text-2xl font-bold">
+                {gameResult === "white" ? "White Wins!" : gameResult === "black" ? "Black Wins!" : "Draw!"}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              {/* White Stats */}
+              <div className="space-y-4 p-6 bg-muted/30 rounded-lg border border-border">
+                <div className="flex items-center gap-3 pb-3 border-b border-border">
+                  <div className="w-8 h-8 rounded-full border-4 border-current" />
+                  <h3 className="text-2xl font-bold">White</h3>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Moves:</span>
+                    <span className="font-bold text-lg">{whiteMoves}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Avg Time/Move:</span>
+                    <span className="font-bold text-lg">{whiteStats.avgTime.toFixed(1)}s</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Fastest Move:</span>
+                    <span className="font-bold text-lg">{whiteStats.fastestMove.toFixed(1)}s</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Slowest Move:</span>
+                    <span className="font-bold text-lg">{whiteStats.slowestMove.toFixed(1)}s</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-border">
+                    <span className="text-muted-foreground">Time Left:</span>
+                    <span className="font-bold text-xl text-primary">{formatTime(whiteTime)}</span>
                   </div>
                 </div>
               </div>
-            </DialogContent>
-          </Dialog>
 
-          {/* Game Report */}
-          <AnimatePresence>
-            {showReport && (
-              <motion.div 
-                initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -20, scale: 0.9 }}
-                className="mt-6 space-y-4"
-              >
-                {/* Winner Banner */}
-                <div className={`text-center p-6 rounded-xl shadow-xl border-2 ${
-                  gameResult === "draw" 
-                    ? "bg-gradient-to-r from-primary/30 via-accent/20 to-primary/30 border-primary"
-                    : "bg-gradient-to-r from-success/30 via-success/20 to-success/30 border-success"
-                }`}>
-                  <p className={`text-3xl font-black mb-2 ${gameResult === "draw" ? "text-primary" : "text-success"}`}>
-                    {gameResult === "draw" ? "🤝 Draw!" : 
-                     gameResult === "white" ? "🏆 White Wins!" :
-                     gameResult === "black" ? "🏆 Black Wins!" :
-                     whiteTime === 0 ? "🏆 Black Wins!" : "🏆 White Wins!"}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {gameResult === "draw" ? "Game ended in a draw" :
-                     gameResult ? "Game concluded by decision" :
-                     `${whiteTime === 0 ? "White" : "Black"} ran out of time`}
-                  </p>
+              {/* Black Stats */}
+              <div className="space-y-4 p-6 bg-muted/30 rounded-lg border border-border">
+                <div className="flex items-center gap-3 pb-3 border-b border-border">
+                  <div className="w-8 h-8 rounded-full bg-current" />
+                  <h3 className="text-2xl font-bold">Black</h3>
                 </div>
-
-                {/* Game Statistics Report */}
-                <div className="p-6 bg-gradient-to-br from-card via-card to-primary/5 border-2 border-primary/20 rounded-xl shadow-xl space-y-4">
-                  <h3 className="text-2xl font-bold text-center mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                    📊 Game Statistics
-                  </h3>
-                  
-                  {/* Both Players Stats Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* White Player Stats */}
-                    <div className="space-y-3 p-5 bg-gradient-to-br from-background/80 to-primary/5 rounded-lg border-2 border-border">
-                      <div className="flex items-center justify-center gap-2 mb-3 pb-3 border-b border-border">
-                        <div className="w-6 h-6 rounded-full border-4 border-foreground shadow-lg" />
-                        <span className="font-bold text-xl">White</span>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center p-3 bg-background/60 rounded-lg">
-                          <span className="text-sm text-muted-foreground">Moves</span>
-                          <span className="font-bold text-lg text-primary">{whiteMoves}</span>
-                        </div>
-
-                        <div className="flex justify-between items-center p-3 bg-background/60 rounded-lg">
-                          <span className="text-sm text-muted-foreground">Avg Time</span>
-                          <span className="font-bold text-lg text-accent">
-                            {whiteMoves > 0 
-                              ? `${(moveTimings.filter((_, i) => i % 2 === 0).reduce((a, b) => a + b, 0) / whiteMoves).toFixed(1)}s`
-                              : "0s"}
-                          </span>
-                        </div>
-
-                        <div className="flex justify-between items-center p-3 bg-background/60 rounded-lg">
-                          <span className="text-sm text-muted-foreground">Fastest</span>
-                          <span className="font-bold text-lg text-success">
-                            {moveTimings.filter((_, i) => i % 2 === 0).length > 0
-                              ? `${Math.min(...moveTimings.filter((_, i) => i % 2 === 0)).toFixed(1)}s`
-                              : "0s"}
-                          </span>
-                        </div>
-
-                        <div className="flex justify-between items-center p-3 bg-background/60 rounded-lg">
-                          <span className="text-sm text-muted-foreground">Slowest</span>
-                          <span className="font-bold text-lg text-destructive">
-                            {moveTimings.filter((_, i) => i % 2 === 0).length > 0
-                              ? `${Math.max(...moveTimings.filter((_, i) => i % 2 === 0)).toFixed(1)}s`
-                              : "0s"}
-                          </span>
-                        </div>
-
-                        <div className="flex justify-between items-center p-3 bg-primary/10 rounded-lg border border-primary/40">
-                          <span className="text-sm font-medium">Time Left</span>
-                          <span className="font-bold text-lg text-primary">{formatTime(whiteTime)}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Black Player Stats */}
-                    <div className="space-y-3 p-5 bg-gradient-to-br from-background/80 to-primary/5 rounded-lg border-2 border-border">
-                      <div className="flex items-center justify-center gap-2 mb-3 pb-3 border-b border-border">
-                        <div className="w-6 h-6 rounded-full bg-foreground shadow-lg" />
-                        <span className="font-bold text-xl">Black</span>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center p-3 bg-background/60 rounded-lg">
-                          <span className="text-sm text-muted-foreground">Moves</span>
-                          <span className="font-bold text-lg text-primary">{blackMoves}</span>
-                        </div>
-
-                        <div className="flex justify-between items-center p-3 bg-background/60 rounded-lg">
-                          <span className="text-sm text-muted-foreground">Avg Time</span>
-                          <span className="font-bold text-lg text-accent">
-                            {blackMoves > 0 
-                              ? `${(moveTimings.filter((_, i) => i % 2 === 1).reduce((a, b) => a + b, 0) / blackMoves).toFixed(1)}s`
-                              : "0s"}
-                          </span>
-                        </div>
-
-                        <div className="flex justify-between items-center p-3 bg-background/60 rounded-lg">
-                          <span className="text-sm text-muted-foreground">Fastest</span>
-                          <span className="font-bold text-lg text-success">
-                            {moveTimings.filter((_, i) => i % 2 === 1).length > 0
-                              ? `${Math.min(...moveTimings.filter((_, i) => i % 2 === 1)).toFixed(1)}s`
-                              : "0s"}
-                          </span>
-                        </div>
-
-                        <div className="flex justify-between items-center p-3 bg-background/60 rounded-lg">
-                          <span className="text-sm text-muted-foreground">Slowest</span>
-                          <span className="font-bold text-lg text-destructive">
-                            {moveTimings.filter((_, i) => i % 2 === 1).length > 0
-                              ? `${Math.max(...moveTimings.filter((_, i) => i % 2 === 1)).toFixed(1)}s`
-                              : "0s"}
-                          </span>
-                        </div>
-
-                        <div className="flex justify-between items-center p-3 bg-primary/10 rounded-lg border border-primary/40">
-                          <span className="text-sm font-medium">Time Left</span>
-                          <span className="font-bold text-lg text-primary">{formatTime(blackTime)}</span>
-                        </div>
-                      </div>
-                    </div>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Moves:</span>
+                    <span className="font-bold text-lg">{blackMoves}</span>
                   </div>
-
-                  {/* Play Another Game Button */}
-                  <Button
-                    onClick={handlePlayAnother}
-                    size="lg"
-                    className="w-full h-14 text-lg font-bold mt-4"
-                  >
-                    <Play className="w-5 h-5 mr-2" />
-                    Play Another Game
-                  </Button>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Avg Time/Move:</span>
+                    <span className="font-bold text-lg">{blackStats.avgTime.toFixed(1)}s</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Fastest Move:</span>
+                    <span className="font-bold text-lg">{blackStats.fastestMove.toFixed(1)}s</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Slowest Move:</span>
+                    <span className="font-bold text-lg">{blackStats.slowestMove.toFixed(1)}s</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-border">
+                    <span className="text-muted-foreground">Time Left:</span>
+                    <span className="font-bold text-xl text-primary">{formatTime(blackTime)}</span>
+                  </div>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </div>
+              </div>
+            </div>
+
+            <Button
+              onClick={handlePlayAnother}
+              size="lg"
+              className="w-full h-14 text-lg font-bold mt-4"
+            >
+              <Play className="w-5 h-5 mr-2" />
+              Play Another Game
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
