@@ -4,7 +4,7 @@ project_id = "bsalyuxinhzdqhwnbdvf"
 verify_jwt = true
 
 [functions.analyze-move]
-verify_jwt = false
+verify_jwt = true
 
 [functions.validate-chess-move]
 verify_jwt = true
@@ -22,7 +22,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.explain-opening-move]
-verify_jwt = false
+verify_jwt = true
 
 [functions.generate-game-highlight]
 verify_jwt = true
