@@ -351,17 +351,21 @@ const ChessClock = () => {
       return;
     }
 
-    // At game start (no moves made), only Black can press to start the clock
-    if (whiteMoves === 0 && blackMoves === 0) {
+    // At game start (no moves made), ONLY Black can press to start the clock
+    if (whiteMoves === 0 && blackMoves === 0 && !isActive) {
       if (player !== "black") {
-        return; // Only Black can start the game
+        toast({
+          title: "Black Starts First",
+          description: "Black must press their clock to start the game",
+        });
+        return;
       }
       
       // Black starts the clock, which begins White's time
       playMove();
       setIsActive(true);
       setLastMoveTime(Date.now());
-      const newMoves = blackMoves + 1;
+      const newMoves = 1;
       const newTime = blackTime + increment;
       setBlackMoves(newMoves);
       setBlackTime(newTime);
@@ -373,6 +377,7 @@ const ChessClock = () => {
           black_time: newTime,
           is_white_turn: true,
           is_paused: false,
+          is_active: true,
         });
       }
       return;
@@ -382,7 +387,7 @@ const ChessClock = () => {
       setIsActive(true);
       setLastMoveTime(Date.now());
       if (multiDeviceMode) {
-        updateSession({ is_paused: false });
+        updateSession({ is_paused: false, is_active: true });
       }
     }
 
@@ -430,7 +435,7 @@ const ChessClock = () => {
     setIsActive(false);
     setWhiteTime(timeControl);
     setBlackTime(timeControl);
-    setIsWhiteTurn(playerSide === "white");
+    setIsWhiteTurn(true);
     setWhiteMoves(0);
     setBlackMoves(0);
     setMoveTimings([]);
@@ -446,6 +451,7 @@ const ChessClock = () => {
         white_moves: 0,
         black_moves: 0,
         is_paused: false,
+        is_active: false,
         game_result: null,
       });
     }
@@ -482,12 +488,13 @@ const ChessClock = () => {
   const handlePlayAnother = () => {
     setWhiteTime(timeControl);
     setBlackTime(timeControl);
-    setIsWhiteTurn(playerSide === "white");
+    setIsWhiteTurn(true);
     setWhiteMoves(0);
     setBlackMoves(0);
     setMoveTimings([]);
     setShowReport(false);
     setGameResult(null);
+    setIsActive(false);
     
     if (multiDeviceMode && sessionId) {
       updateSession({
@@ -497,6 +504,7 @@ const ChessClock = () => {
         white_moves: 0,
         black_moves: 0,
         is_paused: false,
+        is_active: false,
         game_result: null,
       });
     }
@@ -508,7 +516,7 @@ const ChessClock = () => {
     setWhiteTime(minutes * 60);
     setBlackTime(minutes * 60);
     setIsActive(false);
-    setIsWhiteTurn(playerSide === "white");
+    setIsWhiteTurn(true);
     setWhiteMoves(0);
     setBlackMoves(0);
     setMoveTimings([]);
@@ -524,7 +532,7 @@ const ChessClock = () => {
     setWhiteTime(seconds);
     setBlackTime(seconds);
     setIsActive(false);
-    setIsWhiteTurn(playerSide === "white");
+    setIsWhiteTurn(true);
     setWhiteMoves(0);
     setBlackMoves(0);
     setMoveTimings([]);
