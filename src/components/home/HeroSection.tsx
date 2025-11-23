@@ -8,7 +8,7 @@ import heroImage from "@/assets/chess-hero.jpg";
 export const HeroSection = () => {
   const navigate = useNavigate();
   const [currentWord, setCurrentWord] = useState(0);
-  const words = ["Smart Training", "Play Online", "Detailed Analysis", "Chessmate Networking", "Smart Puzzles"];
+  const words = ["Smart Training", "Play Online", "Detailed Analysis", "Chessmate Networking", "Smart Puzzles", "Smart Chess Clock"];
   const [currentChessPiece, setCurrentChessPiece] = useState(0);
   
   const chessPieces = [
