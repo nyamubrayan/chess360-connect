@@ -499,6 +499,7 @@ const ChessClock = () => {
   };
 
   const handlePlayAnother = () => {
+    // Reset game state but keep time control
     setWhiteTime(timeControl);
     setBlackTime(timeControl);
     setIsWhiteTurn(true);
@@ -508,19 +509,18 @@ const ChessClock = () => {
     setShowReport(false);
     setGameResult(null);
     setIsActive(false);
+    setMultiDeviceMode(false);
+    setSessionCode("");
+    setSessionId(null);
+    setIsHost(false);
+    setGuestConnected(false);
     
-    if (multiDeviceMode && sessionId) {
-      updateSession({
-        white_time: timeControl,
-        black_time: timeControl,
-        is_white_turn: true,
-        white_moves: 0,
-        black_moves: 0,
-        is_paused: false,
-        is_active: false,
-        game_result: null,
-      });
-    }
+    // Open settings at side selection step with time already configured
+    setIsConfigured(false);
+    setSetupStep(1);
+    setSelectedTimeControl({ minutes: timeControl / 60, increment });
+    setMultiDeviceSetup(false);
+    setSettingsOpen(true);
   };
 
   const applyPreset = (minutes: number, incrementSeconds: number) => {
@@ -752,10 +752,17 @@ const ChessClock = () => {
                   </div>
                   
                   <Button 
-                    onClick={() => setSetupStep(2)}
+                    onClick={() => {
+                      // If time control is already set (from Play Another Game), skip to game mode step
+                      if (selectedTimeControl) {
+                        setSetupStep(3);
+                      } else {
+                        setSetupStep(2);
+                      }
+                    }}
                     className="w-full h-12 text-base font-bold"
                   >
-                    Next: Time Control
+                    {selectedTimeControl ? 'Next: Game Mode' : 'Next: Time Control'}
                   </Button>
                 </motion.div>
               )}
@@ -891,6 +898,15 @@ const ChessClock = () => {
                   <div className="space-y-3">
                     <Button
                       onClick={() => {
+                        // Apply time control if coming from Play Another Game
+                        if (selectedTimeControl) {
+                          const seconds = selectedTimeControl.minutes * 60;
+                          setTimeControl(seconds);
+                          setIncrement(selectedTimeControl.increment);
+                          setWhiteTime(seconds);
+                          setBlackTime(seconds);
+                          setIsConfigured(true);
+                        }
                         setSettingsOpen(false);
                       }}
                       className="w-full h-16 text-base font-bold"
