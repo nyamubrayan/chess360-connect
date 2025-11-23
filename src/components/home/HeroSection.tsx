@@ -41,14 +41,14 @@ export const HeroSection = () => {
               </span>
               <span className="block mt-2 text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl">
                 Explore{" "}
-                <span className="relative inline-block min-w-[180px] xs:min-w-[220px] sm:min-w-[280px] md:min-w-[340px] lg:min-w-[400px] text-left">
+                <span className="relative inline-block min-w-[140px] xs:min-w-[170px] sm:min-w-[210px] md:min-w-[250px] lg:min-w-[300px] text-left align-baseline">
                   <span 
                     key={currentWord}
-                    className="absolute left-0 top-0 text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent transition-opacity duration-700 ease-in-out animate-[fade-in_0.7s_ease-in-out]"
+                    className="absolute left-0 top-0 text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent transition-opacity duration-700 ease-in-out animate-[fade-in_0.7s_ease-in-out]"
                   >
                     {words[currentWord]}
                   </span>
-                  <span className="invisible text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl">{words[currentWord]}</span>
+                  <span className="invisible text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl">{words[currentWord]}</span>
                 </span>
               </span>
             </h1>
