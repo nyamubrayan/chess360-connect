@@ -12,7 +12,7 @@ export const HeroSection = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentWord((prev) => (prev + 1) % words.length);
-    }, 2500);
+    }, 3000);
     return () => clearInterval(interval);
   }, []);
 
@@ -43,7 +43,7 @@ export const HeroSection = () => {
                 <span className="inline-block min-w-[280px] sm:min-w-[350px] lg:min-w-[450px]">
                   <span 
                     key={currentWord}
-                    className="inline-block bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent animate-fade-in"
+                    className="inline-block bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent transition-opacity duration-700 ease-in-out animate-[fade-in_0.7s_ease-in-out]"
                   >
                     {words[currentWord]}
                   </span>
