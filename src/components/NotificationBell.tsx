@@ -39,6 +39,11 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
     notification: Notification | null;
     senderName: string | null;
   }>({ open: false, notification: null, senderName: null });
+  const [rematchDialog, setRematchDialog] = useState<{
+    open: boolean;
+    notification: Notification | null;
+    senderName: string | null;
+  }>({ open: false, notification: null, senderName: null });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -157,69 +162,25 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
       }
     }
 
-    // Handle rematch requests
+    // Handle rematch requests - show dialog
     if (notification.type === 'rematch_request' && notification.sender_id) {
       try {
-        // Fetch the original game to get time control settings
-        const { data: originalGame } = await supabase
-          .from('games')
-          .select('time_control, time_increment')
-          .eq('id', notification.room_id!)
+        const { data: senderProfile } = await supabase
+          .from('profiles')
+          .select('display_name, username')
+          .eq('id', notification.sender_id)
           .single();
 
-        if (!originalGame) {
-          toast.error('Failed to load rematch details');
-          return;
-        }
-
-        // Create new game with the same time control
-        const isWhite = Math.random() < 0.5;
-        const whitePlayerId = isWhite ? userId : notification.sender_id;
-        const blackPlayerId = isWhite ? notification.sender_id : userId;
-        const timeInSeconds = originalGame.time_control * 60;
-
-        const { data: newGame, error: gameError } = await supabase
-          .from('games')
-          .insert({
-            white_player_id: whitePlayerId,
-            black_player_id: blackPlayerId,
-            time_control: originalGame.time_control,
-            time_increment: originalGame.time_increment,
-            white_time_remaining: timeInSeconds,
-            black_time_remaining: timeInSeconds,
-            status: 'active',
-            last_move_at: new Date().toISOString(),
-          })
-          .select()
-          .single();
-
-        if (gameError) throw gameError;
-
-        // Send notifications to both players
-        await supabase.from('notifications').insert([
-          {
-            user_id: whitePlayerId,
-            type: 'match_found',
-            title: 'Rematch Started!',
-            message: 'Your rematch has started. You are playing as White.',
-            room_id: newGame.id,
-          },
-          {
-            user_id: blackPlayerId,
-            type: 'match_found',
-            title: 'Rematch Started!',
-            message: 'Your rematch has started. You are playing as Black.',
-            room_id: newGame.id,
-          },
-        ]);
-
-        toast.success('Rematch accepted! Starting game...');
-        navigate(`/game/${newGame.id}`);
+        setRematchDialog({
+          open: true,
+          notification,
+          senderName: senderProfile?.display_name || senderProfile?.username || 'A player'
+        });
         setOpen(false);
         return;
       } catch (error) {
-        console.error('Error creating rematch:', error);
-        toast.error('Failed to start rematch');
+        console.error('Error loading rematch request:', error);
+        toast.error('Failed to load rematch request');
         return;
       }
     }
@@ -406,6 +367,91 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
     }
   };
 
+  const handleAcceptRematch = async () => {
+    if (!rematchDialog.notification?.room_id || !rematchDialog.notification?.sender_id) return;
+
+    try {
+      // Fetch the original game to get time control settings
+      const { data: originalGame } = await supabase
+        .from('games')
+        .select('time_control, time_increment')
+        .eq('id', rematchDialog.notification.room_id)
+        .single();
+
+      if (!originalGame) {
+        toast.error('Failed to load rematch details');
+        return;
+      }
+
+      // Create new game with the same time control
+      const isWhite = Math.random() < 0.5;
+      const whitePlayerId = isWhite ? userId : rematchDialog.notification.sender_id;
+      const blackPlayerId = isWhite ? rematchDialog.notification.sender_id : userId;
+      const timeInSeconds = originalGame.time_control * 60;
+
+      const { data: newGame, error: gameError } = await supabase
+        .from('games')
+        .insert({
+          white_player_id: whitePlayerId,
+          black_player_id: blackPlayerId,
+          time_control: originalGame.time_control,
+          time_increment: originalGame.time_increment,
+          white_time_remaining: timeInSeconds,
+          black_time_remaining: timeInSeconds,
+          status: 'active',
+          last_move_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (gameError) throw gameError;
+
+      // Send notifications to both players
+      await supabase.from('notifications').insert([
+        {
+          user_id: whitePlayerId,
+          type: 'match_found',
+          title: 'Rematch Started!',
+          message: 'Your rematch has started. You are playing as White.',
+          room_id: newGame.id,
+        },
+        {
+          user_id: blackPlayerId,
+          type: 'match_found',
+          title: 'Rematch Started!',
+          message: 'Your rematch has started. You are playing as Black.',
+          room_id: newGame.id,
+        },
+      ]);
+
+      toast.success('Rematch accepted! Starting game...');
+      setRematchDialog({ open: false, notification: null, senderName: null });
+      navigate(`/game/${newGame.id}`);
+    } catch (error) {
+      console.error('Error creating rematch:', error);
+      toast.error('Failed to start rematch');
+    }
+  };
+
+  const handleDeclineRematch = async () => {
+    if (!rematchDialog.notification) return;
+
+    try {
+      // Delete the notification
+      await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', rematchDialog.notification.id);
+
+      toast.info('Rematch declined');
+      setRematchDialog({ open: false, notification: null, senderName: null });
+      fetchNotifications();
+    } catch (error) {
+      console.error('Error declining rematch:', error);
+      toast.error('Failed to decline rematch');
+    }
+  };
+
   return (
     <>
       <AlertDialog 
@@ -430,6 +476,33 @@ export const NotificationBell = ({ userId }: { userId: string }) => {
             </AlertDialogCancel>
             <AlertDialogAction onClick={handleAcceptTrainingInvite}>
               Accept
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog 
+        open={rematchDialog.open} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setRematchDialog({ open: false, notification: null, senderName: null });
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>🔄 Rematch Request</AlertDialogTitle>
+            <AlertDialogDescription>
+              {rematchDialog.senderName} wants to play another game with you! 
+              Same time control as your previous match.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleDeclineRematch}>
+              Decline
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleAcceptRematch}>
+              Accept Rematch
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
