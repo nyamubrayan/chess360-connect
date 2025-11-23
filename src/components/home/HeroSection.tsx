@@ -29,24 +29,26 @@ export const HeroSection = () => {
       <div className="container mx-auto max-w-6xl relative z-10">
         <div className="text-center space-y-8 max-w-4xl mx-auto">
           <div className="space-y-4">
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight">
-              Welcome to{" "}
-              <span className="relative inline-block">
-                <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-pulse">
-                  Chessafari
+            <h1 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight">
+              <span className="block">
+                Welcome to{" "}
+                <span className="relative inline-block">
+                  <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-pulse">
+                    Chessafari
+                  </span>
+                  <span className="absolute -bottom-2 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-primary opacity-50 blur-sm"></span>
                 </span>
-                <span className="absolute -bottom-2 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-primary opacity-50 blur-sm"></span>
               </span>
-              <br className="sm:hidden" />
-              <span className="block sm:inline mt-2 sm:mt-0 text-4xl sm:text-5xl lg:text-6xl">
+              <span className="block mt-2 text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl">
                 Explore{" "}
-                <span className="inline-block min-w-[280px] sm:min-w-[350px] lg:min-w-[450px]">
+                <span className="relative inline-block min-w-[200px] xs:min-w-[240px] sm:min-w-[300px] md:min-w-[380px] lg:min-w-[450px] text-left">
                   <span 
                     key={currentWord}
-                    className="inline-block bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent transition-opacity duration-700 ease-in-out animate-[fade-in_0.7s_ease-in-out]"
+                    className="absolute left-0 top-0 bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent transition-opacity duration-700 ease-in-out animate-[fade-in_0.7s_ease-in-out]"
                   >
                     {words[currentWord]}
                   </span>
+                  <span className="invisible">{words[currentWord]}</span>
                 </span>
               </span>
             </h1>
