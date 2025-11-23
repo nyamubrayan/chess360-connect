@@ -151,21 +151,34 @@ export const PostGameSummary = ({ open, onOpenChange, gameId, result, playerColo
 
         {/* Rating Change Display */}
         {ratingChange !== null && newRating !== null && (
-          <Card className="gradient-card p-6 mb-4">
+          <Card className="gradient-card p-6 mb-4 animate-scale-in">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Rating Change</p>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className={`text-3xl font-bold ${ratingChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  <span 
+                    className={`text-3xl font-bold transition-all duration-500 animate-fade-in ${
+                      ratingChange >= 0 ? 'text-green-500' : 'text-red-500'
+                    } ${Math.abs(ratingChange) >= 20 ? 'animate-pulse' : ''}`}
+                  >
                     {ratingChange >= 0 ? '+' : ''}{ratingChange}
                   </span>
-                  <TrendingUp className={`w-6 h-6 ${ratingChange >= 0 ? 'text-green-500' : 'text-red-500 rotate-180'}`} />
+                  <TrendingUp 
+                    className={`w-6 h-6 transition-all duration-500 animate-fade-in ${
+                      ratingChange >= 0 ? 'text-green-500' : 'text-red-500 rotate-180'
+                    } ${Math.abs(ratingChange) >= 20 ? 'animate-bounce' : ''}`} 
+                  />
                 </div>
+                {Math.abs(ratingChange) >= 30 && (
+                  <p className="text-xs font-semibold mt-1 animate-fade-in text-primary">
+                    {ratingChange > 0 ? '🔥 Massive Gain!' : '⚠️ Significant Loss'}
+                  </p>
+                )}
               </div>
               <div className="text-right">
                 <p className="text-sm text-muted-foreground">New Rating</p>
-                <p className="text-3xl font-bold mt-1">{newRating}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-3xl font-bold mt-1 animate-scale-in">{newRating}</p>
+                <p className="text-xs text-muted-foreground animate-fade-in">
                   (was {newRating - ratingChange})
                 </p>
               </div>
