@@ -320,11 +320,20 @@ export default function ChessGame() {
       if (gameData.white_player_id === user.id) {
         setPlayerColor('white');
         console.log('✓ Player assigned WHITE - board will display from White perspective');
+        console.log('  Game ID:', gameData.id);
+        console.log('  White player ID:', gameData.white_player_id);
+        console.log('  Black player ID:', gameData.black_player_id);
       } else if (gameData.black_player_id === user.id) {
         setPlayerColor('black');
         console.log('✓ Player assigned BLACK - board will display from Black perspective');
+        console.log('  Game ID:', gameData.id);
+        console.log('  White player ID:', gameData.white_player_id);
+        console.log('  Black player ID:', gameData.black_player_id);
       } else {
         console.error('❌ User is neither white nor black player in this game');
+        console.error('  User ID:', user.id);
+        console.error('  White player ID:', gameData.white_player_id);
+        console.error('  Black player ID:', gameData.black_player_id);
       }
     }
     
