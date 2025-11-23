@@ -46,9 +46,6 @@ export const HeroSection = () => {
                 >
                   {words[currentWord]}
                 </span>
-                <span className="block sm:inline text-3xl sm:text-4xl lg:text-5xl text-muted-foreground mt-2">
-                  & More Features Below
-                </span>
               </span>
             </h1>
             <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
