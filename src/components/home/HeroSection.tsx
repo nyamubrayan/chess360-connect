@@ -115,7 +115,7 @@ export const HeroSection = () => {
               onClick={() => navigate("/lobby")}
             >
               <Play className="w-5 h-5 mr-2" />
-              Start Playing Now
+              Play Live Now
             </Button>
             <Button 
               size="lg" 
