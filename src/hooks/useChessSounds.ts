@@ -59,6 +59,17 @@ export const useChessSounds = () => {
     setTimeout(() => playTone(523, 0.12, 0.25), 100);
   }, [playTone]);
 
+  const playWheelSpin = useCallback(() => {
+    playTone(220, 0.08, 0.15);
+    setTimeout(() => playTone(330, 0.08, 0.15), 40);
+    setTimeout(() => playTone(440, 0.08, 0.15), 80);
+  }, [playTone]);
+
+  const playWheelLock = useCallback(() => {
+    playTone(880, 0.15, 0.35);
+    setTimeout(() => playTone(660, 0.1, 0.3), 80);
+  }, [playTone]);
+
   return {
     playMove,
     playCapture,
@@ -66,5 +77,7 @@ export const useChessSounds = () => {
     playCheckmate,
     playGameStart,
     playCastle,
+    playWheelSpin,
+    playWheelLock,
   };
 };
