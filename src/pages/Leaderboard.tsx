@@ -108,7 +108,8 @@ const Leaderboard = () => {
   }, [user, category]);
 
   const fetchLeaderboard = async () => {
-    let query = supabase
+    // Fetch all data without server-side ordering since Supabase doesn't support ordering by nested relations
+    const { data, error } = await supabase
       .from("profiles")
       .select(
         `
@@ -122,29 +123,43 @@ const Leaderboard = () => {
           total_puzzles_solved
         )
       `
-      );
-
-    // Apply sorting based on category
-    if (category === "rating") {
-      query = query.order("rating", { ascending: false });
-    } else if (category === "games") {
-      query = query.order("player_stats(total_games)", { ascending: false });
-    } else if (category === "puzzles") {
-      query = query.order("user_training_stats(total_puzzles_solved)", { ascending: false });
-    }
-
-    const { data, error } = await query.limit(50);
+      )
+      .limit(200); // Fetch more data to ensure we have enough after sorting
 
     if (error) {
       console.error("Error fetching leaderboard:", error);
-    } else {
-      const formattedData = (data || []).map((p: any) => ({
-        ...p,
-        player_stats: Array.isArray(p.player_stats) ? p.player_stats[0] : p.player_stats,
-        user_training_stats: Array.isArray(p.user_training_stats) ? p.user_training_stats[0] : p.user_training_stats,
-      }));
-      setPlayers(formattedData);
+      setLoading(false);
+      return;
     }
+
+    // Format the data
+    const formattedData = (data || []).map((p: any) => ({
+      ...p,
+      player_stats: Array.isArray(p.player_stats) ? p.player_stats[0] : p.player_stats,
+      user_training_stats: Array.isArray(p.user_training_stats) ? p.user_training_stats[0] : p.user_training_stats,
+    }));
+
+    // Sort data based on category on the client side
+    let sortedData = [...formattedData];
+    
+    if (category === "rating") {
+      sortedData.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    } else if (category === "games") {
+      sortedData.sort((a, b) => {
+        const aGames = a.player_stats?.total_games || 0;
+        const bGames = b.player_stats?.total_games || 0;
+        return bGames - aGames;
+      });
+    } else if (category === "puzzles") {
+      sortedData.sort((a, b) => {
+        const aPuzzles = a.user_training_stats?.total_puzzles_solved || 0;
+        const bPuzzles = b.user_training_stats?.total_puzzles_solved || 0;
+        return bPuzzles - aPuzzles;
+      });
+    }
+
+    // Take top 50
+    setPlayers(sortedData.slice(0, 50));
     setLoading(false);
   };
 
