@@ -33,6 +33,7 @@ export default function ChessGame() {
   const [gameStarted, setGameStarted] = useState(false);
   const [firstMoveCountdown, setFirstMoveCountdown] = useState<number | null>(null);
   const [lastMove, setLastMove] = useState<{ from: string; to: string } | null>(null);
+  const [timeoutHandled, setTimeoutHandled] = useState(false);
   
   const sounds = useChessSounds();
 
@@ -306,6 +307,20 @@ export default function ChessGame() {
     setGame(gameData);
     chess.load(gameData.current_fen);
     setPosition(gameData.current_fen);
+    
+    // Set player color immediately when game data arrives
+    if (user) {
+      if (gameData.white_player_id === user.id) {
+        setPlayerColor('white');
+      } else if (gameData.black_player_id === user.id) {
+        setPlayerColor('black');
+      }
+    }
+    
+    // Reset timeout flag when game becomes active or when a new move is made
+    if (nowActive || gameData.last_move_at !== game?.last_move_at) {
+      setTimeoutHandled(false);
+    }
     
     // Play game start sound when game becomes active
     if (wasWaiting && nowActive && !gameStarted) {
@@ -679,6 +694,8 @@ export default function ChessGame() {
               game={game}
               playerColor={playerColor}
               className="mb-4"
+              timeoutHandled={timeoutHandled}
+              setTimeoutHandled={setTimeoutHandled}
             />
             
             {/* First Move Countdown Warning - Visible to Both Players */}
