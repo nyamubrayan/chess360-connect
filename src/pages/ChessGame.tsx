@@ -45,15 +45,20 @@ export default function ChessGame() {
       return;
     }
 
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    // Fetch user FIRST, then fetch game to ensure playerColor is set correctly
+    const initializeGame = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         navigate('/auth');
         return;
       }
       setUser(user);
-    });
+      
+      // Now fetch game after user is set
+      await fetchGame();
+    };
 
-    fetchGame();
+    initializeGame();
 
     // Subscribe to game updates
     const gameChannel = supabase
@@ -310,14 +315,16 @@ export default function ChessGame() {
     chess.load(gameData.current_fen);
     setPosition(gameData.current_fen);
     
-    // Set player color ONLY ONCE when first loading the game (don't change during updates)
+    // Set player color based on user ID - critical for board perspective
     if (user && !playerColor) {
       if (gameData.white_player_id === user.id) {
         setPlayerColor('white');
-        console.log('Player color set to WHITE (locked for this game)');
+        console.log('✓ Player assigned WHITE - board will display from White perspective');
       } else if (gameData.black_player_id === user.id) {
         setPlayerColor('black');
-        console.log('Player color set to BLACK (locked for this game)');
+        console.log('✓ Player assigned BLACK - board will display from Black perspective');
+      } else {
+        console.error('❌ User is neither white nor black player in this game');
       }
     }
     
@@ -403,11 +410,22 @@ export default function ChessGame() {
   };
 
   const handleMove = async (from: string, to: string) => {
-    if (isProcessing || !user || game.status !== 'active') return;
+    if (isProcessing || !user || game.status !== 'active') {
+      console.log('Move blocked - processing:', isProcessing, 'status:', game?.status);
+      return;
+    }
+
+    if (!playerColor) {
+      toast.error('Player color not assigned yet');
+      console.error('❌ playerColor is null - cannot determine if it\'s player\'s turn');
+      return;
+    }
 
     const currentTurn = chess.turn();
     const myTurn = (currentTurn === 'w' && playerColor === 'white') || 
                    (currentTurn === 'b' && playerColor === 'black');
+
+    console.log('Move attempt:', { from, to, currentTurn, playerColor, myTurn });
 
     if (!myTurn) {
       toast.error('Not your turn');
@@ -743,7 +761,7 @@ export default function ChessGame() {
               position={position}
               onMove={handleMove}
               playerColor={playerColor}
-              disabled={isProcessing || game.status !== 'active'}
+              disabled={isProcessing || game.status !== 'active' || !playerColor}
               chess={chess}
               lastMove={lastMove}
             />
