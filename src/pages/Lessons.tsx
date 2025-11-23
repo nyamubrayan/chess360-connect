@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Brain, TrendingUp, ArrowRight, Sparkles, Target, BookOpen } from 'lucide-react';
+import { Brain, TrendingUp, ArrowRight, Sparkles, Target, BookOpen, BookMarked } from 'lucide-react';
 import { CommunityBar } from '@/components/CommunityBar';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { LessonViewer } from '@/components/lessons/LessonViewer';
 
 interface Lesson {
   title: string;
@@ -16,12 +17,45 @@ interface Lesson {
   targetAreas: string[];
 }
 
+// Sample lesson content with sections
+const sampleLessonSections = {
+  'Opening Principles': [
+    {
+      title: 'Control the Center',
+      content: 'The center of the chessboard (e4, d4, e5, d5) is the most important area to control in the opening phase.\n\nWhy is the center important?\n- Pieces in the center control more squares\n- Central pawns support piece development\n- Control of the center gives you more space and flexibility\n\nBest ways to control the center:\n1. Occupy it with pawns (e4, d4)\n2. Control it with pieces (knights and bishops)\n3. Challenge opponent\'s central pawns'
+    },
+    {
+      title: 'Develop Your Pieces',
+      content: 'Piece development means bringing your knights, bishops, and other pieces from their starting positions to more active squares.\n\nDevelopment guidelines:\n- Knights before bishops (knights have fewer good squares)\n- Develop toward the center\n- Don\'t move the same piece twice in the opening\n- Castle early for king safety\n\nCommon mistakes:\n- Moving too many pawns\n- Bringing out the queen too early\n- Neglecting piece coordination'
+    },
+    {
+      title: 'King Safety',
+      content: 'Keeping your king safe is crucial in the opening. The best way to protect your king is through castling.\n\nCastling benefits:\n- Moves king to safety (away from center)\n- Brings rook toward center\n- Connects your rooks\n\nWhen to castle:\n- Usually within first 10 moves\n- After developing knights and bishops\n- Before starting an attack\n\nWarning signs:\n- Open files near your king\n- Missing pawn shield\n- Opponent\'s pieces aimed at your king'
+    }
+  ],
+  'Basic Tactics': [
+    {
+      title: 'The Fork',
+      content: 'A fork is when one piece attacks two or more enemy pieces at the same time.\n\nMost common forks:\n- Knight forks (the knight is excellent for forking)\n- Pawn forks (attacking two pieces)\n- Queen forks (most powerful)\n\nHow to create forks:\n1. Look for undefended pieces\n2. Calculate if you can attack them simultaneously\n3. Check if your opponent can defend both pieces\n\nRemember: The key to successful forks is that your opponent cannot save both pieces in one move.'
+    },
+    {
+      title: 'The Pin',
+      content: 'A pin occurs when an attacking piece prevents an enemy piece from moving because doing so would expose a more valuable piece behind it.\n\nTypes of pins:\n- Absolute pin (pinned piece cannot legally move)\n- Relative pin (moving would lose material)\n\nPieces that pin:\n- Bishops (diagonal pins)\n- Rooks (rank/file pins)\n- Queens (any direction)\n\nDefending against pins:\n- Break the pin with another piece\n- Attack the pinning piece\n- Move the valuable piece behind\n- Consider if the pin is truly dangerous'
+    },
+    {
+      title: 'The Skewer',
+      content: 'A skewer is the opposite of a pin - a more valuable piece is forced to move, exposing a less valuable piece behind it.\n\nSkewer characteristics:\n- Attacks valuable piece first\n- Forces it to move\n- Captures piece behind\n\nCommon skewers:\n- Rook skewering king and rook\n- Bishop skewing king and queen\n- Queen skewering any pieces\n\nSetting up skewers:\n1. Align enemy pieces on same rank, file, or diagonal\n2. Attack the more valuable piece\n3. Force it to move\n4. Capture the piece behind'
+    }
+  ]
+}
+
 export default function Lessons() {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [playerStats, setPlayerStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedLesson, setSelectedLesson] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -243,13 +277,23 @@ export default function Lessons() {
                             className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-all"
                             variant="secondary"
                             onClick={() => {
-                              // Navigate based on category
-                              if (lesson.category === 'opening') navigate('/openings');
-                              else if (lesson.category === 'endgame') navigate('/endgames');
-                              else if (lesson.category === 'tactics') navigate('/puzzles');
-                              else toast.info('This training module is coming soon!');
+                              // Check if we have sample sections for this lesson
+                              const lessonKey = Object.keys(sampleLessonSections).find(key => 
+                                lesson.title.toLowerCase().includes(key.toLowerCase())
+                              );
+                              
+                              if (lessonKey) {
+                                setSelectedLesson(lesson.title);
+                              } else {
+                                // Navigate based on category for other lessons
+                                if (lesson.category === 'opening') navigate('/openings');
+                                else if (lesson.category === 'endgame') navigate('/endgames');
+                                else if (lesson.category === 'tactics') navigate('/puzzles');
+                                else toast.info('This training module is coming soon!');
+                              }
                             }}
                           >
+                            <BookMarked className="w-4 h-4 mr-2" />
                             Start Learning
                             <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                           </Button>
@@ -262,6 +306,54 @@ export default function Lessons() {
             </div>
           </>
         )}
+
+        {/* Lesson Viewer Modal */}
+        {selectedLesson && (() => {
+          const lessonKey = Object.keys(sampleLessonSections).find(key => 
+            selectedLesson.toLowerCase().includes(key.toLowerCase())
+          );
+          const sections = lessonKey ? sampleLessonSections[lessonKey as keyof typeof sampleLessonSections] : [];
+          const lessonData = lessons.find(l => l.title === selectedLesson);
+
+          return (
+            <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-50 overflow-y-auto">
+              <div className="container mx-auto px-4 py-8 max-w-4xl">
+                <Button
+                  variant="ghost"
+                  onClick={() => setSelectedLesson(null)}
+                  className="mb-4"
+                >
+                  <ArrowRight className="w-4 h-4 mr-2 rotate-180" />
+                  Back to Lessons
+                </Button>
+
+                <div className="mb-6">
+                  <h1 className="text-3xl font-bold mb-2">{selectedLesson}</h1>
+                  {lessonData && (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="capitalize">
+                        {lessonData.category}
+                      </Badge>
+                      <Badge variant="outline" className={getPriorityColor(lessonData.priority)}>
+                        {lessonData.priority} priority
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+
+                <LessonViewer
+                  lessonTitle={selectedLesson}
+                  lessonCategory={lessonData?.category || 'general'}
+                  sections={sections}
+                  onComplete={() => {
+                    toast.success('Lesson completed! 🎉');
+                    setSelectedLesson(null);
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

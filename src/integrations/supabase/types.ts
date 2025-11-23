@@ -543,6 +543,39 @@ export type Database = {
           },
         ]
       }
+      lesson_bookmarks: {
+        Row: {
+          created_at: string | null
+          id: string
+          lesson_category: string
+          lesson_title: string
+          section_content: string
+          section_index: number
+          section_title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          lesson_category: string
+          lesson_title: string
+          section_content: string
+          section_index: number
+          section_title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          lesson_category?: string
+          lesson_title?: string
+          section_content?: string
+          section_index?: number
+          section_title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       matchmaking_queue: {
         Row: {
           created_at: string

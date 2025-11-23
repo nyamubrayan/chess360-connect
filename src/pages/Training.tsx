@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Brain, Target, BookOpen, TrendingUp, ArrowRight, GraduationCap, Clock, Grid3x3 } from 'lucide-react';
+import { Brain, Target, BookOpen, TrendingUp, ArrowRight, GraduationCap, Clock, Grid3x3, BookmarkCheck } from 'lucide-react';
 import { CommunityBar } from '@/components/CommunityBar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InteractivePieceDemo } from '@/components/chess/InteractivePieceDemo';
 import { AICoachPanel } from '@/components/training/AICoachPanel';
 import { TrainingHistory } from '@/components/training/TrainingHistory';
+import { MyNotes } from '@/components/lessons/MyNotes';
 
 export default function Training() {
   const navigate = useNavigate();
@@ -138,7 +139,7 @@ export default function Training() {
         </div>
 
         <Tabs defaultValue="modules" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-8">
+          <TabsList className="grid w-full grid-cols-5 mb-8">
             <TabsTrigger value="basics" className="text-sm sm:text-base">
               <GraduationCap className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">Chess Basics</span>
@@ -148,6 +149,11 @@ export default function Training() {
               <Brain className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">Training Modules</span>
               <span className="sm:hidden">Modules</span>
+            </TabsTrigger>
+            <TabsTrigger value="my-notes" className="text-sm sm:text-base">
+              <BookmarkCheck className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">My Notes</span>
+              <span className="sm:hidden">Notes</span>
             </TabsTrigger>
             <TabsTrigger value="ai-coach" className="text-sm sm:text-base">
               <Brain className="w-4 h-4 mr-2" />
@@ -427,6 +433,11 @@ export default function Training() {
           {/* Training History Tab */}
           <TabsContent value="history">
             <TrainingHistory />
+          </TabsContent>
+
+          {/* My Notes Tab */}
+          <TabsContent value="my-notes" className="space-y-8">
+            <MyNotes />
           </TabsContent>
         </Tabs>
       </div>
