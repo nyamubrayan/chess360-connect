@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { CommunityBar } from '@/components/CommunityBar';
@@ -59,6 +59,9 @@ export default function Connect() {
   const [puzzleDialogOpen, setPuzzleDialogOpen] = useState(false);
   const [pendingFriendRequest, setPendingFriendRequest] = useState<{ id: string; name: string } | null>(null);
   const [sortBy, setSortBy] = useState<'rating' | 'games' | 'puzzles' | 'chessmates'>('rating');
+  const [currentChessPiece, setCurrentChessPiece] = useState(0);
+  
+  const chessPieces = ['♔', '♕', '♖', '♗', '♘', '♙'];
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -80,6 +83,15 @@ export default function Connect() {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  // Chess piece cycling animation
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentChessPiece((prev) => (prev + 1) % chessPieces.length);
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [chessPieces.length]);
 
   const loadPlayers = async (currentUserId: string) => {
     try {
@@ -446,75 +458,35 @@ export default function Connect() {
     }
   };
 
-  const chessPieceVariants = {
-    hidden: { x: -100, opacity: 0, rotate: -20 },
-    visible: {
-      x: 0,
-      opacity: 1,
-      rotate: 0,
-      transition: { type: "spring" as const, stiffness: 100, damping: 15 }
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Animated Chess Pieces Background */}
-      <motion.div
-        className="absolute top-20 left-10 text-7xl opacity-10 select-none pointer-events-none hidden lg:block"
-        variants={chessPieceVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        ♔
-      </motion.div>
-      <motion.div
-        className="absolute top-40 right-20 text-6xl opacity-10 select-none pointer-events-none hidden lg:block"
-        variants={chessPieceVariants}
-        initial="hidden"
-        animate="visible"
-        transition={{ delay: 0.2 }}
-      >
-        ♞
-      </motion.div>
-      <motion.div
-        className="absolute bottom-40 left-20 text-6xl opacity-10 select-none pointer-events-none hidden lg:block"
-        variants={chessPieceVariants}
-        initial="hidden"
-        animate="visible"
-        transition={{ delay: 0.4 }}
-      >
-        ♜
-      </motion.div>
-      <motion.div
-        className="absolute bottom-20 right-40 text-7xl opacity-10 select-none pointer-events-none hidden lg:block"
-        variants={chessPieceVariants}
-        initial="hidden"
-        animate="visible"
-        transition={{ delay: 0.6 }}
-      >
-        ♛
-      </motion.div>
-      <motion.div
-        className="absolute top-1/2 left-1/4 text-5xl opacity-5 select-none pointer-events-none hidden xl:block"
-        variants={chessPieceVariants}
-        initial="hidden"
-        animate="visible"
-        transition={{ delay: 0.8 }}
-      >
-        ♝
-      </motion.div>
-
       <CommunityBar user={user} />
       
       <div className="container mx-auto px-4 py-6 md:py-8 max-w-7xl relative z-10">
         {/* Header */}
         <motion.div
-          className="mb-6 md:mb-8"
+          className="mb-6 md:mb-8 relative"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <div className="flex items-center gap-3 mb-3 md:mb-4">
+          <div className="flex items-center gap-3 mb-3 md:mb-4 relative">
+            {/* Cycling Chess Piece Animation */}
+            <motion.div
+              key={currentChessPiece}
+              className="text-4xl md:text-5xl lg:text-6xl select-none"
+              initial={{ opacity: 0, scale: 0.5, rotate: -180 }}
+              animate={{ opacity: 1, scale: 1, rotate: 0 }}
+              exit={{ opacity: 0, scale: 0.5, rotate: 180 }}
+              transition={{ 
+                duration: 0.6,
+                type: "spring",
+                stiffness: 200,
+                damping: 20
+              }}
+            >
+              {chessPieces[currentChessPiece]}
+            </motion.div>
             <Users className="w-7 h-7 md:w-8 md:h-8 text-primary" />
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold">Networking Zone</h1>
           </div>
