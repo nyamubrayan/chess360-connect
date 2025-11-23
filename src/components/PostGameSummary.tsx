@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trophy, TrendingUp, TrendingDown, Target, Lightbulb, Loader2, Download } from "lucide-react";
+import { Trophy, TrendingUp, TrendingDown, Target, Lightbulb, Loader2, Download, RefreshCw, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface PostGameSummaryProps {
@@ -12,6 +12,8 @@ interface PostGameSummaryProps {
   gameId: string;
   result: string;
   playerColor: "white" | "black";
+  onRequestRematch?: () => void;
+  onFindNewMatch?: () => void;
 }
 
 interface GameSummary {
@@ -35,7 +37,7 @@ interface PlayerInfo {
   oldRating: number;
 }
 
-export const PostGameSummary = ({ open, onOpenChange, gameId, result, playerColor }: PostGameSummaryProps) => {
+export const PostGameSummary = ({ open, onOpenChange, gameId, result, playerColor, onRequestRematch, onFindNewMatch }: PostGameSummaryProps) => {
   const [summary, setSummary] = useState<GameSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [whitePlayer, setWhitePlayer] = useState<PlayerInfo | null>(null);
@@ -359,7 +361,43 @@ export const PostGameSummary = ({ open, onOpenChange, gameId, result, playerColo
               </CardContent>
             </Card>
 
-            <Button variant="outline" className="w-full" onClick={() => onOpenChange(false)}>
+            {/* What's next section */}
+            <Card className="border-2 border-primary/20">
+              <CardContent className="pt-6">
+                <h3 className="text-xl font-bold text-center mb-4">What's next?</h3>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  {onRequestRematch && (
+                    <Button
+                      onClick={() => {
+                        onRequestRematch();
+                        onOpenChange(false);
+                      }}
+                      className="flex-1 h-12"
+                      size="lg"
+                    >
+                      <RefreshCw className="w-5 h-5 mr-2" />
+                      Request Rematch
+                    </Button>
+                  )}
+                  {onFindNewMatch && (
+                    <Button
+                      onClick={() => {
+                        onFindNewMatch();
+                        onOpenChange(false);
+                      }}
+                      variant="outline"
+                      className="flex-1 h-12"
+                      size="lg"
+                    >
+                      <Search className="w-5 h-5 mr-2" />
+                      Find New Match
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Button variant="ghost" className="w-full" onClick={() => onOpenChange(false)}>
               Close Summary
             </Button>
           </div>
