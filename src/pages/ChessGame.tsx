@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Chess, Square } from 'chess.js';
@@ -126,6 +126,57 @@ export default function ChessGame() {
     };
   }, [gameId]);
 
+  // Handler for first move timeout
+  const handleFirstMoveTimeout = useCallback(async () => {
+    if (!game || !user || game.status !== 'active') return;
+
+    console.log('First move timeout - ending game with no rating changes...');
+
+    try {
+      // End the game without applying rating changes (no winner_id, no rating changes)
+      const { error } = await supabase
+        .from('games')
+        .update({
+          status: 'completed',
+          result: 'aborted',
+          completed_at: new Date().toISOString(),
+          // No winner_id - ensures no rating changes
+          // No rating_change fields - no points deducted
+        })
+        .eq('id', game.id)
+        .eq('status', 'active'); // Only abort if still active
+
+      if (error) {
+        console.error('Error ending game:', error);
+        throw error;
+      }
+
+      console.log('Game ended successfully - no rating changes applied');
+
+      // Send notifications to both players
+      await supabase.from('notifications').insert([
+        {
+          user_id: game.white_player_id,
+          type: 'game_aborted',
+          title: 'Game Ended',
+          message: 'Game ended - no move was made within 30 seconds. No rating changes.',
+        },
+        {
+          user_id: game.black_player_id,
+          type: 'game_aborted',
+          title: 'Game Ended',
+          message: 'Game ended - no move was made within 30 seconds. No rating changes.',
+        },
+      ]);
+
+      toast.info('Game ended - no first move within 30 seconds. No rating changes applied.', {
+        duration: 6000,
+      });
+    } catch (error) {
+      console.error('Error handling first move timeout:', error);
+    }
+  }, [game, user]);
+
   // Monitor first move timeout - cancel game if no first move within 30 seconds
   useEffect(() => {
     if (!game || !user || game.status !== 'active' || !playerColor) {
@@ -161,7 +212,7 @@ export default function ChessGame() {
     return () => {
       clearInterval(interval);
     };
-  }, [game?.move_count, game?.status, game?.created_at, user, playerColor]);
+  }, [game?.move_count, game?.status, game?.created_at, user, playerColor, handleFirstMoveTimeout]);
 
   // Monitor inactivity - forfeit opponent after 20 seconds of no move (after first move)
   useEffect(() => {
@@ -213,56 +264,6 @@ export default function ChessGame() {
       if (timer) clearTimeout(timer);
     };
   }, [game?.last_move_at, game?.current_turn, game?.status, game?.move_count, playerColor, user]);
-
-  const handleFirstMoveTimeout = async () => {
-    if (!game || !user || game.status !== 'active') return;
-
-    console.log('First move timeout - ending game with no rating changes...');
-
-    try {
-      // End the game without applying rating changes (no winner_id, no rating changes)
-      const { error } = await supabase
-        .from('games')
-        .update({
-          status: 'completed',
-          result: 'aborted',
-          completed_at: new Date().toISOString(),
-          // No winner_id - ensures no rating changes
-          // No rating_change fields - no points deducted
-        })
-        .eq('id', game.id)
-        .eq('status', 'active'); // Only abort if still active
-
-      if (error) {
-        console.error('Error ending game:', error);
-        throw error;
-      }
-
-      console.log('Game ended successfully - no rating changes applied');
-
-      // Send notifications to both players
-      await supabase.from('notifications').insert([
-        {
-          user_id: game.white_player_id,
-          type: 'game_aborted',
-          title: 'Game Ended',
-          message: 'Game ended - no move was made within 30 seconds. No rating changes.',
-        },
-        {
-          user_id: game.black_player_id,
-          type: 'game_aborted',
-          title: 'Game Ended',
-          message: 'Game ended - no move was made within 30 seconds. No rating changes.',
-        },
-      ]);
-
-      toast.info('Game ended - no first move within 30 seconds. No rating changes applied.', {
-        duration: 6000,
-      });
-    } catch (error) {
-      console.error('Error handling first move timeout:', error);
-    }
-  };
 
   const handleInactivityForfeit = async () => {
     if (!game || !user || game.status !== 'active') return;
@@ -798,6 +799,7 @@ export default function ChessGame() {
                   opponentName={playerColor === 'white' ? (blackPlayer?.display_name || blackPlayer?.username || 'Opponent') : (whitePlayer?.display_name || whitePlayer?.username || 'Opponent')}
                   timeControl={game.time_control}
                   timeIncrement={game.time_increment}
+                  gameResult={game.result}
                 />
               </div>
             )}
