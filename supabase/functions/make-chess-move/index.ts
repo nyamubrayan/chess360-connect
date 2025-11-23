@@ -191,8 +191,8 @@ serve(async (req) => {
 
       if (isCheckmate) {
         status = 'completed';
-        result = 'checkmate';
         winner = isWhitePlayer ? game.white_player_id : game.black_player_id;
+        result = isWhitePlayer ? 'white_won' : 'black_won';
       } else if (isStalemate) {
         status = 'completed';
         result = 'stalemate';
@@ -245,7 +245,7 @@ serve(async (req) => {
         .from('games')
         .update({
           status: 'completed',
-          result: 'timeout',
+          result: isWhitePlayer ? 'black_won' : 'white_won',
           winner_id: isWhitePlayer ? game.black_player_id : game.white_player_id,
           completed_at: now.toISOString(),
         })
@@ -317,8 +317,10 @@ serve(async (req) => {
     if (validatedMoveData.status === 'completed') {
       let eloResult: 'white_win' | 'black_win' | 'draw' = 'draw';
       
-      if (validatedMoveData.result === 'checkmate') {
-        eloResult = validatedMoveData.winner === game.white_player_id ? 'white_win' : 'black_win';
+      if (validatedMoveData.result === 'white_won') {
+        eloResult = 'white_win';
+      } else if (validatedMoveData.result === 'black_won') {
+        eloResult = 'black_win';
       } else if (validatedMoveData.result === 'stalemate' || validatedMoveData.result === 'draw') {
         eloResult = 'draw';
       }
@@ -341,7 +343,7 @@ serve(async (req) => {
 
       const notifications = [];
       
-      if (validatedMoveData.result === 'checkmate') {
+      if (validatedMoveData.result === 'white_won' || validatedMoveData.result === 'black_won') {
         const winnerId = validatedMoveData.winner;
         const loserId = winnerId === game.white_player_id ? game.black_player_id : game.white_player_id;
         
