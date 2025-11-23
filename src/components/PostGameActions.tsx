@@ -28,8 +28,8 @@ export const PostGameActions = ({
   const navigate = useNavigate();
   const [rematchSent, setRematchSent] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  // Game is aborted if it's a draw with 0 moves
-  const isAborted = gameResult === 'draw' && moveCount === 0;
+  // Game is aborted if it's a draw with 0 or 1 moves (no real play)
+  const isAborted = gameResult === 'draw' && (moveCount ?? 0) <= 1;
 
   const handleRematchRequest = async () => {
     setIsProcessing(true);
@@ -74,7 +74,7 @@ export const PostGameActions = ({
             </div>
             <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 mb-4">
               <p className="text-sm text-center text-muted-foreground">
-                Game ended - no first move was made within 30 seconds.
+                Game ended - a player did not make their first move within 30 seconds.
               </p>
               <p className="text-sm text-center text-muted-foreground font-medium mt-1">
                 No rating changes applied.
