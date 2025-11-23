@@ -291,9 +291,9 @@ const ChessClock = () => {
     };
   }, []);
 
-  // Fallback polling to keep both devices in sync even if realtime misses
+  // Fallback polling to keep both devices in sync
   useEffect(() => {
-    if (!multiDeviceMode || !sessionId) return;
+    if (!multiDeviceMode || !sessionId || isActive) return;
 
     const interval = setInterval(async () => {
       try {
@@ -310,13 +310,20 @@ const ChessClock = () => {
         setIsWhiteTurn(data.is_white_turn);
         setWhiteMoves(data.white_moves);
         setBlackMoves(data.black_moves);
+        setGuestConnected(data.guest_connected);
+        
+        if (data.game_result && !gameResult) {
+          const result = data.game_result as "white" | "black" | "draw";
+          setGameResult(result);
+          setShowReport(true);
+        }
       } catch (err) {
         console.error('Polling error for clock session', err);
       }
-    }, 1000);
+    }, 500);
 
     return () => clearInterval(interval);
-  }, [multiDeviceMode, sessionId]);
+  }, [multiDeviceMode, sessionId, isActive, gameResult]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -544,7 +551,7 @@ const ChessClock = () => {
   const blackStats = calculateStats(blackMoves);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex flex-col overflow-hidden">
+    <div className="h-screen bg-gradient-to-br from-background via-background to-primary/5 flex flex-col overflow-hidden">
       {/* Code Display Dialog */}
       <Dialog open={showCodeDialog} onOpenChange={setShowCodeDialog}>
         <DialogContent className="gradient-card border-2 border-primary/20 shadow-2xl max-w-md">
@@ -811,7 +818,7 @@ const ChessClock = () => {
       </div>
 
       {/* Vertical Clock Display */}
-      <div className="flex-1 flex flex-col relative">
+      <div className="flex-1 flex flex-col relative overflow-hidden">
         {/* Single device mode - show both clocks */}
         {!multiDeviceMode && (
           <>
@@ -977,98 +984,126 @@ const ChessClock = () => {
 
         {/* Multi-device mode - show ONLY player's own clock fullscreen */}
         {multiDeviceMode && (
-          <motion.div
-            className="h-full flex items-center justify-center cursor-pointer relative overflow-hidden transition-all duration-500"
-            style={{
-              background: ((playerSide === 'white' && isWhiteTurn) || (playerSide === 'black' && !isWhiteTurn)) && isActive
-                ? "linear-gradient(135deg, hsl(var(--primary) / 0.3), hsl(var(--accent) / 0.2), hsl(var(--primary) / 0.1))"
-                : "linear-gradient(135deg, hsl(var(--muted) / 0.2), hsl(var(--background)))"
-            }}
-            onClick={() => handleClockPress(playerSide)}
-            whileTap={{ scale: 0.98 }}
-            animate={((playerSide === 'white' && isWhiteTurn) || (playerSide === 'black' && !isWhiteTurn)) && isActive ? {
-              boxShadow: [
-                "inset 0 0 60px rgba(var(--primary), 0.2)",
-                "inset 0 0 80px rgba(var(--primary), 0.4)",
-                "inset 0 0 60px rgba(var(--primary), 0.2)"
-              ]
-            } : {}}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
-            <AnimatePresence>
+          <div className="relative h-full w-full">
+            <motion.div
+              className="absolute inset-0 flex items-center justify-center cursor-pointer overflow-hidden transition-all duration-500"
+              style={{
+                background: ((playerSide === 'white' && isWhiteTurn) || (playerSide === 'black' && !isWhiteTurn)) && isActive
+                  ? "linear-gradient(135deg, hsl(var(--primary) / 0.3), hsl(var(--accent) / 0.2), hsl(var(--primary) / 0.1))"
+                  : "linear-gradient(135deg, hsl(var(--muted) / 0.2), hsl(var(--background)))"
+              }}
+              onClick={() => handleClockPress(playerSide)}
+              whileTap={{ scale: 0.98 }}
+              animate={((playerSide === 'white' && isWhiteTurn) || (playerSide === 'black' && !isWhiteTurn)) && isActive ? {
+                boxShadow: [
+                  "inset 0 0 60px rgba(var(--primary), 0.2)",
+                  "inset 0 0 80px rgba(var(--primary), 0.4)",
+                  "inset 0 0 60px rgba(var(--primary), 0.2)"
+                ]
+              } : {}}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <AnimatePresence>
+                {((playerSide === 'white' && isWhiteTurn) || (playerSide === 'black' && !isWhiteTurn)) && isActive && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 border-4 border-primary shadow-[0_0_30px_rgba(var(--primary),0.5)]"
+                  />
+                )}
+              </AnimatePresence>
+
               {((playerSide === 'white' && isWhiteTurn) || (playerSide === 'black' && !isWhiteTurn)) && isActive && (
                 <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute inset-0 border-4 border-primary shadow-[0_0_30px_rgba(var(--primary),0.5)]"
+                  className="absolute inset-0 opacity-10"
+                  animate={{
+                    backgroundPosition: ["0% 0%", "100% 100%"],
+                  }}
+                  transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                  style={{
+                    backgroundImage: "radial-gradient(circle, hsl(var(--primary)) 1px, transparent 1px)",
+                    backgroundSize: "50px 50px",
+                  }}
                 />
               )}
-            </AnimatePresence>
 
-            {((playerSide === 'white' && isWhiteTurn) || (playerSide === 'black' && !isWhiteTurn)) && isActive && (
-              <motion.div
-                className="absolute inset-0 opacity-10"
-                animate={{
-                  backgroundPosition: ["0% 0%", "100% 100%"],
-                }}
-                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                style={{
-                  backgroundImage: "radial-gradient(circle, hsl(var(--primary)) 1px, transparent 1px)",
-                  backgroundSize: "50px 50px",
-                }}
-              />
-            )}
+              <div className="text-center space-y-4 sm:space-y-6 md:space-y-8 p-4 sm:p-6 md:p-8 z-10 w-full max-w-4xl">
+                <motion.div 
+                  className="flex items-center justify-center gap-3 sm:gap-4"
+                  animate={((playerSide === 'white' && isWhiteTurn) || (playerSide === 'black' && !isWhiteTurn)) && isActive ? { y: [0, -5, 0] } : {}}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  {playerSide === 'white' ? (
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full border-4 border-current shadow-xl" />
+                  ) : (
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-foreground shadow-xl border-4 border-background" />
+                  )}
+                  <span className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-wide capitalize">{playerSide}</span>
+                </motion.div>
+                
+                <motion.div 
+                  className={`text-6xl sm:text-8xl md:text-9xl lg:text-[10rem] xl:text-[12rem] font-mono font-black tracking-tighter ${
+                    getTimeColor(
+                      playerSide === 'white' ? whiteTime : blackTime,
+                      ((playerSide === 'white' && isWhiteTurn) || (playerSide === 'black' && !isWhiteTurn)) && isActive
+                    )
+                  }`}
+                  animate={((playerSide === 'white' && isWhiteTurn) || (playerSide === 'black' && !isWhiteTurn)) && isActive ? { scale: [1, 1.03, 1] } : {}}
+                  transition={{ duration: 1, repeat: Infinity }}
+                  style={{ 
+                    textShadow: ((playerSide === 'white' && isWhiteTurn) || (playerSide === 'black' && !isWhiteTurn)) && isActive 
+                      ? "0 0 30px rgba(var(--primary), 0.5)" 
+                      : "none" 
+                  }}
+                >
+                  {formatTime(playerSide === 'white' ? whiteTime : blackTime)}
+                </motion.div>
 
-            <div className="text-center space-y-8 p-8 z-10">
-              <motion.div 
-                className="flex items-center justify-center gap-4"
-                animate={((playerSide === 'white' && isWhiteTurn) || (playerSide === 'black' && !isWhiteTurn)) && isActive ? { y: [0, -5, 0] } : {}}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                {playerSide === 'white' ? (
-                  <div className="w-12 h-12 rounded-full border-4 border-current shadow-xl" />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-foreground shadow-xl border-4 border-background" />
+                {increment > 0 && (
+                  <div className="text-sm sm:text-base md:text-lg text-muted-foreground flex items-center justify-center gap-2 font-medium">
+                    <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-gold" />
+                    +{increment}s increment
+                  </div>
                 )}
-                <span className="text-4xl font-bold tracking-wide capitalize">{playerSide}</span>
-              </motion.div>
-              
-              <motion.div 
-                className={`text-9xl md:text-[12rem] font-mono font-black tracking-tighter ${
-                  getTimeColor(
-                    playerSide === 'white' ? whiteTime : blackTime,
-                    ((playerSide === 'white' && isWhiteTurn) || (playerSide === 'black' && !isWhiteTurn)) && isActive
-                  )
-                }`}
-                animate={((playerSide === 'white' && isWhiteTurn) || (playerSide === 'black' && !isWhiteTurn)) && isActive ? { scale: [1, 1.03, 1] } : {}}
-                transition={{ duration: 1, repeat: Infinity }}
-                style={{ 
-                  textShadow: ((playerSide === 'white' && isWhiteTurn) || (playerSide === 'black' && !isWhiteTurn)) && isActive 
-                    ? "0 0 30px rgba(var(--primary), 0.5)" 
-                    : "none" 
-                }}
-              >
-                {formatTime(playerSide === 'white' ? whiteTime : blackTime)}
-              </motion.div>
 
-              {increment > 0 && (
-                <div className="text-lg text-muted-foreground flex items-center justify-center gap-2 font-medium">
-                  <Zap className="w-6 h-6 text-gold" />
-                  +{increment}s increment
+                {/* Show turn indicator */}
+                <div className="text-base sm:text-lg md:text-xl font-semibold">
+                  {((playerSide === 'white' && isWhiteTurn) || (playerSide === 'black' && !isWhiteTurn)) ? (
+                    <span className="text-primary animate-pulse">Your Turn - Tap to Move</span>
+                  ) : (
+                    <span className="text-muted-foreground">Opponent's Turn</span>
+                  )}
                 </div>
-              )}
-
-              {/* Show turn indicator */}
-              <div className="text-xl font-semibold">
-                {((playerSide === 'white' && isWhiteTurn) || (playerSide === 'black' && !isWhiteTurn)) ? (
-                  <span className="text-primary animate-pulse">Your Turn - Tap to Move</span>
-                ) : (
-                  <span className="text-muted-foreground">Opponent's Turn</span>
-                )}
               </div>
+            </motion.div>
+            
+            {/* Opponent Time Badge at Bottom */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+              <motion.div 
+                className="bg-muted/90 backdrop-blur-md border-2 border-border rounded-full px-4 sm:px-6 py-2 sm:py-3 shadow-xl"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.5 }}
+              >
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    {playerSide === 'black' ? (
+                      <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 border-current" />
+                    ) : (
+                      <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-foreground" />
+                    )}
+                    <span className="text-xs sm:text-sm font-semibold text-muted-foreground">
+                      {playerSide === 'white' ? 'Black' : 'White'}
+                    </span>
+                  </div>
+                  <span className="text-base sm:text-lg md:text-xl font-mono font-bold">
+                    {formatTime(playerSide === 'white' ? blackTime : whiteTime)}
+                  </span>
+                </div>
+              </motion.div>
             </div>
-          </motion.div>
+          </div>
         )}
       </div>
 
