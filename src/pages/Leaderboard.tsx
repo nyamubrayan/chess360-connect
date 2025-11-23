@@ -108,8 +108,8 @@ const Leaderboard = () => {
   }, [user, category]);
 
   const fetchLeaderboard = async () => {
-    // Fetch all data without server-side ordering since Supabase doesn't support ordering by nested relations
-    const { data, error } = await supabase
+    // Fetch profiles with player stats
+    const { data: profileData, error: profileError } = await supabase
       .from("profiles")
       .select(
         `
@@ -118,25 +118,38 @@ const Leaderboard = () => {
           total_games,
           wins,
           win_rate
-        ),
-        user_training_stats (
-          total_puzzles_solved
         )
       `
       )
-      .limit(200); // Fetch more data to ensure we have enough after sorting
+      .limit(200);
 
-    if (error) {
-      console.error("Error fetching leaderboard:", error);
+    if (profileError) {
+      console.error("Error fetching leaderboard (profiles):", profileError);
       setLoading(false);
       return;
     }
 
+    // Fetch puzzle stats separately and merge on the client
+    const { data: puzzleData, error: puzzleError } = await supabase
+      .from("user_training_stats")
+      .select("user_id, total_puzzles_solved");
+
+    if (puzzleError) {
+      console.error("Error fetching leaderboard (puzzles):", puzzleError);
+    }
+
+    const puzzleMap = new Map<string, number>();
+    (puzzleData || []).forEach((row: any) => {
+      puzzleMap.set(row.user_id, row.total_puzzles_solved || 0);
+    });
+
     // Format the data
-    const formattedData = (data || []).map((p: any) => ({
+    const formattedData: PlayerWithStats[] = (profileData || []).map((p: any) => ({
       ...p,
       player_stats: Array.isArray(p.player_stats) ? p.player_stats[0] : p.player_stats,
-      user_training_stats: Array.isArray(p.user_training_stats) ? p.user_training_stats[0] : p.user_training_stats,
+      user_training_stats: {
+        total_puzzles_solved: puzzleMap.get(p.id) || 0,
+      },
     }));
 
     // Sort data based on category on the client side
@@ -193,8 +206,9 @@ const Leaderboard = () => {
     );
   }
 
-  const topThree = players.slice(0, 3);
-  const restOfPlayers = players.slice(3);
+  const hasPodium = players.length >= 3;
+  const topThree = hasPodium ? players.slice(0, 3) : [];
+  const restOfPlayers = hasPodium ? players.slice(3) : players;
 
   const getCategoryValue = (player: PlayerWithStats) => {
     if (category === "rating") return player.rating?.toLocaleString() || '1,200';
