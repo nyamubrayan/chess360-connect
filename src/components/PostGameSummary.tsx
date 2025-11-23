@@ -26,37 +26,41 @@ interface GameSummary {
   suggestions: string;
 }
 
+interface PlayerInfo {
+  id: string;
+  username: string;
+  display_name: string | null;
+  ratingChange: number;
+  newRating: number;
+  oldRating: number;
+}
+
 export const PostGameSummary = ({ open, onOpenChange, gameId, result, playerColor }: PostGameSummaryProps) => {
   const [summary, setSummary] = useState<GameSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [ratingChange, setRatingChange] = useState<number | null>(null);
-  const [newRating, setNewRating] = useState<number | null>(null);
+  const [whitePlayer, setWhitePlayer] = useState<PlayerInfo | null>(null);
+  const [blackPlayer, setBlackPlayer] = useState<PlayerInfo | null>(null);
+  const [winnerId, setWinnerId] = useState<string | null>(null);
 
   useEffect(() => {
     if (open && gameId) {
       fetchOrGenerateSummary();
-      fetchRatingChange();
+      fetchPlayersInfo();
     }
   }, [open, gameId]);
 
-  const fetchRatingChange = async () => {
+  const fetchPlayersInfo = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Fetch game data to get rating changes and time control
+      // Fetch game data to get both players' rating changes and winner
       const { data: game, error: gameError } = await supabase
         .from('games')
-        .select('white_player_id, black_player_id, white_rating_change, black_rating_change, time_control')
+        .select('white_player_id, black_player_id, white_rating_change, black_rating_change, time_control, winner_id')
         .eq('id', gameId)
         .single();
 
       if (gameError) throw gameError;
 
-      // Determine player's rating change
-      const isWhite = game.white_player_id === user.id;
-      const change = isWhite ? game.white_rating_change : game.black_rating_change;
-      setRatingChange(change || 0);
+      setWinnerId(game.winner_id);
 
       // Determine game category to fetch correct rating
       const getGameCategory = (timeControl: number) => {
@@ -66,19 +70,44 @@ export const PostGameSummary = ({ open, onOpenChange, gameId, result, playerColo
       };
       
       const category = getGameCategory(game.time_control);
-      const ratingField = `${category}_rating`;
+      const ratingField = `${category}_rating` as 'bullet_rating' | 'blitz_rating' | 'rapid_rating';
 
-      // Fetch current category-specific rating
-      const { data: profile, error: profileError } = await supabase
+      // Fetch both players' profiles
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select(ratingField)
-        .eq('id', user.id)
-        .single();
+        .select('id, username, display_name, bullet_rating, blitz_rating, rapid_rating')
+        .in('id', [game.white_player_id, game.black_player_id]);
 
-      if (profileError) throw profileError;
-      setNewRating(profile[ratingField as keyof typeof profile] as number || 1200);
+      if (profilesError) throw profilesError;
+
+      const whiteProfile = profiles?.find(p => p.id === game.white_player_id);
+      const blackProfile = profiles?.find(p => p.id === game.black_player_id);
+
+      if (whiteProfile) {
+        const currentRating = whiteProfile[ratingField] || 1200;
+        setWhitePlayer({
+          id: whiteProfile.id,
+          username: whiteProfile.username,
+          display_name: whiteProfile.display_name,
+          ratingChange: game.white_rating_change || 0,
+          newRating: currentRating,
+          oldRating: currentRating - (game.white_rating_change || 0),
+        });
+      }
+
+      if (blackProfile) {
+        const currentRating = blackProfile[ratingField] || 1200;
+        setBlackPlayer({
+          id: blackProfile.id,
+          username: blackProfile.username,
+          display_name: blackProfile.display_name,
+          ratingChange: game.black_rating_change || 0,
+          newRating: currentRating,
+          oldRating: currentRating - (game.black_rating_change || 0),
+        });
+      }
     } catch (error) {
-      console.error('Error fetching rating change:', error);
+      console.error('Error fetching players info:', error);
     }
   };
 
@@ -126,61 +155,106 @@ export const PostGameSummary = ({ open, onOpenChange, gameId, result, playerColo
     }
   };
 
-  const getResultBadge = () => {
-    if (result === "draw") {
-      return <Badge variant="secondary">Draw</Badge>;
-    }
-    const won = (result === "white_win" && playerColor === "white") || 
-                (result === "black_win" && playerColor === "black");
-    return won ? (
-      <Badge className="bg-green-500/10 text-green-500">Victory</Badge>
-    ) : (
-      <Badge className="bg-red-500/10 text-red-500">Defeat</Badge>
-    );
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-2xl">Game Summary</DialogTitle>
-            {getResultBadge()}
-          </div>
+          <DialogTitle className="text-2xl text-center">Game Over</DialogTitle>
         </DialogHeader>
 
-        {/* Rating Change Display */}
-        {ratingChange !== null && newRating !== null && (
+        {/* Game Result with Both Players */}
+        {whitePlayer && blackPlayer && (
           <Card className="gradient-card p-6 mb-4 animate-scale-in">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Rating Change</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span 
-                    className={`text-3xl font-bold transition-all duration-500 animate-fade-in ${
-                      ratingChange >= 0 ? 'text-green-500' : 'text-red-500'
-                    } ${Math.abs(ratingChange) >= 20 ? 'animate-pulse' : ''}`}
-                  >
-                    {ratingChange >= 0 ? '+' : ''}{ratingChange}
-                  </span>
-                  <TrendingUp 
-                    className={`w-6 h-6 transition-all duration-500 animate-fade-in ${
-                      ratingChange >= 0 ? 'text-green-500' : 'text-red-500 rotate-180'
-                    } ${Math.abs(ratingChange) >= 20 ? 'animate-bounce' : ''}`} 
-                  />
-                </div>
-                {Math.abs(ratingChange) >= 30 && (
-                  <p className="text-xs font-semibold mt-1 animate-fade-in text-primary">
-                    {ratingChange > 0 ? '🔥 Massive Gain!' : '⚠️ Significant Loss'}
-                  </p>
-                )}
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-muted-foreground">New Rating</p>
-                <p className="text-3xl font-bold mt-1 animate-scale-in">{newRating}</p>
-                <p className="text-xs text-muted-foreground animate-fade-in">
-                  (was {newRating - ratingChange})
+            <div className="space-y-6">
+              {/* Result Title */}
+              <div className="text-center">
+                <h3 className="text-3xl font-bold mb-2">
+                  {winnerId === null ? (
+                    <span className="text-muted-foreground">Draw</span>
+                  ) : winnerId === whitePlayer.id ? (
+                    <span className="text-foreground">White Wins!</span>
+                  ) : (
+                    <span className="text-foreground">Black Wins!</span>
+                  )}
+                </h3>
+                <p className="text-sm text-muted-foreground capitalize">
+                  by {result.replace('_', ' ')}
                 </p>
+              </div>
+
+              {/* Both Players Rating Changes */}
+              <div className="grid grid-cols-2 gap-6">
+                {/* White Player */}
+                <div className={`flex flex-col items-center p-4 rounded-lg border-2 ${
+                  winnerId === whitePlayer.id 
+                    ? 'border-green-500 bg-green-500/10' 
+                    : winnerId === null 
+                    ? 'border-muted' 
+                    : 'border-red-500/50 bg-red-500/5'
+                }`}>
+                  {winnerId === whitePlayer.id && (
+                    <Trophy className="w-8 h-8 text-green-500 mb-2 animate-bounce" />
+                  )}
+                  <div className="text-center mb-3">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">White</p>
+                    <p className="font-bold text-lg truncate max-w-[150px]">
+                      {whitePlayer.display_name || whitePlayer.username}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <span className={`text-2xl font-bold ${
+                        whitePlayer.ratingChange >= 0 ? 'text-green-500' : 'text-red-500'
+                      }`}>
+                        {whitePlayer.ratingChange >= 0 ? '+' : ''}{whitePlayer.ratingChange}
+                      </span>
+                      {whitePlayer.ratingChange >= 0 ? (
+                        <TrendingUp className="w-5 h-5 text-green-500" />
+                      ) : (
+                        <TrendingDown className="w-5 h-5 text-red-500" />
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {whitePlayer.oldRating} → <span className="font-bold">{whitePlayer.newRating}</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Black Player */}
+                <div className={`flex flex-col items-center p-4 rounded-lg border-2 ${
+                  winnerId === blackPlayer.id 
+                    ? 'border-green-500 bg-green-500/10' 
+                    : winnerId === null 
+                    ? 'border-muted' 
+                    : 'border-red-500/50 bg-red-500/5'
+                }`}>
+                  {winnerId === blackPlayer.id && (
+                    <Trophy className="w-8 h-8 text-green-500 mb-2 animate-bounce" />
+                  )}
+                  <div className="text-center mb-3">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Black</p>
+                    <p className="font-bold text-lg truncate max-w-[150px]">
+                      {blackPlayer.display_name || blackPlayer.username}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <span className={`text-2xl font-bold ${
+                        blackPlayer.ratingChange >= 0 ? 'text-green-500' : 'text-red-500'
+                      }`}>
+                        {blackPlayer.ratingChange >= 0 ? '+' : ''}{blackPlayer.ratingChange}
+                      </span>
+                      {blackPlayer.ratingChange >= 0 ? (
+                        <TrendingUp className="w-5 h-5 text-green-500" />
+                      ) : (
+                        <TrendingDown className="w-5 h-5 text-red-500" />
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {blackPlayer.oldRating} → <span className="font-bold">{blackPlayer.newRating}</span>
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </Card>
