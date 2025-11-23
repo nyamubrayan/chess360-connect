@@ -702,7 +702,7 @@ const ChessClock = () => {
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
             <Clock className="w-6 h-6 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-bold text-gradient">Chess Clock</h1>
+          <h1 className="text-2xl font-bold text-gradient">Smart Chess Clock</h1>
           {multiDeviceMode && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Users className="w-4 h-4" />

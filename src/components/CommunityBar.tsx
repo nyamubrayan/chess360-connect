@@ -106,7 +106,7 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
     },
     {
       icon: Clock,
-      label: 'Chess Clock',
+      label: 'Smart Chess Clock',
       path: '/chess-clock'
     }
   ];
