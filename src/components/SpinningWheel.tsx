@@ -1,11 +1,20 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useChessSounds } from '@/hooks/useChessSounds';
-import { Crown, Zap, Castle, Sparkles } from 'lucide-react';
+import { Crown, Zap, Castle, Sparkles, Trophy, Target } from 'lucide-react';
+
+interface CategoryStats {
+  rating: number;
+  gamesPlayed: number;
+}
 
 interface SpinningWheelProps {
   onSelect: (option: string, timeControl?: { time: number; increment: number; label: string }) => void;
   disabled?: boolean;
+  username?: string;
+  bulletStats?: CategoryStats;
+  blitzStats?: CategoryStats;
+  rapidStats?: CategoryStats;
 }
 
 interface CategoryOption {
@@ -71,10 +80,23 @@ const TIME_VARIATIONS: Record<string, TimeVariation[]> = {
   ],
 };
 
-export function SpinningWheel({ onSelect, disabled }: SpinningWheelProps) {
+export function SpinningWheel({ onSelect, disabled, username, bulletStats, blitzStats, rapidStats }: SpinningWheelProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('BULLET');
   const [selectedTimeControl, setSelectedTimeControl] = useState<TimeVariation | null>(null);
   const { playWheelSpin, playWheelLock } = useChessSounds();
+  
+  const getCategoryStats = (category: string): CategoryStats => {
+    switch(category) {
+      case 'BULLET':
+        return bulletStats || { rating: 1200, gamesPlayed: 0 };
+      case 'BLITZ':
+        return blitzStats || { rating: 1200, gamesPlayed: 0 };
+      case 'RAPID':
+        return rapidStats || { rating: 1200, gamesPlayed: 0 };
+      default:
+        return { rating: 1200, gamesPlayed: 0 };
+    }
+  };
   
   const handleCategorySelect = (categoryName: string) => {
     if (disabled) return;
@@ -99,6 +121,7 @@ export function SpinningWheel({ onSelect, disabled }: SpinningWheelProps) {
   const currentCategory = CATEGORIES.find(c => c.name === selectedCategory) || CATEGORIES[0];
   const Icon = currentCategory.icon;
   const timeVariations = TIME_VARIATIONS[selectedCategory] || [];
+  const categoryStats = getCategoryStats(selectedCategory);
   
   return (
     <div className="flex flex-col items-center gap-8 w-full max-w-5xl mx-auto px-4">
@@ -119,25 +142,66 @@ export function SpinningWheel({ onSelect, disabled }: SpinningWheelProps) {
           <div className={`absolute inset-0 bg-gradient-to-br ${currentCategory.gradient} opacity-30 blur-3xl animate-pulse`} />
           
           {/* Content */}
-          <div className="relative p-12 sm:p-16 text-center">
+          <div className="relative p-8 sm:p-12">
             <motion.div
               key={selectedCategory}
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.3 }}
-              className="flex flex-col items-center gap-4"
+              className="space-y-6"
             >
-              <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/40 flex items-center justify-center shadow-2xl">
-                <Icon className="w-12 h-12 sm:w-16 sm:h-16 text-white drop-shadow-lg" />
+              {/* Header Section */}
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/40 flex items-center justify-center shadow-2xl">
+                  <Icon className="w-10 h-10 sm:w-12 sm:h-12 text-white drop-shadow-lg" />
+                </div>
+                
+                <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white drop-shadow-lg tracking-tight">
+                  {currentCategory.displayName}
+                </h2>
+                
+                <p className="text-lg sm:text-xl text-white/80 font-medium">
+                  {currentCategory.description}
+                </p>
               </div>
-              
-              <h2 className="text-5xl sm:text-6xl md:text-7xl font-bold text-white drop-shadow-lg tracking-tight">
-                {currentCategory.displayName}
-              </h2>
-              
-              <p className="text-xl sm:text-2xl text-white/80 font-medium">
-                {currentCategory.description}
-              </p>
+
+              {/* Stats Section */}
+              {selectedCategory !== 'CUSTOM MATCH' && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 max-w-2xl mx-auto">
+                  {/* Username */}
+                  <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
+                    <div className="flex items-center gap-2 justify-center text-white/70 text-sm mb-1">
+                      <Target className="w-4 h-4" />
+                      <span className="font-medium">Player</span>
+                    </div>
+                    <div className="text-white font-bold text-lg sm:text-xl truncate text-center">
+                      {username || 'Player'}
+                    </div>
+                  </div>
+
+                  {/* Rating */}
+                  <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
+                    <div className="flex items-center gap-2 justify-center text-white/70 text-sm mb-1">
+                      <Trophy className="w-4 h-4" />
+                      <span className="font-medium">Rating</span>
+                    </div>
+                    <div className="text-white font-bold text-2xl sm:text-3xl text-center">
+                      {categoryStats.rating}
+                    </div>
+                  </div>
+
+                  {/* Games Played */}
+                  <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
+                    <div className="flex items-center gap-2 justify-center text-white/70 text-sm mb-1">
+                      <Zap className="w-4 h-4" />
+                      <span className="font-medium">Games</span>
+                    </div>
+                    <div className="text-white font-bold text-2xl sm:text-3xl text-center">
+                      {categoryStats.gamesPlayed}
+                    </div>
+                  </div>
+                </div>
+              )}
             </motion.div>
           </div>
         </div>

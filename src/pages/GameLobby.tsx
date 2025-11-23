@@ -36,6 +36,7 @@ const TIME_CONTROLS: TimeControl[] = [
 export default function GameLobby() {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [selectedTimeControl, setSelectedTimeControl] = useState<TimeControl | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('Bullet');
   const [customDialogOpen, setCustomDialogOpen] = useState(false);
@@ -51,6 +52,7 @@ export default function GameLobby() {
         return;
       }
       setUser(user);
+      fetchUserProfile(user.id);
       checkForActiveGame(user.id);
     });
 
@@ -66,6 +68,23 @@ export default function GameLobby() {
       }
     };
   }, [searchInterval, isSearching]);
+
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('username, bullet_rating, blitz_rating, rapid_rating, bullet_games_played, blitz_games_played, rapid_games_played')
+        .eq('id', userId)
+        .single();
+
+      if (error) throw error;
+      if (data) {
+        setProfile(data);
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
 
   const checkForActiveGame = async (userId: string) => {
     setLoadingActiveGame(true);
@@ -429,7 +448,14 @@ export default function GameLobby() {
 
         {/* Game Type Selection */}
         <div className="flex flex-col items-center mb-8 w-full">
-          <SpinningWheel onSelect={handleWheelSelect} disabled={isSearching} />
+          <SpinningWheel 
+            onSelect={handleWheelSelect} 
+            disabled={isSearching}
+            username={profile?.username}
+            bulletStats={{ rating: profile?.bullet_rating || 1200, gamesPlayed: profile?.bullet_games_played || 0 }}
+            blitzStats={{ rating: profile?.blitz_rating || 1200, gamesPlayed: profile?.blitz_games_played || 0 }}
+            rapidStats={{ rating: profile?.rapid_rating || 1200, gamesPlayed: profile?.rapid_games_played || 0 }}
+          />
           
           {/* Searching Status */}
           {isSearching && (

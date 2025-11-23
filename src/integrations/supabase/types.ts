@@ -769,6 +769,10 @@ export type Database = {
         Row: {
           avatar_url: string | null
           bio: string | null
+          blitz_games_played: number | null
+          blitz_rating: number | null
+          bullet_games_played: number | null
+          bullet_rating: number | null
           city: string | null
           country: string | null
           created_at: string | null
@@ -777,6 +781,8 @@ export type Database = {
           latitude: number | null
           location_enabled: boolean | null
           longitude: number | null
+          rapid_games_played: number | null
+          rapid_rating: number | null
           rating: number | null
           show_training_stats: boolean | null
           updated_at: string | null
@@ -785,6 +791,10 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           bio?: string | null
+          blitz_games_played?: number | null
+          blitz_rating?: number | null
+          bullet_games_played?: number | null
+          bullet_rating?: number | null
           city?: string | null
           country?: string | null
           created_at?: string | null
@@ -793,6 +803,8 @@ export type Database = {
           latitude?: number | null
           location_enabled?: boolean | null
           longitude?: number | null
+          rapid_games_played?: number | null
+          rapid_rating?: number | null
           rating?: number | null
           show_training_stats?: boolean | null
           updated_at?: string | null
@@ -801,6 +813,10 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           bio?: string | null
+          blitz_games_played?: number | null
+          blitz_rating?: number | null
+          bullet_games_played?: number | null
+          bullet_rating?: number | null
           city?: string | null
           country?: string | null
           created_at?: string | null
@@ -809,6 +825,8 @@ export type Database = {
           latitude?: number | null
           location_enabled?: boolean | null
           longitude?: number | null
+          rapid_games_played?: number | null
+          rapid_rating?: number | null
           rating?: number | null
           show_training_stats?: boolean | null
           updated_at?: string | null
@@ -1392,6 +1410,10 @@ export type Database = {
       check_and_award_achievements: {
         Args: { p_user_id: string }
         Returns: undefined
+      }
+      get_game_category: {
+        Args: { p_time_control: number; p_time_increment: number }
+        Returns: string
       }
       has_role: {
         Args: {
