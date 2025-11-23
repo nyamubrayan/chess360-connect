@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Trophy, Target, UserIcon, Menu, GraduationCap, Swords, Home, Users, Sparkles, Newspaper, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { NotificationBell } from './NotificationBell';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import chessafariLogo from '@/assets/chessafari-logo.png';
@@ -139,6 +140,7 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
           <div className="flex items-center gap-3">
             {user ? (
               <>
+                <ThemeToggle />
                 <NotificationBell userId={user.id} />
                 
                 {/* Profile Display */}
@@ -248,12 +250,22 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
                           </Button>
                         ))}
                       </div>
+                      
+                      {/* Theme Toggle */}
+                      <div className="border-t pt-4 px-3">
+                        <p className="text-sm font-semibold text-muted-foreground mb-2">Appearance</p>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm">Theme</span>
+                          <ThemeToggle />
+                        </div>
+                      </div>
                     </div>
                   </SheetContent>
                 </Sheet>
               </>
             ) : (
               <>
+                <ThemeToggle />
                 <Button onClick={() => navigate('/auth')} className="h-10 px-6 font-medium hidden lg:flex">
                   Sign In
                 </Button>
@@ -295,6 +307,15 @@ export const CommunityBar = ({ user }: CommunityBarProps) => {
                           <span className="font-medium">{link.label}</span>
                         </Button>
                       ))}
+                      
+                      {/* Theme Toggle */}
+                      <div className="border-t mt-4 pt-4 px-3">
+                        <p className="text-sm font-semibold text-muted-foreground mb-2">Appearance</p>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm">Theme</span>
+                          <ThemeToggle />
+                        </div>
+                      </div>
                     </div>
                   </SheetContent>
                 </Sheet>
