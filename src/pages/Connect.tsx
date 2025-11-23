@@ -444,113 +444,121 @@ export default function Connect() {
           </p>
         </div>
 
-        {/* Pending Requests Section */}
-        {(pendingRequests.received.length > 0 || pendingRequests.sent.length > 0) && (
+        {/* Incoming Requests Section */}
+        {pendingRequests.received.length > 0 && (
           <Card className="gradient-card mb-6 md:mb-8 border-orange-500/20">
             <CardHeader>
-              <CardTitle className="text-lg md:text-xl flex items-center gap-2">
-                <Clock className="w-5 h-5 text-orange-500" />
-                ChessMate Requests
-              </CardTitle>
-              <CardDescription className="text-sm">
-                Manage your pending connection requests
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg md:text-xl flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-orange-500" />
+                    Incoming Requests
+                  </CardTitle>
+                  <CardDescription className="text-sm mt-1">
+                    Players who want to connect with you
+                  </CardDescription>
+                </div>
+                <Badge variant="secondary" className="text-sm font-semibold">
+                  {pendingRequests.received.length}
+                </Badge>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-4 md:space-y-6">
-              {/* Received Requests */}
-              {pendingRequests.received.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-                    <Badge variant="secondary" className="text-xs">
-                      {pendingRequests.received.length}
-                    </Badge>
-                    Received Requests
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                    {pendingRequests.received.map((player) => {
-                      const status = friendStatuses[player.id];
-                      return (
-                        <div key={player.id} className="flex items-center gap-3 p-3 rounded-lg bg-orange-500/5 border border-orange-500/20">
-                          <Avatar className="w-10 h-10 border-2 border-orange-500/20 shrink-0">
-                            <AvatarImage src={player.avatar_url || undefined} />
-                            <AvatarFallback className="bg-orange-500/10 text-orange-600 font-semibold">
-                              {player.username.substring(0, 2).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-sm truncate">
-                              {player.display_name || player.username}
-                            </p>
-                            <p className="text-xs text-muted-foreground truncate">@{player.username}</p>
-                            <div className="flex gap-1 mt-2">
-                              <Button
-                                size="sm"
-                                variant="default"
-                                className="h-7 text-xs px-2"
-                                onClick={() => acceptFriendRequest(status.friendshipId!)}
-                              >
-                                <Check className="w-3 h-3 mr-1" />
-                                Accept
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-7 text-xs px-2"
-                                onClick={() => declineFriendRequest(status.friendshipId!)}
-                              >
-                                <X className="w-3 h-3 mr-1" />
-                                Decline
-                              </Button>
-                            </div>
-                          </div>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                {pendingRequests.received.map((player) => {
+                  const status = friendStatuses[player.id];
+                  return (
+                    <div key={player.id} className="flex items-center gap-3 p-3 rounded-lg bg-orange-500/5 border border-orange-500/20">
+                      <Avatar className="w-10 h-10 border-2 border-orange-500/20 shrink-0">
+                        <AvatarImage src={player.avatar_url || undefined} />
+                        <AvatarFallback className="bg-orange-500/10 text-orange-600 font-semibold">
+                          {player.username.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm truncate">
+                          {player.display_name || player.username}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">@{player.username}</p>
+                        <div className="flex gap-1 mt-2">
+                          <Button
+                            size="sm"
+                            variant="default"
+                            className="h-7 text-xs px-2"
+                            onClick={() => acceptFriendRequest(status.friendshipId!)}
+                          >
+                            <Check className="w-3 h-3 mr-1" />
+                            Accept
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs px-2"
+                            onClick={() => declineFriendRequest(status.friendshipId!)}
+                          >
+                            <X className="w-3 h-3 mr-1" />
+                            Decline
+                          </Button>
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-              {/* Sent Requests */}
-              {pendingRequests.sent.length > 0 && (
+        {/* Sent Requests Section */}
+        {pendingRequests.sent.length > 0 && (
+          <Card className="gradient-card mb-6 md:mb-8 border-primary/20">
+            <CardHeader>
+              <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-                    <Badge variant="secondary" className="text-xs">
-                      {pendingRequests.sent.length}
-                    </Badge>
+                  <CardTitle className="text-lg md:text-xl flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-primary" />
                     Sent Requests
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                    {pendingRequests.sent.map((player) => {
-                      const status = friendStatuses[player.id];
-                      return (
-                        <div key={player.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border">
-                          <Avatar className="w-10 h-10 border-2 border-primary/20 shrink-0">
-                            <AvatarImage src={player.avatar_url || undefined} />
-                            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                              {player.username.substring(0, 2).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-sm truncate">
-                              {player.display_name || player.username}
-                            </p>
-                            <p className="text-xs text-muted-foreground truncate">@{player.username}</p>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-7 text-xs px-2 mt-2"
-                              onClick={() => cancelFriendRequest(status.friendshipId!)}
-                            >
-                              <Clock className="w-3 h-3 mr-1" />
-                              Cancel
-                            </Button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  </CardTitle>
+                  <CardDescription className="text-sm mt-1">
+                    Pending requests you've sent to other players
+                  </CardDescription>
                 </div>
-              )}
+                <Badge variant="secondary" className="text-sm font-semibold">
+                  {pendingRequests.sent.length}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                {pendingRequests.sent.map((player) => {
+                  const status = friendStatuses[player.id];
+                  return (
+                    <div key={player.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border">
+                      <Avatar className="w-10 h-10 border-2 border-primary/20 shrink-0">
+                        <AvatarImage src={player.avatar_url || undefined} />
+                        <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                          {player.username.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm truncate">
+                          {player.display_name || player.username}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">@{player.username}</p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs px-2 mt-2"
+                          onClick={() => cancelFriendRequest(status.friendshipId!)}
+                        >
+                          <Clock className="w-3 h-3 mr-1" />
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </CardContent>
           </Card>
         )}
