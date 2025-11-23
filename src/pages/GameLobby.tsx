@@ -268,6 +268,13 @@ export default function GameLobby() {
 
   const handleWheelSelect = async (category: string, timeControl?: { time: number; increment: number; label: string }) => {
     if (isSearching) return;
+    
+    // Check for active game before starting matchmaking
+    if (activeGame) {
+      toast.info('You already have an active game. Resume it to continue.');
+      return;
+    }
+    
     setSelectedCategory(category);
     
     if (category === 'CUSTOM MATCH') {
@@ -318,8 +325,11 @@ export default function GameLobby() {
         // Check if user already has an active game
         if (joinData?.hasActiveGame && joinData.gameId) {
           toast.info(joinData.message || 'You already have an active game. Redirecting...');
-          navigate(`/game/${joinData.gameId}`);
+          // Clear search interval
+          if (searchInterval) clearInterval(searchInterval);
           setIsSearching(false);
+          setActiveGame({ id: joinData.gameId });
+          navigate(`/game/${joinData.gameId}`);
           return;
         }
 
@@ -352,7 +362,9 @@ export default function GameLobby() {
           // Check if user already has an active game during polling
           if (pollData?.hasActiveGame && pollData.gameId) {
             clearInterval(interval);
+            setSearchInterval(null);
             setIsSearching(false);
+            setActiveGame({ id: pollData.gameId });
             toast.info('Redirecting to your active game...');
             navigate(`/game/${pollData.gameId}`);
             return;
@@ -437,6 +449,12 @@ export default function GameLobby() {
       toast.error('Please select a time control');
       return;
     }
+    
+    // Check for active game before starting matchmaking
+    if (activeGame) {
+      toast.info('You already have an active game. Resume it to continue.');
+      return;
+    }
 
     setIsSearching(true);
 
@@ -460,8 +478,9 @@ export default function GameLobby() {
       // Check if user already has an active game
       if (joinData?.hasActiveGame && joinData.gameId) {
         toast.info(joinData.message || 'You already have an active game. Redirecting...');
-        navigate(`/game/${joinData.gameId}`);
         setIsSearching(false);
+        setActiveGame({ id: joinData.gameId });
+        navigate(`/game/${joinData.gameId}`);
         return;
       }
 
@@ -494,7 +513,9 @@ export default function GameLobby() {
         // Check if user already has an active game during polling
         if (pollData?.hasActiveGame && pollData.gameId) {
           clearInterval(interval);
+          setSearchInterval(null);
           setIsSearching(false);
+          setActiveGame({ id: pollData.gameId });
           toast.info('Redirecting to your active game...');
           navigate(`/game/${pollData.gameId}`);
           return;
