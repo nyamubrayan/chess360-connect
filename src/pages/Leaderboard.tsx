@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Crown, Star, Award, Medal, ArrowLeft } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface PlayerWithStats {
   id: string;
@@ -217,9 +218,18 @@ const Leaderboard = () => {
 
         {/* Podium - Top 3 */}
         {topThree.length >= 3 && (
-          <div className="grid grid-cols-3 gap-2 sm:gap-4 items-end mb-8">
+          <motion.div 
+            className="grid grid-cols-3 gap-2 sm:gap-4 items-end mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
             {/* 2nd Place - Left */}
-            <div className="flex flex-col items-center">
+            <motion.div 
+              className="flex flex-col items-center"
+              layout
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            >
               <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mb-3 ${getPodiumIconBg(2)}`}>
                 <Crown className={`w-8 h-8 sm:w-10 sm:h-10 ${getPodiumIconColor(2)}`} />
               </div>
@@ -232,10 +242,14 @@ const Leaderboard = () => {
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">{getCategoryLabel()}</p>
               </Card>
-            </div>
+            </motion.div>
 
             {/* 1st Place - Center (Elevated) */}
-            <div className="flex flex-col items-center -mt-6 sm:-mt-8">
+            <motion.div 
+              className="flex flex-col items-center -mt-6 sm:-mt-8"
+              layout
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            >
               <div className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center mb-3 ${getPodiumIconBg(1)}`}>
                 <Crown className={`w-10 h-10 sm:w-12 sm:h-12 ${getPodiumIconColor(1)}`} />
               </div>
@@ -248,10 +262,14 @@ const Leaderboard = () => {
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">{getCategoryLabel()}</p>
               </Card>
-            </div>
+            </motion.div>
 
             {/* 3rd Place - Right */}
-            <div className="flex flex-col items-center">
+            <motion.div 
+              className="flex flex-col items-center"
+              layout
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            >
               <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mb-3 ${getPodiumIconBg(3)}`}>
                 <Medal className={`w-8 h-8 sm:w-10 sm:h-10 ${getPodiumIconColor(3)}`} />
               </div>
@@ -264,48 +282,63 @@ const Leaderboard = () => {
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">{getCategoryLabel()}</p>
               </Card>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         )}
 
         {/* Rest of Leaderboard */}
         <div className="space-y-2">
-          {restOfPlayers.map((player, index) => {
-            const position = index + 4;
-            return (
-              <Card
-                key={player.id}
-                className="cursor-pointer hover:bg-accent/50 transition-colors"
-                onClick={() => navigate(`/profile/${player.id}`)}
-              >
-                <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4">
-                  <div className="flex items-center gap-2 sm:gap-3 min-w-[60px] sm:min-w-[80px]">
-                    <span className="text-base sm:text-lg font-medium text-muted-foreground w-6 sm:w-8">
-                      {position}.
-                    </span>
-                    {getRankIcon(position) && (
-                      <div className="flex-shrink-0">
-                        {getRankIcon(position)}
+          <AnimatePresence mode="popLayout">
+            {restOfPlayers.map((player, index) => {
+              const position = index + 4;
+              return (
+                <motion.div
+                  key={player.id}
+                  layout
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ 
+                    type: "spring", 
+                    stiffness: 300, 
+                    damping: 30,
+                    delay: index * 0.02
+                  }}
+                >
+                  <Card
+                    className="cursor-pointer hover:bg-accent/50 transition-colors"
+                    onClick={() => navigate(`/profile/${player.id}`)}
+                  >
+                    <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4">
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-[60px] sm:min-w-[80px]">
+                        <span className="text-base sm:text-lg font-medium text-muted-foreground w-6 sm:w-8">
+                          {position}.
+                        </span>
+                        {getRankIcon(position) && (
+                          <div className="flex-shrink-0">
+                            {getRankIcon(position)}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm sm:text-base truncate">
-                      {player.display_name || player.username}
-                    </p>
-                  </div>
-                  
-                  <div className="text-right">
-                    <p className="font-bold text-base sm:text-lg">
-                      {getCategoryValue(player)}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{getCategoryLabel()}</p>
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
+                      
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm sm:text-base truncate">
+                          {player.display_name || player.username}
+                        </p>
+                      </div>
+                      
+                      <div className="text-right">
+                        <p className="font-bold text-base sm:text-lg">
+                          {getCategoryValue(player)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{getCategoryLabel()}</p>
+                      </div>
+                    </div>
+                  </Card>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
         </div>
       </div>
     </div>
