@@ -47,7 +47,14 @@ serve(async (req) => {
         .limit(1);
 
       if (activeGames && activeGames.length > 0) {
-        console.log('User has ongoing game:', activeGames[0]);
+        console.log('✓ User has ongoing game:', activeGames[0].id);
+        
+        // Remove user from queue since they have an active game
+        await supabaseClient
+          .from('matchmaking_queue')
+          .delete()
+          .eq('user_id', user.id);
+        
         return new Response(
           JSON.stringify({ 
             hasActiveGame: true,
@@ -61,7 +68,7 @@ serve(async (req) => {
         );
       }
       
-      console.log('User has no ongoing games, proceeding with matchmaking');
+      console.log('✓ User has no ongoing games, proceeding with matchmaking');
 
       // First, clean up stale queue entries (older than 5 minutes)
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
@@ -111,18 +118,17 @@ serve(async (req) => {
 
       if (matches && matches.length > 0) {
         const opponent = matches[0];
+        
+        console.log(`🎮 MATCH FOUND: ${user.id} vs ${opponent.user_id}`);
 
-        // Remove both users from queue
-        await supabaseClient
-          .from('matchmaking_queue')
-          .delete()
-          .in('user_id', [user.id, opponent.user_id]);
-
-        // Create game with random color assignment
+        // Create game FIRST with random color assignment
         const isWhite = Math.random() < 0.5;
         const whitePlayerId = isWhite ? user.id : opponent.user_id;
         const blackPlayerId = isWhite ? opponent.user_id : user.id;
         const timeInSeconds = timeControl * 60;
+
+        console.log(`  White: ${whitePlayerId}`);
+        console.log(`  Black: ${blackPlayerId}`);
 
         const { data: game, error: gameError } = await supabaseClient
           .from('games')
@@ -140,9 +146,19 @@ serve(async (req) => {
           .single();
 
         if (gameError) {
-          console.error('Error creating game:', gameError);
+          console.error('❌ Error creating game:', gameError);
           throw gameError;
         }
+
+        console.log(`✓ Game created: ${game.id}`);
+
+        // THEN remove both users from queue (prevent them from matching again)
+        await supabaseClient
+          .from('matchmaking_queue')
+          .delete()
+          .in('user_id', [user.id, opponent.user_id]);
+        
+        console.log(`✓ Both players removed from queue`);
 
         // Send notifications to both players
         await supabaseClient.from('notifications').insert([
