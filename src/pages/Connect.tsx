@@ -61,7 +61,14 @@ export default function Connect() {
   const [sortBy, setSortBy] = useState<'rating' | 'games' | 'puzzles' | 'chessmates'>('rating');
   const [currentChessPiece, setCurrentChessPiece] = useState(0);
   
-  const chessPieces = ['♔', '♕', '♖', '♗', '♘', '♙'];
+  const chessPieces = [
+    { symbol: '♔', name: 'King' },
+    { symbol: '♕', name: 'Queen' },
+    { symbol: '♖', name: 'Rook' },
+    { symbol: '♗', name: 'Bishop' },
+    { symbol: '♘', name: 'Knight' },
+    { symbol: '♙', name: 'Pawn' }
+  ];
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -472,21 +479,33 @@ export default function Connect() {
         >
           <div className="flex items-center gap-3 mb-3 md:mb-4 relative">
             {/* Cycling Chess Piece Animation */}
-            <motion.div
-              key={currentChessPiece}
-              className="text-4xl md:text-5xl lg:text-6xl select-none"
-              initial={{ opacity: 0, scale: 0.5, rotate: -180 }}
-              animate={{ opacity: 1, scale: 1, rotate: 0 }}
-              exit={{ opacity: 0, scale: 0.5, rotate: 180 }}
-              transition={{ 
-                duration: 0.6,
-                type: "spring",
-                stiffness: 200,
-                damping: 20
-              }}
-            >
-              {chessPieces[currentChessPiece]}
-            </motion.div>
+            <div className="flex flex-col items-center">
+              <motion.div
+                key={currentChessPiece}
+                className="text-4xl md:text-5xl lg:text-6xl select-none"
+                initial={{ opacity: 0, scale: 0.5, rotate: -180 }}
+                animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                exit={{ opacity: 0, scale: 0.5, rotate: 180 }}
+                transition={{ 
+                  duration: 0.6,
+                  type: "spring",
+                  stiffness: 200,
+                  damping: 20
+                }}
+              >
+                {chessPieces[currentChessPiece].symbol}
+              </motion.div>
+              <motion.p
+                key={`name-${currentChessPiece}`}
+                className="text-xs md:text-sm font-semibold text-primary mt-1"
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -5 }}
+                transition={{ duration: 0.4, delay: 0.2 }}
+              >
+                {chessPieces[currentChessPiece].name}
+              </motion.p>
+            </div>
             <Users className="w-7 h-7 md:w-8 md:h-8 text-primary" />
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold">Networking Zone</h1>
           </div>
