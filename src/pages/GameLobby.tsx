@@ -77,7 +77,12 @@ export default function GameLobby() {
     // Fetch initial stats
     fetchGameStats();
 
-    // Set up real-time subscriptions for stats
+    // Auto-update stats every second
+    const statsInterval = setInterval(() => {
+      fetchGameStats();
+    }, 1000);
+
+    // Set up real-time subscriptions for instant updates
     const gamesChannel = supabase
       .channel('games-changes')
       .on(
@@ -98,6 +103,7 @@ export default function GameLobby() {
 
     // Cleanup: remove user from queue when component unmounts
     return () => {
+      clearInterval(statsInterval);
       if (searchInterval) clearInterval(searchInterval);
       
       // Remove from queue on unmount if searching
