@@ -37,6 +37,7 @@ const ChessClock = () => {
   
   // Multi-device state
   const [multiDeviceMode, setMultiDeviceMode] = useState(false);
+  const [multiDeviceSetup, setMultiDeviceSetup] = useState(false);
   const [sessionCode, setSessionCode] = useState("");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [showCodeDialog, setShowCodeDialog] = useState(false);
@@ -597,7 +598,7 @@ const ChessClock = () => {
             <div className="space-y-6 py-4">
               {/* Multi-Device Options */}
               {!multiDeviceMode && (
-                <div className="space-y-3 p-4 bg-primary/5 rounded-lg border border-primary/20">
+                <div className="space-y-4 p-4 bg-primary/5 rounded-lg border border-primary/20">
                   <h3 className="font-semibold text-lg flex items-center gap-2">
                     <Users className="w-5 h-5 text-primary" />
                     Multi-Device Mode
@@ -605,77 +606,134 @@ const ChessClock = () => {
                   <p className="text-sm text-muted-foreground">
                     Use two phones - each player sees only their clock
                   </p>
-                  <div className="flex flex-col gap-2">
-                    <Button 
-                      onClick={handleCreateSession}
-                      className="w-full h-12 font-bold"
-                      variant="default"
-                      disabled={!isConfigured}
-                    >
-                      <Share2 className="w-4 h-4 mr-2" />
-                      Create Session & Get Code
-                    </Button>
-                    {!isConfigured && (
-                      <p className="text-xs text-muted-foreground text-center">
-                        Select a time control first
-                      </p>
-                    )}
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
+                  
+                  {!multiDeviceSetup ? (
+                    // Step 1: Enable Multi-Device
+                    <div className="flex flex-col gap-3">
+                      <Button 
+                        onClick={() => setMultiDeviceSetup(true)}
+                        className="w-full h-12 font-bold"
+                        variant="default"
+                        disabled={!isConfigured}
+                      >
+                        <Users className="w-4 h-4 mr-2" />
+                        Start Multi-Device Setup
+                      </Button>
+                      {!isConfigured && (
+                        <p className="text-xs text-muted-foreground text-center">
+                          Select a time control first
+                        </p>
+                      )}
+                      
+                      <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                          <span className="bg-background px-2 text-muted-foreground">Or join existing</span>
+                        </div>
                       </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background px-2 text-muted-foreground">Or join</span>
+                      
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Enter Code"
+                          value={codeInput}
+                          onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+                          className="flex-1 font-mono text-center text-lg"
+                          maxLength={6}
+                        />
+                        <Button onClick={handleJoinSession} variant="outline" size="lg">
+                          <Link2 className="w-4 h-4 mr-2" />
+                          Join
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Enter Code"
-                        value={codeInput}
-                        onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
-                        className="flex-1 font-mono text-center text-lg"
-                        maxLength={6}
-                      />
-                      <Button onClick={handleJoinSession} variant="outline" size="lg">
-                        <Link2 className="w-4 h-4 mr-2" />
-                        Join
+                  ) : (
+                    // Step 2 & 3: Select Side and Generate Code
+                    <div className="space-y-4">
+                      <div className="bg-background/50 p-3 rounded-lg border border-border">
+                        <p className="text-sm font-medium mb-3">Step 1: Choose your side</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button 
+                            variant={playerSide === "white" ? "default" : "outline"}
+                            onClick={() => setPlayerSide("white")}
+                            className="h-14 text-base font-bold"
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className="w-5 h-5 rounded-full border-4 border-current" />
+                              White
+                            </div>
+                          </Button>
+                          <Button 
+                            variant={playerSide === "black" ? "default" : "outline"}
+                            onClick={() => setPlayerSide("black")}
+                            className="h-14 text-base font-bold"
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className="w-5 h-5 rounded-full bg-current" />
+                              Black
+                            </div>
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-background/50 p-3 rounded-lg border border-border">
+                        <p className="text-sm font-medium mb-3">Step 2: Generate connection code</p>
+                        <Button 
+                          onClick={handleCreateSession}
+                          className="w-full h-12 font-bold"
+                          variant="default"
+                        >
+                          <Share2 className="w-4 h-4 mr-2" />
+                          Generate Code
+                        </Button>
+                      </div>
+                      
+                      <Button 
+                        onClick={() => setMultiDeviceSetup(false)}
+                        variant="ghost"
+                        className="w-full"
+                      >
+                        Cancel
                       </Button>
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
 
-              {/* Side Selection */}
-              <div className="space-y-3">
-                <h3 className="font-semibold text-lg flex items-center gap-2">
-                  <span className="text-xl">♟️</span>
-                  Choose Your Side
-                </h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <Button 
-                    variant={playerSide === "white" ? "default" : "outline"}
-                    onClick={() => setPlayerSide("white")}
-                    className="h-16 text-lg font-bold transition-all"
-                    disabled={multiDeviceMode}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full border-4 border-current" />
-                      White
-                    </div>
-                  </Button>
-                  <Button 
-                    variant={playerSide === "black" ? "default" : "outline"}
-                    onClick={() => setPlayerSide("black")}
-                    className="h-16 text-lg font-bold transition-all"
-                    disabled={multiDeviceMode}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-current" />
-                      Black
-                    </div>
-                  </Button>
+              {/* Side Selection (only for single device) */}
+              {!multiDeviceSetup && (
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-lg flex items-center gap-2">
+                    <span className="text-xl">♟️</span>
+                    Choose Your Side
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button 
+                      variant={playerSide === "white" ? "default" : "outline"}
+                      onClick={() => setPlayerSide("white")}
+                      className="h-16 text-lg font-bold transition-all"
+                      disabled={multiDeviceMode}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full border-4 border-current" />
+                        White
+                      </div>
+                    </Button>
+                    <Button 
+                      variant={playerSide === "black" ? "default" : "outline"}
+                      onClick={() => setPlayerSide("black")}
+                      className="h-16 text-lg font-bold transition-all"
+                      disabled={multiDeviceMode}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-current" />
+                        Black
+                      </div>
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Quick Presets */}
               <div className="space-y-3">
