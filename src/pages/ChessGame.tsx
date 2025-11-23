@@ -787,12 +787,20 @@ export default function ChessGame() {
             
             {/* First Move Countdown Warning */}
             {firstMoveCountdown !== null && firstMoveCountdown > 0 && (
-              <Card className="mb-4 p-3 border-destructive bg-destructive/10">
+              <Card className={`mb-4 p-3 border-2 ${
+                firstMoveCountdown <= 10 
+                  ? 'border-destructive bg-destructive/10' 
+                  : 'border-green-500 bg-green-500/10'
+              }`}>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-destructive">
+                  <span className={`text-sm font-medium ${
+                    firstMoveCountdown <= 10 ? 'text-destructive' : 'text-green-600'
+                  }`}>
                     Waiting for first move...
                   </span>
-                  <span className="text-lg font-bold text-destructive">
+                  <span className={`text-lg font-bold ${
+                    firstMoveCountdown <= 10 ? 'text-destructive' : 'text-green-600'
+                  }`}>
                     {firstMoveCountdown}s
                   </span>
                 </div>

@@ -102,38 +102,36 @@ export const PostGameActions = ({
         )}
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {!isAborted && (
-            <Button
-              onClick={handleRematchRequest}
-              disabled={rematchSent || isProcessing}
-              className="w-full gap-2"
-              variant={rematchSent ? "outline" : "default"}
-            >
-              {rematchSent ? (
-                <>
-                  <AlertCircle className="w-4 h-4" />
-                  Request Sent
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-4 h-4" />
-                  Request Rematch
-                </>
-              )}
-            </Button>
-          )}
+          <Button
+            onClick={handleRematchRequest}
+            disabled={rematchSent || isProcessing}
+            className="w-full gap-2"
+            variant={rematchSent ? "outline" : "default"}
+          >
+            {rematchSent ? (
+              <>
+                <AlertCircle className="w-4 h-4" />
+                Request Sent
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-4 h-4" />
+                Request Rematch
+              </>
+            )}
+          </Button>
           
           <Button
             onClick={handleFindNewMatch}
             variant="secondary"
-            className={`w-full gap-2 ${isAborted ? 'sm:col-span-2' : ''}`}
+            className="w-full gap-2"
           >
             <Search className="w-4 h-4" />
             Find New Match
           </Button>
         </div>
         
-        {rematchSent && !isAborted && (
+        {rematchSent && (
           <p className="text-sm text-muted-foreground text-center mt-3">
             Waiting for {opponentName} to accept...
           </p>
