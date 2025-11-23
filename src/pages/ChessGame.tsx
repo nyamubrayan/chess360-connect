@@ -217,55 +217,48 @@ export default function ChessGame() {
   const handleFirstMoveTimeout = async () => {
     if (!game || !user || game.status !== 'active') return;
 
-    console.log('First move timeout - aborting game immediately...');
+    console.log('First move timeout - ending game with no rating changes...');
 
     try {
-      // Abort the game immediately
+      // End the game without applying rating changes (no winner_id, no rating changes)
       const { error } = await supabase
         .from('games')
         .update({
           status: 'completed',
           result: 'aborted',
           completed_at: new Date().toISOString(),
+          // No winner_id - ensures no rating changes
+          // No rating_change fields - no points deducted
         })
         .eq('id', game.id)
         .eq('status', 'active'); // Only abort if still active
 
       if (error) {
-        console.error('Error aborting game:', error);
+        console.error('Error ending game:', error);
         throw error;
       }
 
-      console.log('Game aborted successfully due to first move timeout');
+      console.log('Game ended successfully - no rating changes applied');
 
       // Send notifications to both players
       await supabase.from('notifications').insert([
         {
           user_id: game.white_player_id,
           type: 'game_aborted',
-          title: 'Game Aborted',
-          message: 'Game was aborted because no move was made within 30 seconds.',
+          title: 'Game Ended',
+          message: 'Game ended - no move was made within 30 seconds. No rating changes.',
         },
         {
           user_id: game.black_player_id,
           type: 'game_aborted',
-          title: 'Game Aborted',
-          message: 'Game was aborted because no move was made within 30 seconds.',
+          title: 'Game Ended',
+          message: 'Game ended - no move was made within 30 seconds. No rating changes.',
         },
       ]);
 
-      toast.error('Game aborted - no first move within 30 seconds.', {
-        duration: 5000,
-        action: {
-          label: 'Back to Lobby',
-          onClick: () => navigate('/lobby'),
-        },
+      toast.info('Game ended - no first move within 30 seconds. No rating changes applied.', {
+        duration: 6000,
       });
-
-      // Redirect after short delay
-      setTimeout(() => {
-        navigate('/lobby');
-      }, 2000);
     } catch (error) {
       console.error('Error handling first move timeout:', error);
     }
@@ -401,16 +394,19 @@ export default function ChessGame() {
         : gameData.result === 'timeout'
         ? (gameData.winner_id === user?.id ? 'Opponent ran out of time. You win!' : 'Time out! You lost.')
         : gameData.result === 'aborted'
-        ? 'Game aborted - no first move within 30 seconds'
+        ? 'Game ended - no first move within 30 seconds. No rating changes.'
         : `Game drawn by ${gameData.result}`;
       
-      toast.success(resultMessage, {
-        duration: 8000,
-        action: {
-          label: 'Back to Lobby',
-          onClick: () => navigate('/lobby'),
-        },
-      });
+      // Only show toast if not aborted (aborted already shows its own toast)
+      if (gameData.result !== 'aborted') {
+        toast.success(resultMessage, {
+          duration: 8000,
+          action: {
+            label: 'Back to Lobby',
+            onClick: () => navigate('/lobby'),
+          },
+        });
+      }
     }
     
     // Fetch player profiles
