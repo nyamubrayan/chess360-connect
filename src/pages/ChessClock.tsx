@@ -28,6 +28,8 @@ const ChessClock = () => {
   const [moveTimings, setMoveTimings] = useState<number[]>([]);
   const [lastMoveTime, setLastMoveTime] = useState<number>(Date.now());
   const [showReport, setShowReport] = useState(false);
+  const [pauseMenuOpen, setPauseMenuOpen] = useState(false);
+  const [gameResult, setGameResult] = useState<"white" | "black" | "draw" | null>(null);
   const { playMove } = useChessSounds();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -106,11 +108,27 @@ const ChessClock = () => {
     setBlackMoves(0);
     setMoveTimings([]);
     setShowReport(false);
+    setGameResult(null);
     if (intervalRef.current) clearInterval(intervalRef.current);
   };
 
   const handlePause = () => {
-    setIsActive(!isActive);
+    if (isActive) {
+      setIsActive(false);
+      setPauseMenuOpen(true);
+    }
+  };
+
+  const handleResume = () => {
+    setPauseMenuOpen(false);
+    setIsActive(true);
+  };
+
+  const handleGameEnd = (result: "white" | "black" | "draw") => {
+    setIsActive(false);
+    setGameResult(result);
+    setShowReport(true);
+    setPauseMenuOpen(false);
   };
 
   const applyPreset = (minutes: number, incrementSeconds: number) => {
@@ -450,12 +468,12 @@ const ChessClock = () => {
             <Button
               onClick={handlePause}
               size="lg"
-              variant={isActive ? "default" : "outline"}
+              variant="default"
               className="w-full sm:w-auto min-w-[140px] shadow-lg"
-              disabled={whiteTime === 0 || blackTime === 0}
+              disabled={!isActive || whiteTime === 0 || blackTime === 0}
             >
-              {isActive ? <Pause className="w-5 h-5 mr-2" /> : <Play className="w-5 h-5 mr-2" />}
-              {isActive ? "Pause" : "Resume"}
+              <Pause className="w-5 h-5 mr-2" />
+              Pause
             </Button>
             <Button onClick={handleReset} size="lg" variant="outline" className="w-full sm:w-auto min-w-[140px] shadow-lg">
               <RotateCcw className="w-5 h-5 mr-2" />
@@ -470,9 +488,66 @@ const ChessClock = () => {
             </p>
           </div>
 
+          {/* Pause Menu Dialog */}
+          <Dialog open={pauseMenuOpen} onOpenChange={setPauseMenuOpen}>
+            <DialogContent className="gradient-card border-2 border-primary/20 shadow-2xl max-w-sm">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold text-center bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                  ⏸️ Game Paused
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3 py-4">
+                <Button
+                  onClick={handleResume}
+                  size="lg"
+                  className="w-full h-14 text-lg font-bold"
+                >
+                  <Play className="w-5 h-5 mr-2" />
+                  Resume
+                </Button>
+                
+                <div className="pt-2 border-t border-border">
+                  <p className="text-sm text-muted-foreground text-center mb-3">End Game & View Stats</p>
+                  <div className="space-y-2">
+                    <Button
+                      onClick={() => handleGameEnd("white")}
+                      variant="outline"
+                      size="lg"
+                      className="w-full h-12 font-bold hover:bg-success/20 hover:border-success"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 rounded-full border-4 border-current" />
+                        White Won
+                      </div>
+                    </Button>
+                    <Button
+                      onClick={() => handleGameEnd("black")}
+                      variant="outline"
+                      size="lg"
+                      className="w-full h-12 font-bold hover:bg-success/20 hover:border-success"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 rounded-full bg-current" />
+                        Black Won
+                      </div>
+                    </Button>
+                    <Button
+                      onClick={() => handleGameEnd("draw")}
+                      variant="outline"
+                      size="lg"
+                      className="w-full h-12 font-bold hover:bg-primary/20 hover:border-primary"
+                    >
+                      🤝 Draw
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
           {/* Game Report */}
           <AnimatePresence>
-            {showReport && (blackTime === 0 || whiteTime === 0) && (
+            {showReport && (
               <motion.div 
                 initial={{ opacity: 0, y: 20, scale: 0.9 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -480,12 +555,21 @@ const ChessClock = () => {
                 className="mt-6 space-y-4"
               >
                 {/* Winner Banner */}
-                <div className="text-center p-6 bg-gradient-to-r from-success/30 via-success/20 to-success/30 border-2 border-success rounded-xl shadow-xl">
-                  <p className="text-3xl font-black text-success mb-2">
-                    🏆 {whiteTime === 0 ? "Black Wins!" : "White Wins!"}
+                <div className={`text-center p-6 rounded-xl shadow-xl border-2 ${
+                  gameResult === "draw" 
+                    ? "bg-gradient-to-r from-primary/30 via-accent/20 to-primary/30 border-primary"
+                    : "bg-gradient-to-r from-success/30 via-success/20 to-success/30 border-success"
+                }`}>
+                  <p className={`text-3xl font-black mb-2 ${gameResult === "draw" ? "text-primary" : "text-success"}`}>
+                    {gameResult === "draw" ? "🤝 Draw!" : 
+                     gameResult === "white" ? "🏆 White Wins!" :
+                     gameResult === "black" ? "🏆 Black Wins!" :
+                     whiteTime === 0 ? "🏆 Black Wins!" : "🏆 White Wins!"}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {whiteTime === 0 ? "White" : "Black"} ran out of time
+                    {gameResult === "draw" ? "Game ended in a draw" :
+                     gameResult ? "Game concluded by decision" :
+                     `${whiteTime === 0 ? "White" : "Black"} ran out of time`}
                   </p>
                 </div>
 
