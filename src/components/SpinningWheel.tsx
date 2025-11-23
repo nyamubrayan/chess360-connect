@@ -16,6 +16,7 @@ interface SpinningWheelProps {
   blitzStats?: CategoryStats;
   rapidStats?: CategoryStats;
   onCategoryChange?: (category: string) => void;
+  soundEnabled?: boolean;
 }
 
 interface CategoryOption {
@@ -81,7 +82,7 @@ const TIME_VARIATIONS: Record<string, TimeVariation[]> = {
   ],
 };
 
-export function SpinningWheel({ onSelect, disabled, username, bulletStats, blitzStats, rapidStats, onCategoryChange }: SpinningWheelProps) {
+export function SpinningWheel({ onSelect, disabled, username, bulletStats, blitzStats, rapidStats, onCategoryChange, soundEnabled }: SpinningWheelProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('BULLET');
   const [selectedTimeControl, setSelectedTimeControl] = useState<TimeVariation | null>(null);
   const { playWheelSpin, playWheelLock } = useChessSounds();
@@ -101,7 +102,7 @@ export function SpinningWheel({ onSelect, disabled, username, bulletStats, blitz
   
   const handleCategorySelect = (categoryName: string) => {
     if (disabled) return;
-    playWheelSpin();
+    if (soundEnabled) playWheelSpin();
     setSelectedCategory(categoryName);
     setSelectedTimeControl(null);
     
@@ -111,7 +112,7 @@ export function SpinningWheel({ onSelect, disabled, username, bulletStats, blitz
     }
     
     setTimeout(() => {
-      playWheelLock();
+      if (soundEnabled) playWheelLock();
       if (categoryName === 'CUSTOM MATCH') {
         onSelect(categoryName);
       }
@@ -120,7 +121,7 @@ export function SpinningWheel({ onSelect, disabled, username, bulletStats, blitz
 
   const handleTimeSelect = (timeControl: TimeVariation) => {
     if (disabled) return;
-    playWheelLock();
+    if (soundEnabled) playWheelLock();
     setSelectedTimeControl(timeControl);
     onSelect(selectedCategory, timeControl);
   };
