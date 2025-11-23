@@ -14,6 +14,8 @@ interface PostGameSummaryProps {
   playerColor: "white" | "black";
   onRequestRematch?: () => void;
   onFindNewMatch?: () => void;
+  isRematchOnCooldown?: boolean;
+  rematchCooldown?: number;
 }
 
 interface GameSummary {
@@ -37,7 +39,7 @@ interface PlayerInfo {
   oldRating: number;
 }
 
-export const PostGameSummary = ({ open, onOpenChange, gameId, result, playerColor, onRequestRematch, onFindNewMatch }: PostGameSummaryProps) => {
+export const PostGameSummary = ({ open, onOpenChange, gameId, result, playerColor, onRequestRematch, onFindNewMatch, isRematchOnCooldown = false, rematchCooldown = 0 }: PostGameSummaryProps) => {
   const [summary, setSummary] = useState<GameSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [whitePlayer, setWhitePlayer] = useState<PlayerInfo | null>(null);
@@ -370,13 +372,16 @@ export const PostGameSummary = ({ open, onOpenChange, gameId, result, playerColo
                     <Button
                       onClick={() => {
                         onRequestRematch();
-                        onOpenChange(false);
+                        if (!isRematchOnCooldown) {
+                          onOpenChange(false);
+                        }
                       }}
                       className="flex-1 h-12"
                       size="lg"
+                      disabled={isRematchOnCooldown}
                     >
                       <RefreshCw className="w-5 h-5 mr-2" />
-                      Request Rematch
+                      {isRematchOnCooldown ? `Wait ${rematchCooldown}s` : 'Request Rematch'}
                     </Button>
                   )}
                   {onFindNewMatch && (
