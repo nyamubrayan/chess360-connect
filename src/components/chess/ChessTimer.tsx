@@ -22,11 +22,11 @@ export const ChessTimer = ({ game, playerColor, className }: ChessTimerProps) =>
     // Only run timer if game is active AND BOTH players have made their first moves
     if (game.status !== 'active' || game.move_count <= 1) return;
 
+    // Synchronized timer calculation using server timestamp
     const interval = setInterval(() => {
       const currentTurn = game.current_turn;
-      const timeSinceLastMove = game.last_move_at 
-        ? Math.floor((Date.now() - new Date(game.last_move_at).getTime()) / 1000)
-        : 0;
+      const serverTime = game.last_move_at ? new Date(game.last_move_at).getTime() : Date.now();
+      const timeSinceLastMove = Math.floor((Date.now() - serverTime) / 1000);
 
       if (currentTurn === 'w') {
         const newTime = Math.max(0, game.white_time_remaining - timeSinceLastMove);
