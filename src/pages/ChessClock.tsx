@@ -48,7 +48,13 @@ const ChessClock = () => {
   
   // Setup flow state
   const [setupStep, setSetupStep] = useState<1 | 2 | 3>(1); // 1: Choose side, 2: Time control, 3: Game mode
-  const [selectedTimeControl, setSelectedTimeControl] = useState<{ minutes: number; increment: number } | null>(null);
+  const [differentTimesEnabled, setDifferentTimesEnabled] = useState(false);
+  const [selectedTimeControl, setSelectedTimeControl] = useState<{ 
+    minutes: number; 
+    increment: number;
+    whiteMinutes?: number;
+    blackMinutes?: number;
+  } | null>(null);
   
   const { playMove } = useChessSounds();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -809,40 +815,111 @@ const ChessClock = () => {
 
                   {/* Custom Time */}
                   <div className="space-y-3 pt-3 border-t border-border">
-                    <h4 className="font-semibold">⚙️ Custom Time</h4>
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-semibold">⚙️ Custom Time</h4>
+                      <label className="flex items-center gap-2 text-sm cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={differentTimesEnabled}
+                          onChange={(e) => setDifferentTimesEnabled(e.target.checked)}
+                          className="w-4 h-4 rounded border-border"
+                        />
+                        <span>Different times</span>
+                      </label>
+                    </div>
                     <div className="space-y-3">
-                      <div>
-                        <Label className="font-medium">Minutes per side</Label>
-                        <Input
-                          type="number"
-                          min="1"
-                          max="180"
-                          defaultValue="6"
-                          id="custom-minutes"
-                          className="mt-1.5 h-11"
-                        />
-                      </div>
-                      <div>
-                        <Label className="font-medium">Increment (seconds)</Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          max="60"
-                          defaultValue="0"
-                          id="custom-increment"
-                          className="mt-1.5 h-11"
-                        />
-                      </div>
+                      {!differentTimesEnabled ? (
+                        <>
+                          <div>
+                            <Label className="font-medium">Minutes per side</Label>
+                            <Input
+                              type="number"
+                              min="1"
+                              max="180"
+                              defaultValue="6"
+                              id="custom-minutes"
+                              className="mt-1.5 h-11"
+                            />
+                          </div>
+                          <div>
+                            <Label className="font-medium">Increment (seconds)</Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              max="60"
+                              defaultValue="0"
+                              id="custom-increment"
+                              className="mt-1.5 h-11"
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label className="font-medium">White (minutes)</Label>
+                              <Input
+                                type="number"
+                                min="1"
+                                max="180"
+                                defaultValue="6"
+                                id="custom-white-minutes"
+                                className="mt-1.5 h-11"
+                              />
+                            </div>
+                            <div>
+                              <Label className="font-medium">Black (minutes)</Label>
+                              <Input
+                                type="number"
+                                min="1"
+                                max="180"
+                                defaultValue="6"
+                                id="custom-black-minutes"
+                                className="mt-1.5 h-11"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <Label className="font-medium">Increment (seconds)</Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              max="60"
+                              defaultValue="0"
+                              id="custom-increment"
+                              className="mt-1.5 h-11"
+                            />
+                          </div>
+                        </>
+                      )}
                       <Button
                         variant="outline"
                         onClick={() => {
-                          const minutes = parseInt(
-                            (document.getElementById("custom-minutes") as HTMLInputElement).value
-                          );
-                          const inc = parseInt(
-                            (document.getElementById("custom-increment") as HTMLInputElement).value
-                          );
-                          setSelectedTimeControl({ minutes, increment: inc });
+                          if (!differentTimesEnabled) {
+                            const minutes = parseInt(
+                              (document.getElementById("custom-minutes") as HTMLInputElement).value
+                            );
+                            const inc = parseInt(
+                              (document.getElementById("custom-increment") as HTMLInputElement).value
+                            );
+                            setSelectedTimeControl({ minutes, increment: inc });
+                          } else {
+                            const whiteMinutes = parseInt(
+                              (document.getElementById("custom-white-minutes") as HTMLInputElement).value
+                            );
+                            const blackMinutes = parseInt(
+                              (document.getElementById("custom-black-minutes") as HTMLInputElement).value
+                            );
+                            const inc = parseInt(
+                              (document.getElementById("custom-increment") as HTMLInputElement).value
+                            );
+                            setSelectedTimeControl({ 
+                              minutes: whiteMinutes, // Use white as default for display
+                              increment: inc,
+                              whiteMinutes,
+                              blackMinutes
+                            });
+                          }
                         }}
                         className="w-full h-11 font-bold"
                       >
@@ -863,11 +940,12 @@ const ChessClock = () => {
                       onClick={() => {
                         if (selectedTimeControl) {
                           // Apply the time control settings
-                          const seconds = selectedTimeControl.minutes * 60;
-                          setTimeControl(seconds);
+                          const whiteSeconds = (selectedTimeControl.whiteMinutes || selectedTimeControl.minutes) * 60;
+                          const blackSeconds = (selectedTimeControl.blackMinutes || selectedTimeControl.minutes) * 60;
+                          setTimeControl(whiteSeconds); // Use white time as base
                           setIncrement(selectedTimeControl.increment);
-                          setWhiteTime(seconds);
-                          setBlackTime(seconds);
+                          setWhiteTime(whiteSeconds);
+                          setBlackTime(blackSeconds);
                           setIsConfigured(true);
                           setSetupStep(3);
                         }
@@ -900,11 +978,12 @@ const ChessClock = () => {
                       onClick={() => {
                         // Apply time control if coming from Play Another Game
                         if (selectedTimeControl) {
-                          const seconds = selectedTimeControl.minutes * 60;
-                          setTimeControl(seconds);
+                          const whiteSeconds = (selectedTimeControl.whiteMinutes || selectedTimeControl.minutes) * 60;
+                          const blackSeconds = (selectedTimeControl.blackMinutes || selectedTimeControl.minutes) * 60;
+                          setTimeControl(whiteSeconds);
                           setIncrement(selectedTimeControl.increment);
-                          setWhiteTime(seconds);
-                          setBlackTime(seconds);
+                          setWhiteTime(whiteSeconds);
+                          setBlackTime(blackSeconds);
                           setIsConfigured(true);
                         }
                         setSettingsOpen(false);
