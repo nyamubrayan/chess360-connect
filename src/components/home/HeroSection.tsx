@@ -1,10 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { Play, Puzzle, Trophy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import heroImage from "@/assets/chess-hero.jpg";
 
 export const HeroSection = () => {
   const navigate = useNavigate();
+  const [currentWord, setCurrentWord] = useState(0);
+  const words = ["Journey", "Adventure", "Experience", "Mastery"];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentWord((prev) => (prev + 1) % words.length);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <section className="relative overflow-hidden py-20 sm:py-32 px-4">
@@ -21,10 +31,22 @@ export const HeroSection = () => {
           <div className="space-y-4">
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight">
               Welcome to{" "}
-              <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-                Chessafari
+              <span className="relative inline-block">
+                <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-pulse">
+                  Chessafari
+                </span>
+                <span className="absolute -bottom-2 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-primary opacity-50 blur-sm"></span>
               </span>
-              {" "}– Your AI-Powered Chess Journey
+              <br className="sm:hidden" />
+              <span className="block sm:inline mt-2 sm:mt-0 text-4xl sm:text-5xl lg:text-6xl">
+                Your AI-Powered Chess{" "}
+                <span 
+                  key={currentWord}
+                  className="inline-block bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent animate-fade-in"
+                >
+                  {words[currentWord]}
+                </span>
+              </span>
             </h1>
             <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               Experience the future of chess learning. Get real-time analysis, personalized training, 
