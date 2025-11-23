@@ -200,7 +200,7 @@ export default function ChessGame() {
 
   // Monitor first move timeout - 30s for White's and Black's first moves
   useEffect(() => {
-    if (!game || !user || game.status !== 'active' || !playerColor) {
+    if (!game || game.status !== 'active') {
       setFirstMoveCountdown(null);
       return;
     }
@@ -231,7 +231,11 @@ export default function ChessGame() {
 
       if (remainingSeconds <= 0) {
         setFirstMoveCountdown(0);
-        handleFirstMoveTimeout(phaseColor);
+        // Only the player whose turn it is should handle the timeout
+        if ((phaseColor === 'white' && playerColor === 'white') || 
+            (phaseColor === 'black' && playerColor === 'black')) {
+          handleFirstMoveTimeout(phaseColor);
+        }
         clearInterval(interval);
       } else {
         setFirstMoveCountdown(remainingSeconds);
@@ -242,8 +246,11 @@ export default function ChessGame() {
       clearInterval(interval);
     };
   }, [
-    game,
-    user,
+    game?.status,
+    game?.current_turn,
+    game?.move_count,
+    game?.created_at,
+    game?.last_move_at,
     playerColor,
     handleFirstMoveTimeout,
   ]);
@@ -785,7 +792,7 @@ export default function ChessGame() {
               className="mb-4"
             />
             
-            {/* First Move Countdown Warning */}
+            {/* First Move Countdown Warning - Visible to Both Players */}
             {firstMoveCountdown !== null && firstMoveCountdown > 0 && (
               <Card className={`mb-4 p-3 border-2 ${
                 firstMoveCountdown <= 10 
@@ -796,7 +803,7 @@ export default function ChessGame() {
                   <span className={`text-sm font-medium ${
                     firstMoveCountdown <= 10 ? 'text-destructive' : 'text-green-600'
                   }`}>
-                    Waiting for first move...
+                    Waiting for {game.current_turn === 'w' ? 'White' : 'Black'}'s first move...
                   </span>
                   <span className={`text-lg font-bold ${
                     firstMoveCountdown <= 10 ? 'text-destructive' : 'text-green-600'
