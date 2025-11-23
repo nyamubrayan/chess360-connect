@@ -1327,14 +1327,43 @@ const ChessClock = () => {
               </div>
             </div>
 
-            <Button
-              onClick={handlePlayAnother}
-              size="lg"
-              className="w-full h-14 text-lg font-bold mt-4"
-            >
-              <Play className="w-5 h-5 mr-2" />
-              Play Another Game
-            </Button>
+            <div className="grid grid-cols-2 gap-3 mt-4">
+              <Button
+                onClick={() => {
+                  setShowReport(false);
+                  setIsConfigured(false);
+                  setSettingsOpen(true);
+                  setWhiteTime(timeControl);
+                  setBlackTime(timeControl);
+                  setIsWhiteTurn(true);
+                  setWhiteMoves(0);
+                  setBlackMoves(0);
+                  setMoveTimings([]);
+                  setGameResult(null);
+                  setIsActive(false);
+                  setMultiDeviceMode(false);
+                  setMultiDeviceSetup(false);
+                  setGuestConnected(false);
+                  setSessionId(null);
+                  setSessionCode("");
+                  setIsHost(false);
+                }}
+                size="lg"
+                variant="outline"
+                className="h-14 text-base font-bold"
+              >
+                <Settings className="w-5 h-5 mr-2" />
+                New Game Settings
+              </Button>
+              <Button
+                onClick={handlePlayAnother}
+                size="lg"
+                className="h-14 text-base font-bold"
+              >
+                <Play className="w-5 h-5 mr-2" />
+                Play Another Game
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
