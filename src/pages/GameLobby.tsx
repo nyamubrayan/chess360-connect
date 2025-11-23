@@ -103,14 +103,24 @@ export default function GameLobby() {
     if (isSearching) return;
     setSelectedCategory(category);
     
-    if (category === 'Custom') {
+    if (category === 'CUSTOM MATCH') {
       setCustomDialogOpen(true);
       setSelectedTimeControl(null);
       return;
     }
     
+    // Map wheel category names to time control categories
+    const categoryMap: Record<string, string> = {
+      'BULLET': 'Bullet',
+      'BLITZ': 'Blitz',
+      'RAPID': 'Rapid',
+      'CLASSIC': 'Classical',
+    };
+    
+    const mappedCategory = categoryMap[category] || category;
+    
     // Auto-select first time control for category
-    const defaultTimeControl = TIME_CONTROLS.find(tc => tc.category === category);
+    const defaultTimeControl = TIME_CONTROLS.find(tc => tc.category === mappedCategory);
     if (defaultTimeControl) {
       setSelectedTimeControl(defaultTimeControl);
     }
@@ -334,18 +344,19 @@ export default function GameLobby() {
         <div className="flex flex-col items-center mb-8">
           <SpinningWheel onSelect={handleWheelSelect} disabled={isSearching} />
           
-          {/* Find Match Button - appears below wheel */}
+          {/* Find Opponent Button - appears below wheel */}
           <div className="mt-8 w-full max-w-md mx-auto space-y-4">
             {!isSearching ? (
               <>
-                {selectedCategory !== 'Custom' && (
+                {selectedCategory !== 'CUSTOM MATCH' && (
                   <Button
                     onClick={handleQuickMatch}
                     disabled={!selectedTimeControl}
-                    className="w-full gap-2 h-16 text-xl font-bold shadow-lg hover:shadow-xl transition-all animate-fade-in"
+                    variant="outline"
+                    className="w-full gap-2 h-14 text-lg font-bold tracking-wider border-2 border-primary/60 bg-primary/10 hover:bg-primary/20 hover:border-primary shadow-lg hover:shadow-xl transition-all animate-fade-in rounded-xl"
                     size="lg"
                   >
-                    Find Match
+                    FIND OPPONENT
                   </Button>
                 )}
               </>
@@ -358,10 +369,10 @@ export default function GameLobby() {
                 <Button
                   onClick={handleCancelSearch}
                   variant="destructive"
-                  className="w-full gap-2 h-14 text-lg"
+                  className="w-full gap-2 h-14 text-lg font-bold tracking-wider rounded-xl"
                   size="lg"
                 >
-                  Cancel Search
+                  CANCEL SEARCH
                 </Button>
               </>
             )}
