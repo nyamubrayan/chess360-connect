@@ -576,71 +576,93 @@ const ChessClock = () => {
                 {/* Game Statistics Report */}
                 <div className="p-6 bg-gradient-to-br from-card via-card to-primary/5 border-2 border-primary/20 rounded-xl shadow-xl space-y-4">
                   <h3 className="text-2xl font-bold text-center mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                    📊 Game Statistics
+                    📊 Your Game Statistics
                   </h3>
                   
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* White Stats */}
-                    <div className="space-y-3 p-4 bg-background/50 rounded-lg border border-border">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-6 h-6 rounded-full border-4 border-foreground" />
-                        <span className="font-bold text-lg">White</span>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Moves:</span>
-                          <span className="font-bold text-lg">{whiteMoves}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Avg Time:</span>
-                          <span className="font-bold text-lg">
-                            {whiteMoves > 0 
-                              ? `${(moveTimings.filter((_, i) => i % 2 === 0).reduce((a, b) => a + b, 0) / whiteMoves).toFixed(1)}s`
-                              : "0s"
-                            }
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Black Stats */}
-                    <div className="space-y-3 p-4 bg-background/50 rounded-lg border border-border">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-6 h-6 rounded-full bg-foreground" />
-                        <span className="font-bold text-lg">Black</span>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Moves:</span>
-                          <span className="font-bold text-lg">{blackMoves}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Avg Time:</span>
-                          <span className="font-bold text-lg">
-                            {blackMoves > 0 
-                              ? `${(moveTimings.filter((_, i) => i % 2 === 1).reduce((a, b) => a + b, 0) / blackMoves).toFixed(1)}s`
-                              : "0s"
-                            }
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Total Stats */}
-                  <div className="p-4 bg-primary/10 rounded-lg border border-primary/30 space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground font-medium">Total Moves:</span>
-                      <span className="font-bold text-xl text-primary">{whiteMoves + blackMoves}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground font-medium">Overall Avg Time:</span>
-                      <span className="font-bold text-xl text-primary">
-                        {moveTimings.length > 0 
-                          ? `${(moveTimings.reduce((a, b) => a + b, 0) / moveTimings.length).toFixed(1)}s`
-                          : "0s"
-                        }
+                  {/* Player's Side Stats */}
+                  <div className="space-y-4 p-6 bg-gradient-to-br from-background/80 to-primary/5 rounded-lg border-2 border-primary/30">
+                    <div className="flex items-center justify-center gap-3 mb-4">
+                      {playerSide === "white" ? (
+                        <div className="w-8 h-8 rounded-full border-4 border-foreground shadow-lg" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-foreground shadow-lg" />
+                      )}
+                      <span className="font-bold text-2xl">
+                        {playerSide === "white" ? "White" : "Black"}
                       </span>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center p-4 bg-background/60 rounded-lg border border-border">
+                        <div className="flex items-center gap-2">
+                          <span className="text-3xl">♟️</span>
+                          <span className="text-muted-foreground font-medium">Total Moves:</span>
+                        </div>
+                        <span className="font-black text-3xl text-primary">
+                          {playerSide === "white" ? whiteMoves : blackMoves}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-center p-4 bg-background/60 rounded-lg border border-border">
+                        <div className="flex items-center gap-2">
+                          <span className="text-3xl">⏱️</span>
+                          <span className="text-muted-foreground font-medium">Average Time per Move:</span>
+                        </div>
+                        <span className="font-black text-3xl text-accent">
+                          {playerSide === "white" 
+                            ? (whiteMoves > 0 
+                                ? `${(moveTimings.filter((_, i) => i % 2 === 0).reduce((a, b) => a + b, 0) / whiteMoves).toFixed(1)}s`
+                                : "0s")
+                            : (blackMoves > 0 
+                                ? `${(moveTimings.filter((_, i) => i % 2 === 1).reduce((a, b) => a + b, 0) / blackMoves).toFixed(1)}s`
+                                : "0s")
+                          }
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-center p-4 bg-background/60 rounded-lg border border-border">
+                        <div className="flex items-center gap-2">
+                          <span className="text-3xl">⚡</span>
+                          <span className="text-muted-foreground font-medium">Fastest Move:</span>
+                        </div>
+                        <span className="font-black text-3xl text-success">
+                          {playerSide === "white"
+                            ? (moveTimings.filter((_, i) => i % 2 === 0).length > 0
+                                ? `${Math.min(...moveTimings.filter((_, i) => i % 2 === 0)).toFixed(1)}s`
+                                : "0s")
+                            : (moveTimings.filter((_, i) => i % 2 === 1).length > 0
+                                ? `${Math.min(...moveTimings.filter((_, i) => i % 2 === 1)).toFixed(1)}s`
+                                : "0s")
+                          }
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-center p-4 bg-background/60 rounded-lg border border-border">
+                        <div className="flex items-center gap-2">
+                          <span className="text-3xl">🐌</span>
+                          <span className="text-muted-foreground font-medium">Slowest Move:</span>
+                        </div>
+                        <span className="font-black text-3xl text-destructive">
+                          {playerSide === "white"
+                            ? (moveTimings.filter((_, i) => i % 2 === 0).length > 0
+                                ? `${Math.max(...moveTimings.filter((_, i) => i % 2 === 0)).toFixed(1)}s`
+                                : "0s")
+                            : (moveTimings.filter((_, i) => i % 2 === 1).length > 0
+                                ? `${Math.max(...moveTimings.filter((_, i) => i % 2 === 1)).toFixed(1)}s`
+                                : "0s")
+                          }
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-center p-4 bg-primary/10 rounded-lg border-2 border-primary/40">
+                        <div className="flex items-center gap-2">
+                          <span className="text-3xl">⏰</span>
+                          <span className="text-foreground font-bold">Time Remaining:</span>
+                        </div>
+                        <span className="font-black text-3xl text-primary">
+                          {playerSide === "white" ? formatTime(whiteTime) : formatTime(blackTime)}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
