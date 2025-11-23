@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Clock, Play, Pause, RotateCcw, Settings, Zap, Users, Share2, Link2 } from "lucide-react";
+import { Clock, Play, Pause, RotateCcw, Settings, Zap, Users, Share2, Link2, ArrowLeft } from "lucide-react";
 import { useChessSounds } from "@/hooks/useChessSounds";
 import {
   Dialog,
@@ -44,6 +44,7 @@ const ChessClock = () => {
   const [codeInput, setCodeInput] = useState("");
   const [isHost, setIsHost] = useState(false);
   const [guestConnected, setGuestConnected] = useState(false);
+  const [isPageVisible, setIsPageVisible] = useState(true);
   
   const { playMove } = useChessSounds();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -288,6 +289,19 @@ const ChessClock = () => {
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
       }
+    };
+  }, []);
+
+  // Track page visibility
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsPageVisible(!document.hidden);
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 
@@ -552,6 +566,45 @@ const ChessClock = () => {
 
   return (
     <div className="h-screen bg-gradient-to-br from-background via-background to-primary/5 flex flex-col overflow-hidden">
+      {/* Return to Clock Floating Button - shows when page is not visible */}
+      <AnimatePresence>
+        {!isPageVisible && isActive && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none"
+          >
+            <motion.div
+              animate={{
+                scale: [1, 1.1, 1],
+                boxShadow: [
+                  "0 0 20px rgba(var(--primary), 0.3)",
+                  "0 0 40px rgba(var(--primary), 0.6)",
+                  "0 0 20px rgba(var(--primary), 0.3)"
+                ]
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="bg-gradient-to-br from-primary to-accent rounded-full p-8 shadow-2xl border-4 border-background pointer-events-auto cursor-pointer"
+              onClick={() => window.focus()}
+            >
+              <div className="text-center space-y-3">
+                <motion.div
+                  animate={{ x: [0, -10, 0] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  <ArrowLeft className="w-16 h-16 text-primary-foreground mx-auto" />
+                </motion.div>
+                <div className="text-primary-foreground">
+                  <p className="text-xl font-bold">Return to Clock</p>
+                  <p className="text-sm opacity-90">Game in progress</p>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Code Display Dialog */}
       <Dialog open={showCodeDialog} onOpenChange={setShowCodeDialog}>
         <DialogContent className="gradient-card border-2 border-primary/20 shadow-2xl max-w-md">
