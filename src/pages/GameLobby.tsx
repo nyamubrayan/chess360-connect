@@ -100,7 +100,7 @@ export default function GameLobby() {
     }
   };
 
-  const handleWheelSelect = (category: string) => {
+  const handleWheelSelect = (category: string, timeControl?: { time: number; increment: number; label: string }) => {
     if (isSearching) return;
     setSelectedCategory(category);
     
@@ -110,20 +110,22 @@ export default function GameLobby() {
       return;
     }
     
-    // Map wheel category names to time control categories
-    const categoryMap: Record<string, string> = {
-      'BULLET': 'Bullet',
-      'BLITZ': 'Blitz',
-      'RAPID': 'Rapid',
-      'CLASSIC': 'Classical',
-    };
-    
-    const mappedCategory = categoryMap[category] || category;
-    
-    // Auto-select first time control for category
-    const defaultTimeControl = TIME_CONTROLS.find(tc => tc.category === mappedCategory);
-    if (defaultTimeControl) {
-      setSelectedTimeControl(defaultTimeControl);
+    if (timeControl) {
+      const categoryMap: Record<string, string> = {
+        'BULLET': 'Bullet',
+        'BLITZ': 'Blitz',
+        'RAPID': 'Rapid',
+        'CLASSIC': 'Classical',
+      };
+      
+      const mappedCategory = categoryMap[category] || category;
+      
+      setSelectedTimeControl({
+        time: timeControl.time,
+        increment: timeControl.increment,
+        category: mappedCategory,
+        label: timeControl.label
+      });
     }
   };
 
@@ -341,12 +343,12 @@ export default function GameLobby() {
           </Card>
         )}
 
-        {/* Spinning Wheel */}
+        {/* Game Type Selection */}
         <div className="flex flex-col items-center mb-8 w-full">
           <SpinningWheel onSelect={handleWheelSelect} disabled={isSearching} />
           
-          {/* Find Opponent Button - appears below wheel */}
-          <div className="mt-12 w-full max-w-md mx-auto space-y-4">
+          {/* Find Opponent Button */}
+          <div className="mt-8 w-full max-w-2xl mx-auto space-y-4">
             {!isSearching ? (
               <>
                 {selectedCategory !== 'CUSTOM MATCH' && (

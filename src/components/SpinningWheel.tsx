@@ -1,235 +1,230 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { useChessSounds } from '@/hooks/useChessSounds';
-import { Crown, Zap, Castle, Clock, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Crown, Zap, Castle, Sparkles } from 'lucide-react';
 
 interface SpinningWheelProps {
-  onSelect: (option: string) => void;
+  onSelect: (option: string, timeControl?: { time: number; increment: number; label: string }) => void;
   disabled?: boolean;
 }
 
-interface WheelOption {
+interface CategoryOption {
   name: string;
   displayName: string;
-  timeRange: string;
   icon: any;
   gradient: string;
   description: string;
 }
 
-const OPTIONS: WheelOption[] = [
+interface TimeVariation {
+  time: number;
+  increment: number;
+  label: string;
+}
+
+const CATEGORIES: CategoryOption[] = [
   { 
     name: 'BULLET', 
     displayName: 'Bullet',
-    timeRange: '1-2 min', 
     icon: Zap, 
     gradient: 'from-orange-500 via-red-500 to-pink-500',
-    description: 'Lightning fast games'
+    description: 'Lightning fast'
   },
   { 
     name: 'BLITZ', 
     displayName: 'Blitz',
-    timeRange: '3-5 min', 
     icon: Zap, 
     gradient: 'from-yellow-500 via-orange-500 to-red-500',
-    description: 'Quick tactical battles'
+    description: 'Quick tactical'
   },
   { 
     name: 'RAPID', 
     displayName: 'Rapid',
-    timeRange: '10-15 min', 
     icon: Castle, 
     gradient: 'from-emerald-500 via-teal-500 to-cyan-500',
-    description: 'Balanced gameplay'
+    description: 'Balanced play'
   },
   { 
     name: 'CLASSIC', 
     displayName: 'Classic',
-    timeRange: '30-60 min', 
     icon: Crown, 
     gradient: 'from-blue-500 via-indigo-500 to-purple-500',
-    description: 'Deep strategic games'
+    description: 'Deep strategy'
   },
   { 
     name: 'CUSTOM MATCH', 
     displayName: 'Custom',
-    timeRange: 'Your choice', 
     icon: Sparkles, 
     gradient: 'from-purple-500 via-pink-500 to-rose-500',
-    description: 'Create your rules'
+    description: 'Your rules'
   },
 ];
 
+const TIME_VARIATIONS: Record<string, TimeVariation[]> = {
+  'BULLET': [
+    { time: 1, increment: 0, label: '1+0' },
+    { time: 2, increment: 1, label: '2+1' },
+  ],
+  'BLITZ': [
+    { time: 3, increment: 0, label: '3+0' },
+    { time: 3, increment: 2, label: '3+2' },
+    { time: 5, increment: 0, label: '5+0' },
+    { time: 5, increment: 3, label: '5+3' },
+  ],
+  'RAPID': [
+    { time: 10, increment: 0, label: '10+0' },
+    { time: 10, increment: 5, label: '10+5' },
+    { time: 15, increment: 10, label: '15+10' },
+  ],
+  'CLASSIC': [
+    { time: 30, increment: 0, label: '30+0' },
+    { time: 30, increment: 20, label: '30+20' },
+  ],
+};
+
 export function SpinningWheel({ onSelect, disabled }: SpinningWheelProps) {
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [selectedCategory, setSelectedCategory] = useState<string>('BULLET');
+  const [selectedTimeControl, setSelectedTimeControl] = useState<TimeVariation | null>(null);
   const { playWheelSpin, playWheelLock } = useChessSounds();
   
-  const handleNext = () => {
+  const handleCategorySelect = (categoryName: string) => {
     if (disabled) return;
-    const nextIndex = (selectedIndex + 1) % OPTIONS.length;
     playWheelSpin();
-    setSelectedIndex(nextIndex);
+    setSelectedCategory(categoryName);
+    setSelectedTimeControl(null);
     setTimeout(() => {
       playWheelLock();
-      onSelect(OPTIONS[nextIndex].name);
-    }, 300);
-  };
-  
-  const handlePrev = () => {
-    if (disabled) return;
-    const prevIndex = (selectedIndex - 1 + OPTIONS.length) % OPTIONS.length;
-    playWheelSpin();
-    setSelectedIndex(prevIndex);
-    setTimeout(() => {
-      playWheelLock();
-      onSelect(OPTIONS[prevIndex].name);
-    }, 300);
-  };
-  
-  const handleSelect = (index: number) => {
-    if (disabled || index === selectedIndex) return;
-    playWheelSpin();
-    setSelectedIndex(index);
-    setTimeout(() => {
-      playWheelLock();
-      onSelect(OPTIONS[index].name);
-    }, 300);
+      if (categoryName === 'CUSTOM MATCH') {
+        onSelect(categoryName);
+      }
+    }, 200);
   };
 
-  const currentOption = OPTIONS[selectedIndex];
-  const Icon = currentOption.icon;
+  const handleTimeSelect = (timeControl: TimeVariation) => {
+    if (disabled) return;
+    playWheelLock();
+    setSelectedTimeControl(timeControl);
+    onSelect(selectedCategory, timeControl);
+  };
+
+  const currentCategory = CATEGORIES.find(c => c.name === selectedCategory) || CATEGORIES[0];
+  const Icon = currentCategory.icon;
+  const timeVariations = TIME_VARIATIONS[selectedCategory] || [];
   
   return (
-    <div className="flex flex-col items-center gap-6 w-full max-w-4xl mx-auto px-4">
-      {/* Main Display Card */}
-      <div className="relative w-full">
-        {/* Navigation Arrows */}
-        <button
-          onClick={handlePrev}
-          disabled={disabled}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-background/80 backdrop-blur-sm border-2 border-primary/30 flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-        >
-          <ChevronLeft className="w-6 h-6 text-primary" />
-        </button>
-        
-        <button
-          onClick={handleNext}
-          disabled={disabled}
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-background/80 backdrop-blur-sm border-2 border-primary/30 flex items-center justify-center hover:bg-primary/20 hover:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-        >
-          <ChevronRight className="w-6 h-6 text-primary" />
-        </button>
-
-        {/* Center Display */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={selectedIndex}
-            initial={{ opacity: 0, scale: 0.8, rotateY: -90 }}
-            animate={{ opacity: 1, scale: 1, rotateY: 0 }}
-            exit={{ opacity: 0, scale: 0.8, rotateY: 90 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-            className="relative mx-auto w-full max-w-md"
-          >
-            {/* Glassmorphic Card */}
-            <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-white/20">
-              {/* Gradient Background */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${currentOption.gradient} opacity-90`} />
-              
-              {/* Glass Effect Overlay */}
-              <div className="absolute inset-0 bg-white/10 backdrop-blur-xl" />
-              
-              {/* Animated Glow */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${currentOption.gradient} opacity-30 blur-2xl animate-pulse`} />
-              
-              {/* Content */}
-              <div className="relative p-8 sm:p-12 text-center">
-                {/* Icon */}
-                <motion.div
-                  initial={{ scale: 0, rotate: -180 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                  className="mb-6 flex justify-center"
-                >
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/30 flex items-center justify-center shadow-xl">
-                    <Icon className="w-10 h-10 sm:w-12 sm:h-12 text-white drop-shadow-lg" />
-                  </div>
-                </motion.div>
-                
-                {/* Title */}
-                <motion.h2
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                  className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg tracking-tight"
-                >
-                  {currentOption.displayName}
-                </motion.h2>
-                
-                {/* Time Range */}
-                <motion.p
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                  className="text-lg sm:text-xl text-white/90 font-semibold mb-2"
-                >
-                  {currentOption.timeRange}
-                </motion.p>
-                
-                {/* Description */}
-                <motion.p
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.5 }}
-                  className="text-sm sm:text-base text-white/70 font-medium"
-                >
-                  {currentOption.description}
-                </motion.p>
+    <div className="flex flex-col items-center gap-8 w-full max-w-5xl mx-auto px-4">
+      {/* Large Category Display */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative w-full max-w-2xl"
+      >
+        <div className="relative rounded-3xl overflow-hidden shadow-2xl border-2 border-white/20">
+          {/* Gradient Background */}
+          <div className={`absolute inset-0 bg-gradient-to-br ${currentCategory.gradient} opacity-90`} />
+          
+          {/* Glass Effect */}
+          <div className="absolute inset-0 bg-white/10 backdrop-blur-xl" />
+          
+          {/* Animated Glow */}
+          <div className={`absolute inset-0 bg-gradient-to-br ${currentCategory.gradient} opacity-30 blur-3xl animate-pulse`} />
+          
+          {/* Content */}
+          <div className="relative p-12 sm:p-16 text-center">
+            <motion.div
+              key={selectedCategory}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.3 }}
+              className="flex flex-col items-center gap-4"
+            >
+              <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/40 flex items-center justify-center shadow-2xl">
+                <Icon className="w-12 h-12 sm:w-16 sm:h-16 text-white drop-shadow-lg" />
               </div>
-            </div>
-          </motion.div>
-        </AnimatePresence>
-      </div>
+              
+              <h2 className="text-5xl sm:text-6xl md:text-7xl font-bold text-white drop-shadow-lg tracking-tight">
+                {currentCategory.displayName}
+              </h2>
+              
+              <p className="text-xl sm:text-2xl text-white/80 font-medium">
+                {currentCategory.description}
+              </p>
+            </motion.div>
+          </div>
+        </div>
+      </motion.div>
 
-      {/* Option Pills */}
-      <div className="flex flex-wrap justify-center gap-2 sm:gap-3 w-full">
-        {OPTIONS.map((option, index) => {
-          const OptionIcon = option.icon;
-          const isSelected = index === selectedIndex;
+      {/* Category Selection Buttons */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 w-full max-w-4xl">
+        {CATEGORIES.map((category) => {
+          const CategoryIcon = category.icon;
+          const isSelected = category.name === selectedCategory;
           
           return (
             <motion.button
-              key={option.name}
-              onClick={() => handleSelect(index)}
+              key={category.name}
+              onClick={() => handleCategorySelect(category.name)}
               disabled={disabled}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className={`
-                relative px-4 py-2 sm:px-6 sm:py-3 rounded-full transition-all duration-300
+                relative p-4 sm:p-6 rounded-2xl transition-all duration-300
                 ${isSelected 
-                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/50 scale-105' 
-                  : 'bg-muted/50 backdrop-blur-sm border border-border hover:bg-muted hover:border-primary/50'
+                  ? 'bg-primary text-primary-foreground shadow-xl shadow-primary/50 ring-2 ring-primary' 
+                  : 'bg-card border-2 border-border hover:border-primary/50 hover:shadow-lg'
                 }
                 disabled:opacity-50 disabled:cursor-not-allowed
               `}
             >
-              <div className="flex items-center gap-2">
-                <OptionIcon className={`w-4 h-4 ${isSelected ? '' : 'opacity-70'}`} />
-                <span className="text-xs sm:text-sm font-semibold whitespace-nowrap">
-                  {option.displayName}
+              <div className="flex flex-col items-center gap-2">
+                <CategoryIcon className={`w-6 h-6 sm:w-8 sm:h-8 ${isSelected ? '' : 'opacity-70'}`} />
+                <span className="text-xs sm:text-sm font-bold">
+                  {category.displayName}
                 </span>
               </div>
-              
-              {isSelected && (
-                <motion.div
-                  layoutId="activeIndicator"
-                  className="absolute inset-0 rounded-full border-2 border-primary"
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                />
-              )}
             </motion.button>
           );
         })}
       </div>
+
+      {/* Time Variation Buttons */}
+      {selectedCategory !== 'CUSTOM MATCH' && timeVariations.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="w-full max-w-3xl"
+        >
+          <h3 className="text-lg sm:text-xl font-semibold text-center mb-4 text-foreground">
+            Select Time Control
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            {timeVariations.map((variation) => {
+              const isSelected = selectedTimeControl?.label === variation.label;
+              
+              return (
+                <motion.button
+                  key={variation.label}
+                  onClick={() => handleTimeSelect(variation)}
+                  disabled={disabled}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className={`
+                    p-4 sm:p-6 rounded-xl transition-all duration-300 font-bold text-lg sm:text-xl
+                    ${isSelected 
+                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/50 ring-2 ring-primary' 
+                      : 'bg-muted border-2 border-border hover:border-primary/50 hover:bg-muted/80'
+                    }
+                    disabled:opacity-50 disabled:cursor-not-allowed
+                  `}
+                >
+                  {variation.label}
+                </motion.button>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 }
