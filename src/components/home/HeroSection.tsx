@@ -44,7 +44,7 @@ export const HeroSection = () => {
                 <span className="relative inline-block min-w-[140px] xs:min-w-[170px] sm:min-w-[210px] md:min-w-[250px] lg:min-w-[300px] text-left align-baseline">
                   <span 
                     key={currentWord}
-                    className="absolute left-0 top-0 text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent transition-opacity duration-700 ease-in-out animate-[fade-in_0.7s_ease-in-out]"
+                    className="absolute left-0 bottom-0 text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent transition-opacity duration-700 ease-in-out animate-[fade-in_0.7s_ease-in-out]"
                   >
                     {words[currentWord]}
                   </span>
