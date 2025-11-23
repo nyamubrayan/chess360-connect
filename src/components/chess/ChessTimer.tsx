@@ -19,8 +19,9 @@ export const ChessTimer = ({ game, playerColor, className }: ChessTimerProps) =>
   }, [game.white_time_remaining, game.black_time_remaining]);
 
   useEffect(() => {
-    // Only run timer if game is active AND BOTH players have made their first moves
-    if (game.status !== 'active' || game.move_count <= 1) return;
+    // White's clock starts after Black's first move (move_count >= 2)
+    // Black's clock starts after White's second move (move_count >= 3)
+    if (game.status !== 'active') return;
 
     // Synchronized timer calculation using server timestamp
     const interval = setInterval(() => {
@@ -28,7 +29,8 @@ export const ChessTimer = ({ game, playerColor, className }: ChessTimerProps) =>
       const serverTime = game.last_move_at ? new Date(game.last_move_at).getTime() : Date.now();
       const timeSinceLastMove = Math.floor((Date.now() - serverTime) / 1000);
 
-      if (currentTurn === 'w') {
+      // White's clock runs only after Black has made first move (move_count >= 2)
+      if (currentTurn === 'w' && game.move_count >= 2) {
         const newTime = Math.max(0, game.white_time_remaining - timeSinceLastMove);
         setWhiteTime(newTime);
         
@@ -36,7 +38,10 @@ export const ChessTimer = ({ game, playerColor, className }: ChessTimerProps) =>
         if (newTime === 0 && game.white_time_remaining > 0) {
           handleTimeout('white');
         }
-      } else {
+      }
+      
+      // Black's clock runs only after White has made second move (move_count >= 3)
+      if (currentTurn === 'b' && game.move_count >= 3) {
         const newTime = Math.max(0, game.black_time_remaining - timeSinceLastMove);
         setBlackTime(newTime);
         
