@@ -308,12 +308,14 @@ export default function ChessGame() {
     chess.load(gameData.current_fen);
     setPosition(gameData.current_fen);
     
-    // Set player color immediately when game data arrives
-    if (user) {
+    // Set player color ONLY ONCE when first loading the game (don't change during updates)
+    if (user && !playerColor) {
       if (gameData.white_player_id === user.id) {
         setPlayerColor('white');
+        console.log('Player color set to WHITE (locked for this game)');
       } else if (gameData.black_player_id === user.id) {
         setPlayerColor('black');
+        console.log('Player color set to BLACK (locked for this game)');
       }
     }
     
@@ -371,17 +373,6 @@ export default function ChessGame() {
       setBlackPlayer(black);
     }
   };
-
-  // Set player color when both user and game are available
-  useEffect(() => {
-    if (user && game) {
-      if (game.white_player_id === user.id) {
-        setPlayerColor('white');
-      } else if (game.black_player_id === user.id) {
-        setPlayerColor('black');
-      }
-    }
-  }, [user, game]);
 
   const handleMove = async (from: string, to: string) => {
     if (isProcessing || !user || game.status !== 'active') return;
