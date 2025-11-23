@@ -201,6 +201,7 @@ const ChessClock = () => {
           filter: `id=eq.${sessionIdParam}`,
         },
         (payload) => {
+          console.log('Realtime clock update', payload);
           const data = payload.new as any;
           
           setWhiteTime(data.white_time);
@@ -289,6 +290,33 @@ const ChessClock = () => {
     };
   }, []);
 
+  // Fallback polling to keep both devices in sync even if realtime misses
+  useEffect(() => {
+    if (!multiDeviceMode || !sessionId) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const { data, error } = await supabase
+          .from('chess_clock_sessions')
+          .select()
+          .eq('id', sessionId)
+          .single();
+
+        if (error || !data) return;
+
+        setWhiteTime(data.white_time);
+        setBlackTime(data.black_time);
+        setIsWhiteTurn(data.is_white_turn);
+        setWhiteMoves(data.white_moves);
+        setBlackMoves(data.black_moves);
+      } catch (err) {
+        console.error('Polling error for clock session', err);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [multiDeviceMode, sessionId]);
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -326,7 +354,8 @@ const ChessClock = () => {
           updateSession({ 
             white_moves: newMoves,
             white_time: newTime,
-            is_white_turn: false 
+            is_white_turn: false,
+            is_paused: false,
           });
         }
       } else {
@@ -338,7 +367,8 @@ const ChessClock = () => {
           updateSession({ 
             black_moves: newMoves,
             black_time: newTime,
-            is_white_turn: true 
+            is_white_turn: true,
+            is_paused: false,
           });
         }
       }
