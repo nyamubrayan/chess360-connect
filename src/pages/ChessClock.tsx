@@ -20,6 +20,8 @@ const ChessClock = () => {
   const [isActive, setIsActive] = useState(false);
   const [timeControl, setTimeControl] = useState(300);
   const [increment, setIncrement] = useState(0);
+  const [settingsOpen, setSettingsOpen] = useState(true); // Show settings first
+  const [isConfigured, setIsConfigured] = useState(false);
   const { playMove } = useChessSounds();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -97,6 +99,8 @@ const ChessClock = () => {
     setBlackTime(minutes * 60);
     setIsActive(false);
     setIsWhiteTurn(true);
+    setIsConfigured(true);
+    setSettingsOpen(false);
   };
 
   const applyCustomTime = (minutes: number, incrementSeconds: number) => {
@@ -107,13 +111,14 @@ const ChessClock = () => {
     setBlackTime(seconds);
     setIsActive(false);
     setIsWhiteTurn(true);
+    setIsConfigured(true);
+    setSettingsOpen(false);
   };
 
   const getTimeColor = (seconds: number, active: boolean) => {
     if (!active) return "text-muted-foreground";
     if (seconds < 10) return "text-destructive animate-pulse";
     if (seconds < 30) return "text-destructive";
-    if (seconds < 60) return "text-gold";
     return "text-foreground";
   };
 
@@ -128,13 +133,13 @@ const ChessClock = () => {
           <h1 className="text-2xl font-bold text-gradient">Chess Clock</h1>
         </div>
         
-        <Dialog>
+        <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
           <DialogTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10">
+            <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10" disabled={!isConfigured}>
               <Settings className="w-5 h-5" />
             </Button>
           </DialogTrigger>
-          <DialogContent className="gradient-card">
+          <DialogContent className="gradient-card" onInteractOutside={(e) => !isConfigured && e.preventDefault()}>
             <DialogHeader>
               <DialogTitle>Clock Settings</DialogTitle>
             </DialogHeader>
@@ -210,8 +215,8 @@ const ChessClock = () => {
         </Dialog>
       </div>
 
-      {/* Split Clock Display */}
-      <div className="flex-1 flex flex-col md:flex-row relative">
+      {/* Vertical Clock Display */}
+      <div className="flex-1 flex flex-col relative">
         {/* Black Player - Top/Left */}
         <motion.div
           className={`flex-1 flex items-center justify-center cursor-pointer relative overflow-hidden transition-all duration-500 ${
@@ -287,7 +292,7 @@ const ChessClock = () => {
 
         {/* Divider with Pulse Animation */}
         <motion.div 
-          className="h-2 md:h-auto md:w-2 relative"
+          className="h-2 relative"
           animate={{
             background: [
               "linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent)))",
@@ -296,7 +301,7 @@ const ChessClock = () => {
           }}
           transition={{ duration: 3, repeat: Infinity }}
         >
-          <div className="absolute inset-0 bg-gradient-to-r md:bg-gradient-to-b from-primary via-accent to-primary animate-pulse opacity-50" />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary via-accent to-primary animate-pulse opacity-50" />
         </motion.div>
 
         {/* White Player - Bottom/Right */}
