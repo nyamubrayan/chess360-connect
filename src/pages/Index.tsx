@@ -5,7 +5,7 @@ import { CommunityBar } from "@/components/CommunityBar";
 import { HeroSection } from "@/components/home/HeroSection";
 import { FeaturesSection } from "@/components/home/FeaturesSection";
 import { Footer } from "@/components/Footer";
-import { QuickAccessFab } from "@/components/QuickAccessFab";
+
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -38,8 +38,6 @@ const Index = () => {
       </div>
 
       <Footer />
-      
-      <QuickAccessFab />
     </div>
   );
 };

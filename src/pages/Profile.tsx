@@ -10,6 +10,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { ProfileEditDialog } from "@/components/ProfileEditDialog";
 import { GameHistory } from "@/components/GameHistory";
 import { TrainingStats } from "@/components/training/TrainingStats";
+import { QuickAccessFab } from "@/components/QuickAccessFab";
 
 interface Profile {
   id: string;
@@ -215,6 +216,7 @@ const Profile = () => {
         {/* Game History */}
         <GameHistory userId={profile.id} limit={5} showAnalyzeButton={false} />
       </div>
+      <QuickAccessFab />
     </div>
   );
 };
