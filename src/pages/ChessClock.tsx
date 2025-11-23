@@ -46,6 +46,10 @@ const ChessClock = () => {
   const [guestConnected, setGuestConnected] = useState(false);
   const [isPageVisible, setIsPageVisible] = useState(true);
   
+  // Setup flow state
+  const [setupStep, setSetupStep] = useState<1 | 2 | 3>(1); // 1: Choose side, 2: Time control, 3: Game mode
+  const [selectedTimeControl, setSelectedTimeControl] = useState<{ minutes: number; increment: number } | null>(null);
+  
   const { playMove } = useChessSounds();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -304,6 +308,15 @@ const ChessClock = () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
+
+  // Reset setup flow when opening settings dialog for first configuration
+  useEffect(() => {
+    if (settingsOpen && !isConfigured) {
+      setSetupStep(1);
+      setSelectedTimeControl(null);
+      setMultiDeviceSetup(false);
+    }
+  }, [settingsOpen, isConfigured]);
 
   // Fallback polling to keep both devices in sync
   useEffect(() => {
@@ -688,222 +701,285 @@ const ChessClock = () => {
               <Settings className="w-5 h-5" />
             </Button>
           </DialogTrigger>
-          <DialogContent className="gradient-card border-2 border-primary/20 shadow-2xl max-w-md" onInteractOutside={(e) => !isConfigured && e.preventDefault()}>
+          <DialogContent className="gradient-card border-2 border-primary/20 shadow-2xl max-w-md max-h-[90vh] overflow-y-auto" onInteractOutside={(e) => !isConfigured && e.preventDefault()}>
             <DialogHeader className="space-y-3">
               <DialogTitle className="text-2xl font-bold text-center bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                ⚙️ Clock Settings
+                ⚙️ Clock Setup
               </DialogTitle>
+              {/* Progress Indicators */}
+              <div className="flex items-center justify-center gap-2 py-2">
+                <div className={`h-2 w-2 rounded-full transition-all ${setupStep >= 1 ? 'bg-primary w-8' : 'bg-muted'}`} />
+                <div className={`h-2 w-2 rounded-full transition-all ${setupStep >= 2 ? 'bg-primary w-8' : 'bg-muted'}`} />
+                <div className={`h-2 w-2 rounded-full transition-all ${setupStep >= 3 ? 'bg-primary w-8' : 'bg-muted'}`} />
+              </div>
             </DialogHeader>
+            
             <div className="space-y-6 py-4">
-              {/* Multi-Device Options */}
-              {!multiDeviceMode && (
-                <div className="space-y-4 p-4 bg-primary/5 rounded-lg border border-primary/20">
-                  <h3 className="font-semibold text-lg flex items-center gap-2">
-                    <Users className="w-5 h-5 text-primary" />
-                    Multi-Device Mode
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Use two phones - each player sees only their clock
-                  </p>
+              {/* Step 1: Choose Side */}
+              {setupStep === 1 && (
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-4"
+                >
+                  <div className="text-center space-y-2">
+                    <h3 className="font-bold text-xl">Choose Your Side</h3>
+                    <p className="text-sm text-muted-foreground">Select which color you'll be playing</p>
+                  </div>
                   
-                  {!multiDeviceSetup ? (
-                    // Step 1: Enable Multi-Device
-                    <div className="flex flex-col gap-3">
-                      <Button 
-                        onClick={() => setMultiDeviceSetup(true)}
-                        className="w-full h-12 font-bold"
-                        variant="default"
-                        disabled={!isConfigured}
-                      >
-                        <Users className="w-4 h-4 mr-2" />
-                        Start Multi-Device Setup
-                      </Button>
-                      {!isConfigured && (
-                        <p className="text-xs text-muted-foreground text-center">
-                          Select a time control first
-                        </p>
-                      )}
-                      
-                      <div className="relative">
-                        <div className="absolute inset-0 flex items-center">
-                          <span className="w-full border-t" />
-                        </div>
-                        <div className="relative flex justify-center text-xs uppercase">
-                          <span className="bg-background px-2 text-muted-foreground">Or join existing</span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Enter Code"
-                          value={codeInput}
-                          onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
-                          className="flex-1 font-mono text-center text-lg"
-                          maxLength={6}
-                        />
-                        <Button onClick={handleJoinSession} variant="outline" size="lg">
-                          <Link2 className="w-4 h-4 mr-2" />
-                          Join
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    // Step 2 & 3: Select Side and Generate Code
-                    <div className="space-y-4">
-                      <div className="bg-background/50 p-3 rounded-lg border border-border">
-                        <p className="text-sm font-medium mb-3">Step 1: Choose your side</p>
-                        <div className="grid grid-cols-2 gap-2">
-                          <Button 
-                            variant={playerSide === "white" ? "default" : "outline"}
-                            onClick={() => setPlayerSide("white")}
-                            className="h-14 text-base font-bold"
-                          >
-                            <div className="flex items-center gap-2">
-                              <div className="w-5 h-5 rounded-full border-4 border-current" />
-                              White
-                            </div>
-                          </Button>
-                          <Button 
-                            variant={playerSide === "black" ? "default" : "outline"}
-                            onClick={() => setPlayerSide("black")}
-                            className="h-14 text-base font-bold"
-                          >
-                            <div className="flex items-center gap-2">
-                              <div className="w-5 h-5 rounded-full bg-current" />
-                              Black
-                            </div>
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      <div className="bg-background/50 p-3 rounded-lg border border-border">
-                        <p className="text-sm font-medium mb-3">Step 2: Generate connection code</p>
-                        <Button 
-                          onClick={handleCreateSession}
-                          className="w-full h-12 font-bold"
-                          variant="default"
-                        >
-                          <Share2 className="w-4 h-4 mr-2" />
-                          Generate Code
-                        </Button>
-                      </div>
-                      
-                      <Button 
-                        onClick={() => setMultiDeviceSetup(false)}
-                        variant="ghost"
-                        className="w-full"
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Side Selection (only for single device) */}
-              {!multiDeviceSetup && (
-                <div className="space-y-3">
-                  <h3 className="font-semibold text-lg flex items-center gap-2">
-                    <span className="text-xl">♟️</span>
-                    Choose Your Side
-                  </h3>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-4">
                     <Button 
                       variant={playerSide === "white" ? "default" : "outline"}
                       onClick={() => setPlayerSide("white")}
-                      className="h-16 text-lg font-bold transition-all"
-                      disabled={multiDeviceMode}
+                      className="h-24 text-lg font-bold transition-all hover:scale-105"
                     >
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full border-4 border-current" />
-                        White
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-10 h-10 rounded-full border-4 border-current" />
+                        <span>White</span>
                       </div>
                     </Button>
                     <Button 
                       variant={playerSide === "black" ? "default" : "outline"}
                       onClick={() => setPlayerSide("black")}
-                      className="h-16 text-lg font-bold transition-all"
-                      disabled={multiDeviceMode}
+                      className="h-24 text-lg font-bold transition-all hover:scale-105"
                     >
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-current" />
-                        Black
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-10 h-10 rounded-full bg-current" />
+                        <span>Black</span>
                       </div>
                     </Button>
                   </div>
-                </div>
+                  
+                  <Button 
+                    onClick={() => setSetupStep(2)}
+                    className="w-full h-12 text-base font-bold"
+                  >
+                    Next: Time Control
+                  </Button>
+                </motion.div>
               )}
 
-              {/* Quick Presets */}
-              <div className="space-y-3">
-                <h3 className="font-semibold text-lg flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-gold" />
-                  Quick Presets
-                </h3>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button variant="outline" onClick={() => applyPreset(1, 0)} className="hover:border-primary hover:bg-primary/10 transition-all font-semibold">
-                    ⚡ Bullet (1+0)
-                  </Button>
-                  <Button variant="outline" onClick={() => applyPreset(3, 0)} className="hover:border-primary hover:bg-primary/10 transition-all font-semibold">
-                    🔥 Blitz (3+0)
-                  </Button>
-                  <Button variant="outline" onClick={() => applyPreset(3, 2)} className="hover:border-primary hover:bg-primary/10 transition-all font-semibold">
-                    🎯 Blitz (3+2)
-                  </Button>
-                  <Button variant="outline" onClick={() => applyPreset(5, 0)} className="hover:border-primary hover:bg-primary/10 transition-all font-semibold">
-                    ⏱️ Blitz (5+0)
-                  </Button>
-                  <Button variant="outline" onClick={() => applyPreset(10, 0)} className="hover:border-primary hover:bg-primary/10 transition-all font-semibold">
-                    🚀 Rapid (10+0)
-                  </Button>
-                  <Button variant="outline" onClick={() => applyPreset(15, 10)} className="hover:border-primary hover:bg-primary/10 transition-all font-semibold">
-                    ♟️ Rapid (15+10)
-                  </Button>
-                </div>
-              </div>
+              {/* Step 2: Time Control */}
+              {setupStep === 2 && (
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-4"
+                >
+                  <div className="text-center space-y-2">
+                    <h3 className="font-bold text-xl">Choose Time Control</h3>
+                    <p className="text-sm text-muted-foreground">Select a preset or create custom time</p>
+                  </div>
+                  
+                  {/* Quick Presets */}
+                  <div className="space-y-3">
+                    <h4 className="font-semibold flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-gold" />
+                      Quick Presets
+                    </h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { label: "⚡ Bullet (1+0)", minutes: 1, increment: 0 },
+                        { label: "🔥 Blitz (3+0)", minutes: 3, increment: 0 },
+                        { label: "🎯 Blitz (3+2)", minutes: 3, increment: 2 },
+                        { label: "⏱️ Blitz (5+0)", minutes: 5, increment: 0 },
+                        { label: "🚀 Rapid (10+0)", minutes: 10, increment: 0 },
+                        { label: "♟️ Rapid (15+10)", minutes: 15, increment: 10 },
+                      ].map((preset) => (
+                        <Button 
+                          key={preset.label}
+                          variant={selectedTimeControl?.minutes === preset.minutes && selectedTimeControl?.increment === preset.increment ? "default" : "outline"}
+                          onClick={() => setSelectedTimeControl({ minutes: preset.minutes, increment: preset.increment })}
+                          className="hover:border-primary hover:bg-primary/10 transition-all font-semibold h-auto py-3"
+                        >
+                          {preset.label}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
 
-              {/* Custom Time */}
-              <div className="space-y-3">
-                <h3 className="font-semibold text-lg">⚙️ Custom Time</h3>
-                <div className="space-y-3">
-                  <div>
-                    <Label className="font-medium">Minutes per side</Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      max="180"
-                      defaultValue="5"
-                      id="custom-minutes"
-                      className="mt-1.5 h-11"
-                    />
+                  {/* Custom Time */}
+                  <div className="space-y-3 pt-3 border-t border-border">
+                    <h4 className="font-semibold">⚙️ Custom Time</h4>
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="font-medium">Minutes per side</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          max="180"
+                          defaultValue="6"
+                          id="custom-minutes"
+                          className="mt-1.5 h-11"
+                        />
+                      </div>
+                      <div>
+                        <Label className="font-medium">Increment (seconds)</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="60"
+                          defaultValue="0"
+                          id="custom-increment"
+                          className="mt-1.5 h-11"
+                        />
+                      </div>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          const minutes = parseInt(
+                            (document.getElementById("custom-minutes") as HTMLInputElement).value
+                          );
+                          const inc = parseInt(
+                            (document.getElementById("custom-increment") as HTMLInputElement).value
+                          );
+                          setSelectedTimeControl({ minutes, increment: inc });
+                        }}
+                        className="w-full h-11 font-bold"
+                      >
+                        Use Custom Time
+                      </Button>
+                    </div>
                   </div>
-                  <div>
-                    <Label className="font-medium">Increment (seconds)</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="60"
-                      defaultValue="0"
-                      id="custom-increment"
-                      className="mt-1.5 h-11"
-                    />
+                  
+                  <div className="flex gap-2 pt-2">
+                    <Button 
+                      onClick={() => setSetupStep(1)}
+                      variant="outline"
+                      className="flex-1 h-12"
+                    >
+                      Back
+                    </Button>
+                    <Button 
+                      onClick={() => setSetupStep(3)}
+                      disabled={!selectedTimeControl}
+                      className="flex-1 h-12 text-base font-bold"
+                    >
+                      Next: Game Mode
+                    </Button>
                   </div>
-                  <Button
+                </motion.div>
+              )}
+
+              {/* Step 3: Game Mode */}
+              {setupStep === 3 && (
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-4"
+                >
+                  <div className="text-center space-y-2">
+                    <h3 className="font-bold text-xl">Choose Game Mode</h3>
+                    <p className="text-sm text-muted-foreground">Start locally or connect another device</p>
+                  </div>
+                  
+                  {/* Single Device Option */}
+                  <div className="space-y-3">
+                    <Button
+                      onClick={() => {
+                        if (selectedTimeControl) {
+                          applyPreset(selectedTimeControl.minutes, selectedTimeControl.increment);
+                        }
+                      }}
+                      className="w-full h-16 text-base font-bold"
+                    >
+                      <div className="flex flex-col items-center gap-1">
+                        <Clock className="w-6 h-6" />
+                        <span>Start on This Device</span>
+                        <span className="text-xs opacity-80">Both players share one screen</span>
+                      </div>
+                    </Button>
+                    
+                    {/* Divider */}
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-muted-foreground">or</span>
+                      </div>
+                    </div>
+                    
+                    {/* Multi-Device Options */}
+                    {!multiDeviceSetup ? (
+                      <div className="space-y-3">
+                        <Button
+                          onClick={() => setMultiDeviceSetup(true)}
+                          variant="outline"
+                          className="w-full h-16 text-base font-bold"
+                        >
+                          <div className="flex flex-col items-center gap-1">
+                            <Users className="w-6 h-6" />
+                            <span>Connect Another Device</span>
+                            <span className="text-xs opacity-80">Each player uses their own phone</span>
+                          </div>
+                        </Button>
+                        
+                        <div className="relative">
+                          <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t" />
+                          </div>
+                          <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-background px-2 text-muted-foreground">or join existing game</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Enter Code"
+                            value={codeInput}
+                            onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+                            className="flex-1 font-mono text-center text-lg h-12"
+                            maxLength={6}
+                          />
+                          <Button onClick={handleJoinSession} variant="outline" size="lg" className="h-12">
+                            <Link2 className="w-4 h-4 mr-2" />
+                            Join
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 p-4 bg-primary/5 rounded-lg border border-primary/20">
+                        <p className="text-sm font-medium text-center">Generate a code to share with your opponent</p>
+                        <Button 
+                          onClick={() => {
+                            if (selectedTimeControl) {
+                              setTimeControl(selectedTimeControl.minutes * 60);
+                              setIncrement(selectedTimeControl.increment);
+                              handleCreateSession();
+                            }
+                          }}
+                          className="w-full h-12 font-bold"
+                        >
+                          <Share2 className="w-4 h-4 mr-2" />
+                          Generate Connection Code
+                        </Button>
+                        <Button 
+                          onClick={() => setMultiDeviceSetup(false)}
+                          variant="ghost"
+                          className="w-full"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <Button 
                     onClick={() => {
-                      const minutes = parseInt(
-                        (document.getElementById("custom-minutes") as HTMLInputElement).value
-                      );
-                      const inc = parseInt(
-                        (document.getElementById("custom-increment") as HTMLInputElement).value
-                      );
-                      applyCustomTime(minutes, inc);
+                      setSetupStep(2);
+                      setMultiDeviceSetup(false);
                     }}
-                    className="w-full h-11 font-bold text-base"
+                    variant="outline"
+                    className="w-full h-12"
                   >
-                    Apply Custom Time
+                    Back
                   </Button>
-                </div>
-              </div>
+                </motion.div>
+              )}
             </div>
           </DialogContent>
         </Dialog>
@@ -1333,6 +1409,9 @@ const ChessClock = () => {
                   setShowReport(false);
                   setIsConfigured(false);
                   setSettingsOpen(true);
+                  setSetupStep(1);
+                  setSelectedTimeControl(null);
+                  setMultiDeviceSetup(false);
                   setWhiteTime(timeControl);
                   setBlackTime(timeControl);
                   setIsWhiteTurn(true);
@@ -1342,7 +1421,6 @@ const ChessClock = () => {
                   setGameResult(null);
                   setIsActive(false);
                   setMultiDeviceMode(false);
-                  setMultiDeviceSetup(false);
                   setGuestConnected(false);
                   setSessionId(null);
                   setSessionCode("");
