@@ -13,17 +13,20 @@ export const ChessTimer = ({ game, playerColor, className }: ChessTimerProps) =>
   const [whiteTime, setWhiteTime] = useState(game.white_time_remaining);
   const [blackTime, setBlackTime] = useState(game.black_time_remaining);
 
+  // Synchronize timer display with server state immediately
   useEffect(() => {
+    // Always sync to server time when game state updates
     setWhiteTime(game.white_time_remaining);
     setBlackTime(game.black_time_remaining);
-  }, [game.white_time_remaining, game.black_time_remaining]);
+  }, [game.id, game.white_time_remaining, game.black_time_remaining, game.last_move_at]);
 
+  // Synchronized clock countdown using server timestamps
   useEffect(() => {
     // White's clock starts after Black's first move (move_count >= 2)
     // Black's clock starts after White's second move (move_count >= 3)
     if (game.status !== 'active') return;
 
-    // Synchronized timer calculation using server timestamp
+    // Update every 100ms for smooth, synchronized display
     const interval = setInterval(() => {
       const currentTurn = game.current_turn;
       const serverTime = game.last_move_at ? new Date(game.last_move_at).getTime() : Date.now();
@@ -38,6 +41,9 @@ export const ChessTimer = ({ game, playerColor, className }: ChessTimerProps) =>
         if (newTime === 0 && game.white_time_remaining > 0) {
           handleTimeout('white');
         }
+      } else if (currentTurn === 'w') {
+        // Clock not running yet, show server value
+        setWhiteTime(game.white_time_remaining);
       }
       
       // Black's clock runs only after White has made second move (move_count >= 3)
@@ -49,11 +55,14 @@ export const ChessTimer = ({ game, playerColor, className }: ChessTimerProps) =>
         if (newTime === 0 && game.black_time_remaining > 0) {
           handleTimeout('black');
         }
+      } else if (currentTurn === 'b') {
+        // Clock not running yet, show server value
+        setBlackTime(game.black_time_remaining);
       }
     }, 100);
 
     return () => clearInterval(interval);
-  }, [game]);
+  }, [game.status, game.current_turn, game.move_count, game.white_time_remaining, game.black_time_remaining, game.last_move_at]);
 
   const handleTimeout = async (color: 'white' | 'black') => {
     // End game due to timeout
