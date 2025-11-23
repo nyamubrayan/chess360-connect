@@ -40,11 +40,13 @@ export const HeroSection = () => {
               <br className="sm:hidden" />
               <span className="block sm:inline mt-2 sm:mt-0 text-4xl sm:text-5xl lg:text-6xl">
                 Explore{" "}
-                <span 
-                  key={currentWord}
-                  className="inline-block bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent animate-fade-in"
-                >
-                  {words[currentWord]}
+                <span className="inline-block min-w-[280px] sm:min-w-[350px] lg:min-w-[450px]">
+                  <span 
+                    key={currentWord}
+                    className="inline-block bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent animate-fade-in"
+                  >
+                    {words[currentWord]}
+                  </span>
                 </span>
               </span>
             </h1>
