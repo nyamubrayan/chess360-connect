@@ -105,6 +105,7 @@ export default function GameLobby() {
     
     if (category === 'Custom') {
       setCustomDialogOpen(true);
+      setSelectedTimeControl(null);
       return;
     }
     
@@ -332,62 +333,39 @@ export default function GameLobby() {
         {/* Spinning Wheel */}
         <div className="flex flex-col items-center mb-8">
           <SpinningWheel onSelect={handleWheelSelect} disabled={isSearching} />
-        </div>
-
-        {/* Time Control Options for selected category */}
-        {selectedCategory && selectedCategory !== 'Custom' && (
-          <div className="max-w-2xl mx-auto mb-8">
-            <h3 className="text-center text-lg font-semibold mb-4">Choose {selectedCategory} Time Control</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {TIME_CONTROLS.filter(tc => tc.category === selectedCategory).map((tc) => (
-                <Card
-                  key={tc.label}
-                  onClick={() => handleTimeControlSelect(tc)}
-                  className={`
-                    cursor-pointer p-4 text-center
-                    transition-all duration-300
-                    hover:scale-105 hover:shadow-lg
-                    ${selectedTimeControl?.label === tc.label 
-                      ? 'bg-accent border-primary border-2 shadow-xl scale-[1.02]' 
-                      : 'hover:bg-accent/50'
-                    }
-                    ${isSearching ? 'opacity-50 cursor-not-allowed' : ''}
-                  `}
+          
+          {/* Find Match Button - appears below wheel */}
+          <div className="mt-8 w-full max-w-md mx-auto space-y-4">
+            {!isSearching ? (
+              <>
+                {selectedCategory !== 'Custom' && (
+                  <Button
+                    onClick={handleQuickMatch}
+                    disabled={!selectedTimeControl}
+                    className="w-full gap-2 h-16 text-xl font-bold shadow-lg hover:shadow-xl transition-all animate-fade-in"
+                    size="lg"
+                  >
+                    Find Match
+                  </Button>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="flex items-center justify-center gap-3 py-4">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  <span className="text-muted-foreground">Searching for opponent...</span>
+                </div>
+                <Button
+                  onClick={handleCancelSearch}
+                  variant="destructive"
+                  className="w-full gap-2 h-14 text-lg"
+                  size="lg"
                 >
-                  <div className="text-xl font-bold">{tc.label}</div>
-                </Card>
-              ))}
-            </div>
+                  Cancel Search
+                </Button>
+              </>
+            )}
           </div>
-        )}
-
-        {/* Action Buttons */}
-        <div className="max-w-md mx-auto space-y-4">
-          {!isSearching ? (
-            <Button
-              onClick={handleQuickMatch}
-              disabled={!selectedTimeControl}
-              className="w-full gap-2 h-16 text-xl font-bold shadow-lg hover:shadow-xl transition-all"
-              size="lg"
-            >
-              Find Opponent
-            </Button>
-          ) : (
-            <>
-              <div className="flex items-center justify-center gap-3 py-4">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                <span className="text-muted-foreground">Searching for opponent...</span>
-              </div>
-              <Button
-                onClick={handleCancelSearch}
-                variant="destructive"
-                className="w-full gap-2 h-14 text-lg"
-                size="lg"
-              >
-                Cancel Search
-              </Button>
-            </>
-          )}
         </div>
       </div>
 
