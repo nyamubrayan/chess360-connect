@@ -7,9 +7,11 @@ interface ChessTimerProps {
   game: any;
   playerColor: 'white' | 'black' | null;
   className?: string;
+  timeoutHandled: boolean;
+  setTimeoutHandled: (value: boolean) => void;
 }
 
-export const ChessTimer = ({ game, playerColor, className }: ChessTimerProps) => {
+export const ChessTimer = ({ game, playerColor, className, timeoutHandled, setTimeoutHandled }: ChessTimerProps) => {
   const [whiteTime, setWhiteTime] = useState(game.white_time_remaining);
   const [blackTime, setBlackTime] = useState(game.black_time_remaining);
 
@@ -65,9 +67,39 @@ export const ChessTimer = ({ game, playerColor, className }: ChessTimerProps) =>
   }, [game.status, game.current_turn, game.move_count, game.white_time_remaining, game.black_time_remaining, game.last_move_at]);
 
   const handleTimeout = async (color: 'white' | 'black') => {
-    // End game due to timeout
+    // Prevent multiple timeout calls
+    if (timeoutHandled) {
+      console.log('Timeout already handled, skipping');
+      return;
+    }
+    
+    // Only apply rating changes if both players have made their first moves
+    const bothMadeFirstMove = game.move_count >= 2;
+    
+    console.log(`Timeout for ${color}. Both made first move: ${bothMadeFirstMove}`);
+    
+    setTimeoutHandled(true);
+    
     const winnerId = color === 'white' ? game.black_player_id : game.white_player_id;
-    const loserId = color === 'white' ? game.white_player_id : game.black_player_id;
+    
+    if (!bothMadeFirstMove) {
+      // End game as draw with no rating changes
+      await supabase
+        .from('games')
+        .update({
+          status: 'completed',
+          result: 'timeout',
+          winner_id: winnerId,
+          white_rating_change: 0,
+          black_rating_change: 0,
+          completed_at: new Date().toISOString()
+        })
+        .eq('id', game.id)
+        .eq('status', 'active');
+      
+      console.log('Game ended by timeout with no rating changes (first move phase)');
+      return;
+    }
     
     // Fetch both player profiles to calculate rating changes
     const { data: profiles } = await supabase
@@ -105,7 +137,7 @@ export const ChessTimer = ({ game, playerColor, className }: ChessTimerProps) =>
     const winnerChange = Math.round(K * (1 - expectedWinner));
     const loserChange = Math.round(K * (0 - expectedLoser));
     
-    await supabase
+    const { error } = await supabase
       .from('games')
       .update({
         status: 'completed',
@@ -115,7 +147,15 @@ export const ChessTimer = ({ game, playerColor, className }: ChessTimerProps) =>
         black_rating_change: color === 'black' ? loserChange : winnerChange,
         completed_at: new Date().toISOString()
       })
-      .eq('id', game.id);
+      .eq('id', game.id)
+      .eq('status', 'active');
+    
+    if (error) {
+      console.error('Error updating game on timeout:', error);
+      setTimeoutHandled(false);
+    } else {
+      console.log('Game ended by timeout with rating changes');
+    }
   };
 
   const formatTime = (seconds: number) => {
