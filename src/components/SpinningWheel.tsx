@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
-import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
+import { useState } from 'react';
+import { motion, useMotionValue, animate } from 'framer-motion';
 import { useChessSounds } from '@/hooks/useChessSounds';
 
 interface SpinningWheelProps {
@@ -14,76 +14,37 @@ export function SpinningWheel({ onSelect, disabled }: SpinningWheelProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isSpinning, setIsSpinning] = useState(false);
   const rotation = useMotionValue(0);
-  const containerRef = useRef<HTMLDivElement>(null);
   const { playWheelSpin, playWheelLock } = useChessSounds();
   
   const segmentAngle = 360 / OPTIONS.length;
   
-  const handleDragEnd = (_: any, info: any) => {
+  const handleCenterClick = () => {
     if (disabled || isSpinning) return;
     
-    const velocity = info.velocity.y;
+    const nextIndex = (selectedIndex + 1) % OPTIONS.length;
     const currentRotation = rotation.get();
     
-    // Calculate spin based on velocity
-    const spinAmount = velocity * 0.5;
-    const finalRotation = currentRotation + spinAmount;
-    
-    // Normalize to find final segment
-    const normalizedRotation = ((finalRotation % 360) + 360) % 360;
-    const targetSegment = Math.floor((360 - normalizedRotation + segmentAngle / 2) / segmentAngle) % OPTIONS.length;
-    const snapRotation = finalRotation - (normalizedRotation - (360 - targetSegment * segmentAngle));
+    // Calculate rotation to bring next segment to top
+    const targetRotation = currentRotation + segmentAngle;
     
     setIsSpinning(true);
     playWheelSpin();
     
-    // Animate to snap position
-    animate(rotation, snapRotation, {
+    animate(rotation, targetRotation, {
       type: "spring",
-      damping: 30,
+      damping: 20,
       stiffness: 100,
-      mass: 1.5,
       onComplete: () => {
         setIsSpinning(false);
-        setSelectedIndex(targetSegment);
+        setSelectedIndex(nextIndex);
         playWheelLock();
-        onSelect(OPTIONS[targetSegment]);
-      }
-    });
-  };
-  
-  const handleSegmentClick = (index: number) => {
-    if (disabled || isSpinning) return;
-    
-    const currentRotation = rotation.get();
-    const targetRotation = 360 - (index * segmentAngle);
-    const normalizedCurrent = ((currentRotation % 360) + 360) % 360;
-    
-    // Find shortest path
-    let diff = targetRotation - normalizedCurrent;
-    if (diff > 180) diff -= 360;
-    if (diff < -180) diff += 360;
-    
-    const finalRotation = currentRotation + diff;
-    
-    setIsSpinning(true);
-    playWheelSpin();
-    
-    animate(rotation, finalRotation, {
-      type: "spring",
-      damping: 25,
-      stiffness: 120,
-      onComplete: () => {
-        setIsSpinning(false);
-        setSelectedIndex(index);
-        playWheelLock();
-        onSelect(OPTIONS[index]);
+        onSelect(OPTIONS[nextIndex]);
       }
     });
   };
 
   return (
-    <div className="flex flex-col items-center gap-8" ref={containerRef}>
+    <div className="flex flex-col items-center gap-8">
       {/* Wheel Container */}
       <div className="relative w-[280px] h-[280px] sm:w-[350px] sm:h-[350px] md:w-[400px] md:h-[400px]">
         {/* Pointer/Arrow at top */}
@@ -93,25 +54,31 @@ export function SpinningWheel({ onSelect, disabled }: SpinningWheelProps) {
         
         {/* Wheel */}
         <motion.div
-          className="relative w-full h-full rounded-full shadow-2xl cursor-grab active:cursor-grabbing"
+          className="relative w-full h-full rounded-full shadow-2xl"
           style={{ rotate: rotation }}
-          drag
-          dragConstraints={{ top: 0, bottom: 0, left: 0, right: 0 }}
-          dragElastic={0.1}
-          onDragEnd={handleDragEnd}
-          whileTap={{ scale: 0.98 }}
         >
-          {/* Center circle decoration */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-16 h-16 rounded-full bg-background border-4 border-primary shadow-lg z-10 flex items-center justify-center">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent animate-pulse" />
+          {/* Center circle - clickable */}
+          <button
+            onClick={handleCenterClick}
+            disabled={disabled || isSpinning}
+            className="absolute inset-0 flex items-center justify-center z-10 disabled:opacity-50"
+            style={{ 
+              width: '80px', 
+              height: '80px',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)'
+            }}
+          >
+            <div className="w-20 h-20 rounded-full bg-background border-4 border-primary shadow-lg flex items-center justify-center hover:scale-110 transition-transform cursor-pointer">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent animate-pulse" />
             </div>
-          </div>
+          </button>
           
           {/* Wheel segments */}
           {OPTIONS.map((option, index) => {
             const angle = index * segmentAngle;
-            const isSelected = selectedIndex === index;
+            const isAtTop = index === selectedIndex;
             
             return (
               <div
@@ -120,16 +87,15 @@ export function SpinningWheel({ onSelect, disabled }: SpinningWheelProps) {
                 style={{
                   transform: `rotate(${angle}deg)`,
                 }}
-                onClick={() => handleSegmentClick(index)}
               >
                 <div 
                   className="absolute w-full h-1/2 origin-bottom transition-all duration-300"
                   style={{
                     clipPath: `polygon(50% 100%, ${50 - 50 * Math.sin(Math.PI / OPTIONS.length)}% 0%, ${50 + 50 * Math.sin(Math.PI / OPTIONS.length)}% 0%)`,
-                    background: isSelected 
+                    background: isAtTop 
                       ? `linear-gradient(to top, ${COLORS[index]}, ${COLORS[index]}dd)` 
                       : COLORS[index],
-                    boxShadow: isSelected ? '0 0 20px rgba(0,0,0,0.3) inset' : 'none',
+                    boxShadow: isAtTop ? '0 0 20px rgba(0,0,0,0.3) inset' : 'none',
                   }}
                 />
                 
@@ -140,7 +106,7 @@ export function SpinningWheel({ onSelect, disabled }: SpinningWheelProps) {
                     transform: `translateX(-50%) rotate(${90}deg)`,
                   }}
                 >
-                  <span className={`text-sm sm:text-base md:text-lg font-bold text-background drop-shadow-lg whitespace-nowrap transition-all duration-300 ${isSelected ? 'scale-110' : ''}`}>
+                  <span className={`text-sm sm:text-base md:text-lg font-bold text-background drop-shadow-lg whitespace-nowrap transition-all duration-300 ${isAtTop ? 'scale-110' : ''}`}>
                     {option}
                   </span>
                 </div>
