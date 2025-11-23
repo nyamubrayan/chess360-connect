@@ -13,6 +13,7 @@ interface PostGameActionsProps {
   timeControl: number;
   timeIncrement: number;
   gameResult?: string;
+  moveCount?: number;
 }
 
 export const PostGameActions = ({ 
@@ -21,12 +22,14 @@ export const PostGameActions = ({
   opponentName,
   timeControl,
   timeIncrement,
-  gameResult 
+  gameResult,
+  moveCount = 0
 }: PostGameActionsProps) => {
   const navigate = useNavigate();
   const [rematchSent, setRematchSent] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const isAborted = gameResult === 'aborted';
+  // Game is aborted if it's a draw with 0 moves
+  const isAborted = gameResult === 'draw' && moveCount === 0;
 
   const handleRematchRequest = async () => {
     setIsProcessing(true);

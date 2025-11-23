@@ -19,7 +19,8 @@ export const ChessTimer = ({ game, playerColor, className }: ChessTimerProps) =>
   }, [game.white_time_remaining, game.black_time_remaining]);
 
   useEffect(() => {
-    if (game.status !== 'active') return;
+    // Only run timer if game is active AND first move has been made
+    if (game.status !== 'active' || game.move_count === 0) return;
 
     const interval = setInterval(() => {
       const currentTurn = game.current_turn;
