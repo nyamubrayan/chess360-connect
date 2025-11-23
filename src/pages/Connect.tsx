@@ -380,6 +380,25 @@ export default function Connect() {
     }
   };
 
+  const removeFriend = async (friendshipId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('friends')
+        .delete()
+        .eq('id', friendshipId);
+
+      if (error) throw error;
+
+      toast.success('ChessMate removed');
+      loadPlayers(user.id);
+    } catch (error: any) {
+      console.error('Error removing friend:', error);
+      toast.error('Failed to remove ChessMate');
+    }
+  };
+
   const filteredPlayers = players
     .filter(player => 
       player.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -413,31 +432,31 @@ export default function Connect() {
     <div className="min-h-screen bg-background">
       <CommunityBar user={user} />
       
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="container mx-auto px-4 py-6 md:py-8 max-w-7xl">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <Users className="w-8 h-8 text-primary" />
-            <h1 className="text-4xl lg:text-5xl font-bold">Networking Zone</h1>
+        <div className="mb-6 md:mb-8">
+          <div className="flex items-center gap-3 mb-3 md:mb-4">
+            <Users className="w-7 h-7 md:w-8 md:h-8 text-primary" />
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold">Networking Zone</h1>
           </div>
-          <p className="text-lg text-muted-foreground max-w-2xl">
+          <p className="text-base md:text-lg text-muted-foreground max-w-2xl">
             Discover chess players from around the world and build your network
           </p>
         </div>
 
         {/* Pending Requests Section */}
         {(pendingRequests.received.length > 0 || pendingRequests.sent.length > 0) && (
-          <Card className="gradient-card mb-8 border-orange-500/20">
+          <Card className="gradient-card mb-6 md:mb-8 border-orange-500/20">
             <CardHeader>
-              <CardTitle className="text-xl flex items-center gap-2">
+              <CardTitle className="text-lg md:text-xl flex items-center gap-2">
                 <Clock className="w-5 h-5 text-orange-500" />
                 ChessMate Requests
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm">
                 Manage your pending connection requests
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4 md:space-y-6">
               {/* Received Requests */}
               {pendingRequests.received.length > 0 && (
                 <div>
@@ -447,7 +466,7 @@ export default function Connect() {
                     </Badge>
                     Received Requests
                   </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                     {pendingRequests.received.map((player) => {
                       const status = friendStatuses[player.id];
                       return (
@@ -500,7 +519,7 @@ export default function Connect() {
                     </Badge>
                     Sent Requests
                   </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                     {pendingRequests.sent.map((player) => {
                       const status = friendStatuses[player.id];
                       return (
@@ -538,73 +557,91 @@ export default function Connect() {
 
         {/* Connected Friends Section */}
         {connectedFriends.length > 0 && (
-          <Card className="gradient-card mb-8 border-primary/20">
+          <Card className="gradient-card mb-6 md:mb-8 border-primary/20">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-xl flex items-center gap-2">
-                  <Users className="w-5 h-5 text-primary" />
-                  My ChessMates
-                </CardTitle>
-                <Badge variant="secondary" className="text-sm font-semibold">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                  <CardTitle className="text-lg md:text-xl flex items-center gap-2">
+                    <Users className="w-5 h-5 text-primary" />
+                    My ChessMates
+                  </CardTitle>
+                  <CardDescription className="text-sm mt-1">
+                    Your chess network of {connectedFriends.length} connected {connectedFriends.length === 1 ? 'player' : 'players'}
+                  </CardDescription>
+                </div>
+                <Badge variant="secondary" className="text-sm font-semibold w-fit">
                   {connectedFriends.length} Connected
                 </Badge>
               </div>
-              <CardDescription>
-                Your chess network of {connectedFriends.length} connected {connectedFriends.length === 1 ? 'player' : 'players'}
-              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                {connectedFriends.map((friend) => (
-                  <button
-                    key={friend.id}
-                    className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 active:bg-muted/60 transition-all cursor-pointer text-left w-full touch-manipulation"
-                    onClick={() => navigate(`/profile/${friend.id}`)}
-                  >
-                    <Avatar className="w-10 h-10 border-2 border-primary/20 shrink-0">
-                      <AvatarImage src={friend.avatar_url || undefined} />
-                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                        {friend.username.substring(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0 overflow-hidden">
-                      <p className="font-semibold text-sm truncate">
-                        {friend.display_name || friend.username}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        @{friend.username}
-                      </p>
-                      <Badge variant="outline" className="text-xs mt-1 pointer-events-none">
-                        {friend.rating || 1200}
-                      </Badge>
+                {connectedFriends.map((friend) => {
+                  const status = friendStatuses[friend.id];
+                  return (
+                    <div
+                      key={friend.id}
+                      className="flex flex-col gap-2 p-3 rounded-lg bg-muted/30 border border-primary/20"
+                    >
+                      <div 
+                        className="flex items-center gap-3 cursor-pointer"
+                        onClick={() => navigate(`/profile/${friend.id}`)}
+                      >
+                        <Avatar className="w-10 h-10 border-2 border-primary/20 shrink-0">
+                          <AvatarImage src={friend.avatar_url || undefined} />
+                          <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                            {friend.username.substring(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0 overflow-hidden">
+                          <p className="font-semibold text-sm truncate">
+                            {friend.display_name || friend.username}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            @{friend.username}
+                          </p>
+                          <Badge variant="outline" className="text-xs mt-1">
+                            {friend.rating || 1200}
+                          </Badge>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full h-8 text-xs"
+                        onClick={() => removeFriend(status.friendshipId!)}
+                      >
+                        <UserPlus className="w-3 h-3 mr-1" />
+                        Disconnect
+                      </Button>
                     </div>
-                  </button>
-                ))}
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
         )}
 
         {/* Search and Sort Bar */}
-        <Card className="gradient-card mb-8">
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row gap-4">
+        <Card className="gradient-card mb-6 md:mb-8">
+          <CardContent className="p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 md:w-5 md:h-5" />
                 <Input
                   type="text"
                   placeholder="Search players by username..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-9 md:pl-10 text-sm md:text-base h-9 md:h-10"
                 />
               </div>
               <div className="flex items-center gap-2">
-                <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
+                <ArrowUpDown className="w-4 h-4 text-muted-foreground shrink-0" />
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as any)}
-                  className="px-4 py-2 rounded-md bg-background border border-input text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="px-3 md:px-4 py-2 rounded-md bg-background border border-input text-foreground text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-primary w-full sm:w-auto"
                 >
                   <option value="rating">Sort by Rating</option>
                   <option value="games">Sort by Games Played</option>
@@ -618,18 +655,18 @@ export default function Connect() {
 
         {/* Players Grid */}
         {loading ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Loading players...</p>
+          <div className="text-center py-8 md:py-12">
+            <p className="text-sm md:text-base text-muted-foreground">Loading players...</p>
           </div>
         ) : filteredPlayers.length === 0 ? (
           <Card className="gradient-card">
-            <CardContent className="p-12 text-center">
-              <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No players found</p>
+            <CardContent className="p-8 md:p-12 text-center">
+              <Users className="w-12 h-12 md:w-16 md:h-16 text-muted-foreground mx-auto mb-3 md:mb-4" />
+              <p className="text-sm md:text-base text-muted-foreground">No players found</p>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {filteredPlayers.map((player) => {
               const status = friendStatuses[player.id] || {
                 isFriend: false,
@@ -641,9 +678,9 @@ export default function Connect() {
 
               return (
                 <Card key={player.id} className="gradient-card hover:glow-primary transition-all">
-                  <CardHeader>
-                    <div className="flex items-start gap-4">
-                      <Avatar className="w-16 h-16">
+                  <CardHeader className="p-4 md:p-6">
+                    <div className="flex items-start gap-3 md:gap-4">
+                      <Avatar className="w-12 h-12 md:w-16 md:h-16 shrink-0">
                         <AvatarImage src={player.avatar_url || undefined} />
                         <AvatarFallback>
                           {player.username.substring(0, 2).toUpperCase()}
@@ -651,30 +688,30 @@ export default function Connect() {
                       </Avatar>
                       
                       <div className="flex-1 min-w-0">
-                        <CardTitle className="text-lg truncate">
+                        <CardTitle className="text-base md:text-lg truncate">
                           {player.display_name || player.username}
                         </CardTitle>
-                        <CardDescription className="truncate">
+                        <CardDescription className="text-xs md:text-sm truncate">
                           @{player.username}
                         </CardDescription>
                         
                         {/* Category Ratings */}
-                        <div className="flex flex-wrap gap-1.5 mt-2">
-                          <Badge variant="secondary" className="text-xs px-2 py-0.5">
-                            <span className="text-muted-foreground mr-1">Bullet:</span>
+                        <div className="flex flex-wrap gap-1 md:gap-1.5 mt-2">
+                          <Badge variant="secondary" className="text-xs px-1.5 md:px-2 py-0.5">
+                            <span className="text-muted-foreground mr-0.5 md:mr-1">Bullet:</span>
                             {player.bullet_rating || 1200}
                           </Badge>
-                          <Badge variant="secondary" className="text-xs px-2 py-0.5">
-                            <span className="text-muted-foreground mr-1">Blitz:</span>
+                          <Badge variant="secondary" className="text-xs px-1.5 md:px-2 py-0.5">
+                            <span className="text-muted-foreground mr-0.5 md:mr-1">Blitz:</span>
                             {player.blitz_rating || 1200}
                           </Badge>
-                          <Badge variant="secondary" className="text-xs px-2 py-0.5">
-                            <span className="text-muted-foreground mr-1">Rapid:</span>
+                          <Badge variant="secondary" className="text-xs px-1.5 md:px-2 py-0.5">
+                            <span className="text-muted-foreground mr-0.5 md:mr-1">Rapid:</span>
                             {player.rapid_rating || 1200}
                           </Badge>
                         </div>
                         {player.country && (
-                          <Badge variant="outline" className="text-xs mt-2">
+                          <Badge variant="outline" className="text-xs mt-1.5 md:mt-2">
                             {player.country}
                           </Badge>
                         )}
@@ -682,15 +719,15 @@ export default function Connect() {
                     </div>
                   </CardHeader>
 
-                  <CardContent>
+                  <CardContent className="p-4 md:p-6 pt-0">
                     {player.bio && (
-                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                      <p className="text-xs md:text-sm text-muted-foreground mb-3 md:mb-4 line-clamp-2">
                         {player.bio}
                       </p>
                     )}
 
                     {/* Player Stats */}
-                    <div className="grid grid-cols-3 gap-2 mb-4 p-3 bg-muted/30 rounded-lg">
+                    <div className="grid grid-cols-3 gap-2 mb-3 md:mb-4 p-2 md:p-3 bg-muted/30 rounded-lg">
                       <div className="text-center">
                         <p className="text-xs text-muted-foreground mb-1">Games</p>
                         <p className="text-sm font-bold text-foreground">{player.total_games || 0}</p>
@@ -706,7 +743,7 @@ export default function Connect() {
                     </div>
 
                     {player.show_training_stats && (
-                      <div className="mb-4">
+                      <div className="mb-3 md:mb-4">
                         <TrainingStats userId={player.id} />
                       </div>
                     )}
@@ -715,90 +752,99 @@ export default function Connect() {
                       {status.isBlocked ? (
                         <Button
                           variant="outline"
-                          className="w-full"
+                          size="sm"
+                          className="w-full h-9"
                           onClick={() => unblockUser(player.id)}
                         >
-                          <Ban className="w-4 h-4 mr-2" />
-                          Unblock
+                          <Ban className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5 md:mr-2" />
+                          <span className="text-xs md:text-sm">Unblock</span>
                         </Button>
                       ) : status.isFriend ? (
                         <>
-                          <Button variant="outline" className="flex-1" disabled>
-                            <Check className="w-4 h-4 mr-2" />
-                            ChessMates
+                          <Button variant="outline" size="sm" className="flex-1 h-9" disabled>
+                            <Check className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5 md:mr-2" />
+                            <span className="text-xs md:text-sm">ChessMates</span>
                           </Button>
                           <Button
                             variant="destructive"
-                            size="icon"
+                            size="sm"
+                            className="h-9 px-3"
                             onClick={() => blockUser(player.id)}
                             title="Block user"
                           >
-                            <Ban className="w-4 h-4" />
+                            <Ban className="w-3.5 h-3.5 md:w-4 md:h-4" />
                           </Button>
                         </>
                       ) : status.isPending && status.isRequester ? (
                         <>
                           <Button
                             variant="outline"
-                            className="flex-1"
+                            size="sm"
+                            className="flex-1 h-9"
                             onClick={() => cancelFriendRequest(status.friendshipId!)}
                           >
-                            <Clock className="w-4 h-4 mr-2" />
-                            Cancel Request
+                            <Clock className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5 md:mr-2" />
+                            <span className="text-xs md:text-sm">Cancel</span>
                           </Button>
                           <Button
                             variant="destructive"
-                            size="icon"
+                            size="sm"
+                            className="h-9 px-3"
                             onClick={() => blockUser(player.id)}
                             title="Block user"
                           >
-                            <Ban className="w-4 h-4" />
+                            <Ban className="w-3.5 h-3.5 md:w-4 md:h-4" />
                           </Button>
                         </>
                       ) : status.isPending && !status.isRequester ? (
                         <>
                           <Button
                             variant="default"
-                            className="flex-1"
+                            size="sm"
+                            className="flex-1 h-9"
                             onClick={() => acceptFriendRequest(status.friendshipId!)}
                           >
-                            <Check className="w-4 h-4 mr-2" />
-                            Accept
+                            <Check className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5 md:mr-2" />
+                            <span className="text-xs md:text-sm">Accept</span>
                           </Button>
                           <Button
                             variant="outline"
-                            className="flex-1"
+                            size="sm"
+                            className="flex-1 h-9"
                             onClick={() => declineFriendRequest(status.friendshipId!)}
                           >
-                            <X className="w-4 h-4 mr-2" />
-                            Decline
+                            <X className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5 md:mr-2" />
+                            <span className="text-xs md:text-sm">Decline</span>
                           </Button>
                           <Button
                             variant="destructive"
-                            size="icon"
+                            size="sm"
+                            className="h-9 px-3"
                             onClick={() => blockUser(player.id)}
                             title="Block user"
                           >
-                            <Ban className="w-4 h-4" />
+                            <Ban className="w-3.5 h-3.5 md:w-4 md:h-4" />
                           </Button>
                         </>
                       ) : (
                         <>
                           <Button
                             variant="default"
-                            className="flex-1"
+                            size="sm"
+                            className="flex-1 h-9"
                             onClick={() => initiateFriendRequest(player.id, player.display_name || player.username)}
                           >
-                            <UserPlus className="w-4 h-4 mr-2" />
-                            Add ChessMate
+                            <UserPlus className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5 md:mr-2" />
+                            <span className="text-xs md:text-sm">Add ChessMate</span>
                           </Button>
                           <Button
                             variant="destructive"
-                            size="icon"
+                            size="sm"
+                            className="h-9 px-3"
                             onClick={() => blockUser(player.id)}
                             title="Block user"
                           >
-                            <Ban className="w-4 h-4" />
+                            <Ban className="w-3.5 h-3.5 md:w-4 md:h-4" />
                           </Button>
                         </>
                       )}
