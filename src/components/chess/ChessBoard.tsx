@@ -16,6 +16,11 @@ export const ChessBoardComponent = ({ position, onMove, playerColor, disabled, c
   const [legalMoves, setLegalMoves] = useState<Square[]>([]);
 
   useEffect(() => {
+    console.log('🎨 Board rendering with playerColor:', playerColor);
+    console.log('  Position:', position);
+  }, [playerColor, position]);
+
+  useEffect(() => {
     // Clear highlights when position changes
     setSelectedSquare(null);
     setLegalMoves([]);
@@ -91,20 +96,26 @@ export const ChessBoardComponent = ({ position, onMove, playerColor, disabled, c
 
   return (
     <div className="w-full max-w-[600px] mx-auto">
-      <Chessboard
-        position={position}
-        onPieceDrop={handleDrop}
-        onSquareClick={handleSquareClick}
-        boardOrientation={playerColor || 'white'}
-        customBoardStyle={{
-          borderRadius: '8px',
-          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-        }}
-        customDarkSquareStyle={{ backgroundColor: 'hsl(var(--primary))' }}
-        customLightSquareStyle={{ backgroundColor: 'hsl(var(--card))' }}
-        customSquareStyles={customSquareStyles}
-        arePiecesDraggable={!disabled}
-      />
+      {playerColor ? (
+        <Chessboard
+          position={position}
+          onPieceDrop={handleDrop}
+          onSquareClick={handleSquareClick}
+          boardOrientation={playerColor}
+          customBoardStyle={{
+            borderRadius: '8px',
+            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+          }}
+          customDarkSquareStyle={{ backgroundColor: 'hsl(var(--primary))' }}
+          customLightSquareStyle={{ backgroundColor: 'hsl(var(--card))' }}
+          customSquareStyles={customSquareStyles}
+          arePiecesDraggable={!disabled}
+        />
+      ) : (
+        <div className="w-full aspect-square max-w-[600px] mx-auto bg-muted rounded-lg flex items-center justify-center">
+          <p className="text-muted-foreground">Loading board...</p>
+        </div>
+      )}
     </div>
   );
 };
