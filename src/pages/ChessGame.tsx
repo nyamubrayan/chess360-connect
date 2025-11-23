@@ -905,6 +905,30 @@ export default function ChessGame() {
             gameId={gameId!}
             result={game.result}
             playerColor={playerColor}
+            onRequestRematch={async () => {
+              try {
+                const opponentId = playerColor === 'white' ? game.black_player_id : game.white_player_id;
+                const opponentName = playerColor === 'white' 
+                  ? (blackPlayer?.display_name || blackPlayer?.username) 
+                  : (whitePlayer?.display_name || whitePlayer?.username);
+
+                const { error } = await supabase.from('notifications').insert({
+                  user_id: opponentId,
+                  sender_id: user.id,
+                  type: 'rematch_request',
+                  title: 'Rematch Request',
+                  message: `${opponentName} wants a rematch!`,
+                  room_id: gameId,
+                });
+
+                if (error) throw error;
+                toast.success('Rematch request sent!');
+              } catch (error) {
+                console.error('Error sending rematch:', error);
+                toast.error('Failed to send rematch request');
+              }
+            }}
+            onFindNewMatch={() => navigate('/lobby')}
           />
         )}
       </div>
