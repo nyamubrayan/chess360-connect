@@ -11,6 +11,7 @@ import { UserPlus, Users, Search, Check, Clock, X, Ban, ArrowUpDown } from 'luci
 import { toast } from 'sonner';
 import { PuzzleChallengeDialog } from '@/components/PuzzleChallengeDialog';
 import { TrainingStats } from '@/components/training/TrainingStats';
+import { motion } from 'framer-motion';
 
 interface PlayerProfile {
   id: string;
@@ -428,13 +429,91 @@ export default function Connect() {
     );
   }
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.08 }
+    }
+  };
+
+  const cardVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.4 }
+    }
+  };
+
+  const chessPieceVariants = {
+    hidden: { x: -100, opacity: 0, rotate: -20 },
+    visible: {
+      x: 0,
+      opacity: 1,
+      rotate: 0,
+      transition: { type: "spring" as const, stiffness: 100, damping: 15 }
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Animated Chess Pieces Background */}
+      <motion.div
+        className="absolute top-20 left-10 text-7xl opacity-10 select-none pointer-events-none hidden lg:block"
+        variants={chessPieceVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        ♔
+      </motion.div>
+      <motion.div
+        className="absolute top-40 right-20 text-6xl opacity-10 select-none pointer-events-none hidden lg:block"
+        variants={chessPieceVariants}
+        initial="hidden"
+        animate="visible"
+        transition={{ delay: 0.2 }}
+      >
+        ♞
+      </motion.div>
+      <motion.div
+        className="absolute bottom-40 left-20 text-6xl opacity-10 select-none pointer-events-none hidden lg:block"
+        variants={chessPieceVariants}
+        initial="hidden"
+        animate="visible"
+        transition={{ delay: 0.4 }}
+      >
+        ♜
+      </motion.div>
+      <motion.div
+        className="absolute bottom-20 right-40 text-7xl opacity-10 select-none pointer-events-none hidden lg:block"
+        variants={chessPieceVariants}
+        initial="hidden"
+        animate="visible"
+        transition={{ delay: 0.6 }}
+      >
+        ♛
+      </motion.div>
+      <motion.div
+        className="absolute top-1/2 left-1/4 text-5xl opacity-5 select-none pointer-events-none hidden xl:block"
+        variants={chessPieceVariants}
+        initial="hidden"
+        animate="visible"
+        transition={{ delay: 0.8 }}
+      >
+        ♝
+      </motion.div>
+
       <CommunityBar user={user} />
       
-      <div className="container mx-auto px-4 py-6 md:py-8 max-w-7xl">
+      <div className="container mx-auto px-4 py-6 md:py-8 max-w-7xl relative z-10">
         {/* Header */}
-        <div className="mb-6 md:mb-8">
+        <motion.div
+          className="mb-6 md:mb-8"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
           <div className="flex items-center gap-3 mb-3 md:mb-4">
             <Users className="w-7 h-7 md:w-8 md:h-8 text-primary" />
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold">Networking Zone</h1>
@@ -442,11 +521,16 @@ export default function Connect() {
           <p className="text-base md:text-lg text-muted-foreground max-w-2xl">
             Discover chess players from around the world and build your network
           </p>
-        </div>
+        </motion.div>
 
         {/* Incoming Requests Section */}
         {pendingRequests.received.length > 0 && (
-          <Card className="gradient-card mb-6 md:mb-8 border-orange-500/20">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            <Card className="gradient-card mb-6 md:mb-8 border-orange-500/20">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -507,11 +591,17 @@ export default function Connect() {
               </div>
             </CardContent>
           </Card>
+          </motion.div>
         )}
 
         {/* Sent Requests Section */}
         {pendingRequests.sent.length > 0 && (
-          <Card className="gradient-card mb-6 md:mb-8 border-primary/20">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <Card className="gradient-card mb-6 md:mb-8 border-primary/20">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -561,11 +651,17 @@ export default function Connect() {
               </div>
             </CardContent>
           </Card>
+          </motion.div>
         )}
 
         {/* Connected Friends Section */}
         {connectedFriends.length > 0 && (
-          <Card className="gradient-card mb-6 md:mb-8 border-primary/20">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
+            <Card className="gradient-card mb-6 md:mb-8 border-primary/20">
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div>
@@ -628,10 +724,16 @@ export default function Connect() {
               </div>
             </CardContent>
           </Card>
+          </motion.div>
         )}
 
         {/* Search and Sort Bar */}
-        <Card className="gradient-card mb-6 md:mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+        >
+          <Card className="gradient-card mb-6 md:mb-8">
           <CardContent className="p-4 md:p-6">
             <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
               <div className="relative flex-1">
@@ -660,6 +762,7 @@ export default function Connect() {
             </div>
           </CardContent>
         </Card>
+        </motion.div>
 
         {/* Players Grid */}
         {loading ? (
@@ -674,8 +777,13 @@ export default function Connect() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {filteredPlayers.map((player) => {
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {filteredPlayers.map((player, index) => {
               const status = friendStatuses[player.id] || {
                 isFriend: false,
                 isPending: false,
@@ -685,7 +793,8 @@ export default function Connect() {
               };
 
               return (
-                <Card key={player.id} className="gradient-card hover:glow-primary transition-all">
+                <motion.div key={player.id} variants={cardVariants}>
+                  <Card className="gradient-card hover:glow-primary transition-all h-full">
                   <CardHeader className="p-4 md:p-6">
                     <div className="flex items-start gap-3 md:gap-4">
                       <Avatar className="w-12 h-12 md:w-16 md:h-16 shrink-0">
@@ -859,9 +968,10 @@ export default function Connect() {
                     </div>
                   </CardContent>
                 </Card>
+                </motion.div>
               );
             })}
-          </div>
+          </motion.div>
         )}
       </div>
 
