@@ -838,6 +838,8 @@ export default function ChessGame() {
                   timeIncrement={game.time_increment}
                   gameResult={game.result}
                   moveCount={game.move_count}
+                  whitePlayerName={whitePlayer?.display_name || whitePlayer?.username || 'White'}
+                  blackPlayerName={blackPlayer?.display_name || blackPlayer?.username || 'Black'}
                 />
               </div>
             )}

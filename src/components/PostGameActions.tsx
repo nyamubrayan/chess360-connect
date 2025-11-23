@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,8 @@ interface PostGameActionsProps {
   timeIncrement: number;
   gameResult?: string;
   moveCount?: number;
+  whitePlayerName?: string;
+  blackPlayerName?: string;
 }
 
 export const PostGameActions = ({ 
@@ -23,13 +25,27 @@ export const PostGameActions = ({
   timeControl,
   timeIncrement,
   gameResult,
-  moveCount = 0
+  moveCount = 0,
+  whitePlayerName,
+  blackPlayerName
 }: PostGameActionsProps) => {
   const navigate = useNavigate();
   const [rematchSent, setRematchSent] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [abortedPlayerName, setAbortedPlayerName] = useState<string>('');
+  
   // Game is aborted if it's a draw with 0 or 1 moves (no real play)
-  const isAborted = gameResult === 'draw' && (moveCount ?? 0) <= 1;
+  const isAborted = gameResult === 'draw' && moveCount <= 1;
+
+  useEffect(() => {
+    if (isAborted) {
+      // Determine who timed out based on move count
+      // move_count = 0: White timed out (never moved)
+      // move_count = 1: Black timed out (White moved, Black didn't)
+      const timedOutPlayer = moveCount === 0 ? whitePlayerName : blackPlayerName;
+      setAbortedPlayerName(timedOutPlayer || 'A player');
+    }
+  }, [isAborted, moveCount, whitePlayerName, blackPlayerName]);
 
   const handleRematchRequest = async () => {
     setIsProcessing(true);
@@ -74,7 +90,7 @@ export const PostGameActions = ({
             </div>
             <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 mb-4">
               <p className="text-sm text-center text-muted-foreground">
-                Game ended - a player did not make their first move within 30 seconds.
+                <span className="font-semibold">{abortedPlayerName}</span> did not make their first move within 30 seconds.
               </p>
               <p className="text-sm text-center text-muted-foreground font-medium mt-1">
                 No rating changes applied.
