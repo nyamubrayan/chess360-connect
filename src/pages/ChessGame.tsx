@@ -130,42 +130,43 @@ export default function ChessGame() {
   const handleFirstMoveTimeout = useCallback(async () => {
     if (!game || !user || game.status !== 'active') return;
 
-    console.log('First move timeout - ending game with no rating changes...');
+    console.log('First move timeout - aborting game, no rating changes...');
 
     try {
-      // End the game without applying rating changes (no winner_id, no rating changes)
+      // End the game as a draw (no winner, no rating changes)
       const { error } = await supabase
         .from('games')
         .update({
           status: 'completed',
-          result: 'aborted',
+          result: 'draw',
           completed_at: new Date().toISOString(),
-          // No winner_id - ensures no rating changes
-          // No rating_change fields - no points deducted
+          white_rating_change: 0,
+          black_rating_change: 0,
+          // No winner_id - ensures it's treated as a draw
         })
         .eq('id', game.id)
-        .eq('status', 'active'); // Only abort if still active
+        .eq('status', 'active'); // Only update if still active
 
       if (error) {
         console.error('Error ending game:', error);
         throw error;
       }
 
-      console.log('Game ended successfully - no rating changes applied');
+      console.log('Game ended successfully - marked as draw with no rating changes');
 
       // Send notifications to both players
       await supabase.from('notifications').insert([
         {
           user_id: game.white_player_id,
           type: 'game_aborted',
-          title: 'Game Ended',
-          message: 'Game ended - no move was made within 30 seconds. No rating changes.',
+          title: 'Game Aborted',
+          message: 'Game ended - no first move was made within 30 seconds. No rating changes.',
         },
         {
           user_id: game.black_player_id,
           type: 'game_aborted',
-          title: 'Game Ended',
-          message: 'Game ended - no move was made within 30 seconds. No rating changes.',
+          title: 'Game Aborted',
+          message: 'Game ended - no first move was made within 30 seconds. No rating changes.',
         },
       ]);
 
@@ -388,18 +389,21 @@ export default function ChessGame() {
       console.log('Game completed:', gameData.result, 'Winner:', gameData.winner_id);
       
       // Show completion message
+      // Check if this was an aborted game (draw with 0 moves)
+      const wasAborted = gameData.result === 'draw' && gameData.move_count === 0;
+      
       const resultMessage = gameData.result === 'checkmate' 
         ? (gameData.winner_id === user?.id ? 'You won by checkmate!' : 'Checkmate! You lost.')
         : gameData.result === 'resignation'
         ? (gameData.winner_id === user?.id ? 'Opponent resigned. You win!' : 'You resigned.')
         : gameData.result === 'timeout'
         ? (gameData.winner_id === user?.id ? 'Opponent ran out of time. You win!' : 'Time out! You lost.')
-        : gameData.result === 'aborted'
-        ? 'Game ended - no first move within 30 seconds. No rating changes.'
+        : wasAborted
+        ? 'Game aborted - no first move within 30 seconds. No rating changes.'
         : `Game drawn by ${gameData.result}`;
       
       // Only show toast if not aborted (aborted already shows its own toast)
-      if (gameData.result !== 'aborted') {
+      if (!wasAborted) {
         toast.success(resultMessage, {
           duration: 8000,
           action: {
@@ -800,6 +804,7 @@ export default function ChessGame() {
                   timeControl={game.time_control}
                   timeIncrement={game.time_increment}
                   gameResult={game.result}
+                  moveCount={game.move_count}
                 />
               </div>
             )}
