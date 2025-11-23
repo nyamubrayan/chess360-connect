@@ -141,7 +141,7 @@ export const ChessTimer = ({ game, playerColor, className, timeoutHandled, setTi
       .from('games')
       .update({
         status: 'completed',
-        result: color === 'white' ? '0-1' : '1-0',
+        result: 'timeout',
         winner_id: winnerId,
         white_rating_change: color === 'white' ? loserChange : winnerChange,
         black_rating_change: color === 'black' ? loserChange : winnerChange,
