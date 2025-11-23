@@ -64,11 +64,14 @@ export default function GameLobby() {
   });
 
   useEffect(() => {
+    let currentUserId: string | null = null;
+
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) {
         navigate('/auth');
         return;
       }
+      currentUserId = user.id;
       setUser(user);
       fetchUserProfile(user.id);
       checkForActiveGame(user.id);
@@ -101,6 +104,26 @@ export default function GameLobby() {
       )
       .subscribe();
 
+    // Real-time subscription for profile updates (ratings)
+    const profileChannel = supabase
+      .channel('profile-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: currentUserId ? `id=eq.${currentUserId}` : undefined,
+        },
+        (payload) => {
+          console.log('Profile updated:', payload);
+          if (currentUserId) {
+            fetchUserProfile(currentUserId);
+          }
+        }
+      )
+      .subscribe();
+
     // Cleanup: remove user from queue when component unmounts
     return () => {
       clearInterval(statsInterval);
@@ -115,6 +138,7 @@ export default function GameLobby() {
 
       supabase.removeChannel(gamesChannel);
       supabase.removeChannel(queueChannel);
+      supabase.removeChannel(profileChannel);
     };
   }, [searchInterval, isSearching]);
 
