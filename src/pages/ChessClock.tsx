@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Clock, Play, Pause, RotateCcw, Settings, Zap, Users, Share2, Link2, ArrowLeft } from "lucide-react";
+import { Clock, Play, Pause, RotateCcw, Settings, Zap, Users, Share2, Link2, ArrowLeft, Home } from "lucide-react";
 import { useChessSounds } from "@/hooks/useChessSounds";
 import {
   Dialog,
@@ -17,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { RealtimeChannel } from "@supabase/supabase-js";
 
 const ChessClock = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [whiteTime, setWhiteTime] = useState(300);
   const [blackTime, setBlackTime] = useState(300);
@@ -689,6 +691,14 @@ const ChessClock = () => {
       {/* Header */}
       <div className="p-4 flex items-center justify-between border-b border-border/50 backdrop-blur-sm bg-background/80 z-10">
         <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/")}
+            className="hover:bg-primary/10"
+          >
+            <Home className="w-5 h-5" />
+          </Button>
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
             <Clock className="w-6 h-6 text-primary-foreground" />
           </div>
