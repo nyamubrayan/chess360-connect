@@ -1,88 +1,271 @@
-# 🧠♟️ Chessafari — Learn, Play & Grow in the Journey of Chess
+# Chessafari ♟️🦁
 
-A next-generation chess platform blending AI-powered learning, real-time gameplay, and smart coaching.
+<div align="center">
 
-## 🌍 About Chessafari
+**Your Ultimate Chess Learning & Playing Platform**
 
-Chessafari is a global chess experience inspired by the word "Safari" — a journey. Just like a safari, every player begins a path of discovery: learning, practicing, and mastering the game step by step.
+[![React](https://img.shields.io/badge/React-18.3.1-blue.svg)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.5.3-blue.svg)](https://www.typescriptlang.org/)
+[![Lovable Cloud](https://img.shields.io/badge/Backend-Lovable_Cloud-green.svg)](https://lovable.dev)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-This platform empowers players to:
-- ♟️ **Play real-time chess** with friends or matched opponents
-- 🧩 **Improve through AI analysis** and personalized training
-- 📊 **Analyze games** to identify strengths and weaknesses
-- 🎯 **Train smarter** with AI-powered insights and lessons
-- 🌐 **Connect with players** worldwide in the Networking Zone
-- 🏆 **Compete in tournaments** with various formats
-- 📚 **Learn openings and endgames** through interactive lessons
+[Live Demo](https://chessafari.lovable.app) | [Documentation](#documentation) | [Report Bug](issues/) | [Request Feature](issues/)
 
-## 🚀 Key Features
+</div>
 
-### ♟️ Real-Time Multiplayer Chess
-- Smart matchmaking system (Bullet, Blitz, Rapid, Classical)
-- Live game synchronization with Supabase Realtime
-- Complete chess rules enforcement (castling, en passant, promotion)
-- In-game chat and move takeback requests
-- ELO rating system with rating changes
+---
+
+## 📋 Table of Contents
+
+- [About](#about)
+- [Core Features](#core-features)
+- [Tech Stack](#tech-stack)
+- [Getting Started](#getting-started)
+- [Project Structure](#project-structure)
+- [Deployment](#deployment)
+- [Environment Variables](#environment-variables)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
+
+## 🌍 About
+
+**Chessafari** is a next-generation chess platform inspired by the word "Safari" — a journey of discovery, learning, and mastery. Whether you're taking your first steps in chess or refining your grandmaster-level skills, Chessafari provides comprehensive tools, AI-powered coaching, and a vibrant community to accompany you on your chess journey.
+
+### Why Choose Chessafari?
+
+- 🤖 **AI-Powered Learning** - Get personalized coaching and real-time move analysis
+- 🌍 **Global Community** - Connect with chess enthusiasts worldwide
+- 📊 **Deep Analytics** - Track every aspect of your progress with detailed statistics
+- 🎓 **Structured Learning** - Master openings, endgames, and tactics systematically
+- 🏆 **Competitive Environment** - Join tournaments and climb global leaderboards
+- ⚡ **Real-Time Experience** - Smooth, lag-free online chess with instant synchronization
+- ⏱️ **Smart Chess Clock** - Professional-grade clock for in-person and online games
+- 🎬 **Game Highlights** - AI-generated highlight reels of your best moments
+
+## ✨ Core Features
+
+### 🎮 Gameplay Modes
+
+#### Real-Time Multiplayer Chess
+- **Intelligent Matchmaking**: Find opponents instantly based on your skill level
+- **Multiple Time Controls**: 
+  - Bullet: 1+0
+  - Blitz: 3+2, 5+3
+  - Rapid: 10+5, 15+10
+  - Classical: 30+0 and custom times
+- **Live Synchronization**: Real-time move updates using Lovable Cloud Realtime
+- **Complete Rule Enforcement**: Castling, en passant, promotion, 50-move rule
+- **In-Game Features**: Chat, draw offers, undo requests, resignation
+- **Rating System**: Dynamic ELO ratings with visible rating changes
+
+#### Smart Chess Clock ⏱️
+- **Professional Timer**: Industry-standard chess clock for in-person games
+- **Session Sharing**: Generate unique codes to sync clocks across devices
+- **All Time Formats**: Support for every standard chess time control
+- **Increment Support**: Fischer increment for fair time management
+- **Full Control**: Pause, resume, and restart capabilities
+- **Move Analytics**: Track time spent on each move
+- **Dual Device Mode**: Use separate devices for White and Black players
+- **Game Result Recording**: Automatic timeout detection and win/loss recording
 
 ### 🤖 AI-Powered Training
-- **AI Mentor Mode** - Real-time move analysis during gameplay
-- **Smart Training** - Personalized learning paths based on your play
-- **Post-Game Analysis** - Detailed breakdown of every game
-- **AI Coach Training** - Solo and multiplayer practice with instant feedback
-- Move quality classification (good, questionable, mistake, blunder)
 
-### 🧩 Comprehensive Learning
-- **Chess Puzzles** - Tactical training with difficulty levels
-- **Opening Theory** - Interactive lessons on popular openings
-- **Endgame Training** - Master essential endgame techniques
-- **Chess Basics** - Learn piece movement and fundamentals
-- **Progress Tracking** - Monitor improvement with stats and streaks
+#### Real-Time AI Mentor
+- **Live Move Analysis**: Get instant evaluation of every move as you play
+- **Performance Classification**: Moves rated as brilliant, good, questionable, mistake, or blunder
+- **Smart Suggestions**: AI recommends better alternatives for suboptimal moves
+- **Training Heatmaps**: Visualize your move quality distribution
+- **Accuracy Tracking**: Monitor your overall move precision percentage
 
-### 🌐 Social & Networking
-- **Networking Zone** - Discover and connect with players worldwide
-- **ChessMates System** - Friend requests with puzzle verification
-- **Private Messaging** - Chat with connected friends
-- **Online Status** - See which friends are active
-- **Profile System** - Showcase your achievements and stats
+#### AI Coach Training Sessions
+- **Solo Training**: Practice against AI with real-time feedback
+- **Multiplayer Training**: Train with friends while AI watches and coaches
+- **Move Explanations**: Understand why certain moves are strong or weak
+- **Position Analysis**: Deep evaluation of critical game positions
+- **Performance Summaries**: Detailed post-training statistics and insights
+
+#### Post-Game Analysis
+- **Complete Game Breakdown**: Move-by-move analysis of finished games
+- **Critical Moments**: Identification of game-changing positions
+- **Alternative Lines**: See what you could have played differently
+- **Strengths & Weaknesses**: AI identifies patterns in your play
+- **Improvement Suggestions**: Personalized recommendations for growth
+
+### 🎓 Comprehensive Learning System
+
+#### Interactive Lessons
+- **Opening Repertoire**:
+  - Italian Game, Ruy López, Sicilian Defense
+  - French Defense, King's Indian, Queen's Gambit
+  - Scandinavian Defense, Caro-Kann, and more
+- **Endgame Mastery**:
+  - King and Pawn endgames
+  - Rook endgames
+  - Queen vs Rook
+  - Bishop and Knight checkmates
+- **Step-by-Step Walkthroughs**: Visual board demonstrations
+- **Key Concepts**: Understand the strategic ideas behind each line
+- **Bookmarking System**: Save important positions for later review
+- **Personal Notes**: Add your own insights and reminders
+
+#### Chess Puzzles
+- **Themed Challenges**: Tactics, checkmates, endgames, pins, forks
+- **Difficulty Levels**: From beginner (800) to grandmaster (2500+)
+- **Timed Mode**: Practice speed and accuracy under pressure
+- **Solution Verification**: Instant feedback on puzzle attempts
+- **Daily Puzzles**: Fresh challenges delivered every day
+- **Progress Tracking**: Monitor solved puzzles and success rate
+
+#### Progress & Gamification
+- **Training Level System**: Level up from beginner to master
+- **Streak Tracking**: Build consistency with daily practice streaks
+- **Achievement Badges**: Unlock rewards for reaching milestones
+- **Leaderboards**: Compare your progress with the community
+- **Statistics Dashboard**: Comprehensive view of your learning journey
+
+### 📊 Analytics & Performance Tracking
+
+#### Personal Dashboard
+- **Rating Graphs**: Track your rating evolution over time
+- **Win/Loss/Draw Statistics**: Complete performance breakdown
+- **Opening Performance**: See which openings work best for you
+- **Color Analysis**: Compare your White vs Black performance
+- **Time Management**: Analyze how you spend your thinking time
+- **Opponent Statistics**: Study patterns against different playing styles
+
+#### Advanced Metrics
+- **Move Accuracy Trends**: Track precision improvements
+- **Game Duration Analysis**: Understand your playing pace
+- **Peak Performance Times**: Identify when you play best
+- **Blunder Frequency**: Monitor and reduce mistakes
+- **Tactical Success Rate**: Measure puzzle-solving ability
 
 ### 🏆 Competitive Features
-- **Tournament System** - Single-elimination, Round-robin, Swiss
-- **Tournament Schedule** - View match times and standings
-- **Leaderboards** - Compete for top rankings
-- **Game Highlights** - Generate shareable video clips of your games
-- **Game History** - Complete record of all your matches
 
-### 📊 Analytics & Insights
-- **Deep Analytics** - Track performance trends over time
-- **Move-by-move Analysis** - Understand every decision
-- **Performance Graphs** - Visualize rating progression
-- **Heatmaps** - See move distribution patterns
-- **Statistics Dashboard** - Comprehensive game metrics
+#### Tournament System
+- **Multiple Formats**:
+  - Single Elimination
+  - Swiss System
+  - Round Robin
+- **Custom Tournaments**: Create your own competitions
+- **Live Brackets**: Real-time tournament progress visualization
+- **Match Scheduling**: Automatic pairing and time management
+- **Tournament Chat**: Communicate with participants
+- **Prize Distribution**: Built-in winner recognition
+- **Tournament History**: Review past performance
 
-## 🏗️ Tech Stack
+#### Leaderboards
+- **Global Rankings**: See where you stand worldwide
+- **Category Rankings**: Separate boards for Bullet, Blitz, Rapid
+- **Regional Filters**: Compete with local players
+- **Time-Based Rankings**: Weekly, monthly, all-time standings
+- **Top Players Showcase**: Featured profiles of leading players
 
-### Frontend
-- **React 18** + **TypeScript** - Modern UI framework
-- **Vite** - Lightning-fast build tool
-- **Tailwind CSS** - Utility-first styling
-- **Shadcn UI** + **Radix UI** - Beautiful, accessible components
-- **React Router v6** - Client-side routing
-- **TanStack Query** - Data fetching and caching
-- **Zustand** - Lightweight state management
-- **chess.js** - Chess engine and move validation
-- **react-chessboard** - Interactive chessboard component
+### 🎬 Game Highlights
 
-### Backend & Database
-- **Supabase (PostgreSQL)** - Database and authentication
-- **Supabase Realtime** - WebSocket-based live updates
-- **Supabase Storage** - File storage (avatars, lessons)
-- **Supabase Edge Functions** - Serverless backend logic (Deno)
-- **Row-Level Security (RLS)** - Database-level authorization
+#### AI-Powered Highlight Generation
+- **Automatic Creation**: AI identifies your most brilliant moments
+- **Key Moment Detection**: Captures tactical shots, checkmates, brilliant moves
+- **Custom Highlights**: Manually select positions you want to feature
+- **Video Generation**: Create shareable highlight reels
+- **Social Sharing**: Export and share on social media
+- **View Counter**: Track engagement on your highlights
+- **Like System**: Community appreciation for great plays
 
-### AI & External Services
-- **Lovable AI** - Game analysis and insights (Gemini/GPT)
-- **OpenAI API** - Optional AI integration
-- **Google Gemini** - Alternative AI backend
+### 🌐 Social & Community
+
+#### Networking & Friends
+- **ChessMates System**: Send and accept friend requests
+- **Puzzle Verification**: Optional puzzle challenge for friend requests
+- **Private Messaging**: One-on-one chat with connected players
+- **Online Status**: See when friends are available
+- **Location Sharing**: Optional location-based player discovery
+- **Friend Challenges**: Quickly challenge friends to games
+
+#### Profile & Customization
+- **Profile Showcase**: Display your stats and achievements
+- **Avatar Upload**: Personalize your identity
+- **Bio & Description**: Share your chess story
+- **Privacy Controls**: Manage who can see your information
+- **Display Preferences**: Customize your public profile
+- **Training Stats Display**: Show or hide your training progress
+
+#### Content & Updates
+- **News Feed**: Latest chess news and updates
+- **Event Calendar**: Upcoming tournaments and competitions
+- **Community Events**: Join online simuls and special events
+- **Notifications**: Stay informed about challenges and messages
+
+### 🎨 Customization & Accessibility
+
+#### Theme & Appearance
+- **Dark/Light Mode**: Seamless theme switching
+- **Custom Board Themes**: Multiple color schemes (coming soon)
+- **Piece Set Options**: Various piece designs (coming soon)
+- **Sound Effects**: Customizable audio feedback
+- **Animation Settings**: Control move animations
+
+#### User Experience
+- **Responsive Design**: Perfect on desktop, tablet, and mobile
+- **Keyboard Shortcuts**: Power-user features
+- **Notification Preferences**: Fine-tune alert settings
+- **Language Support**: Multi-language interface (planned)
+- **Accessibility Features**: Screen reader support
+
+## 🛠 Tech Stack
+
+### Frontend Architecture
+- **React 18.3.1** - Modern React with Hooks and Concurrent Features
+- **TypeScript 5.5.3** - Type-safe development
+- **Vite 5.4.2** - Lightning-fast build tool and dev server
+- **Tailwind CSS 3.4.11** - Utility-first styling with custom design system
+- **Shadcn UI** - Beautiful, accessible component library
+- **React Router DOM 6.30.1** - Client-side routing
+- **Framer Motion 12.23.24** - Smooth animations and transitions
+
+### State & Data Management
+- **TanStack Query 5.83.0** - Server state management and caching
+- **Zustand 5.0.8** - Lightweight global state management
+- **React Hook Form 7.61.1** - Performant form handling
+- **Zod 3.25.76** - Schema validation
+
+### Chess-Specific Libraries
+- **chess.js 1.4.0** - Complete chess rules engine
+- **react-chessboard 4.7.2** - Interactive chessboard component
+
+### UI & Visualization
+- **Lucide React 0.462.0** - Beautiful icon library
+- **Recharts 2.15.4** - Responsive chart components
+- **Sonner 1.7.4** - Toast notifications
+- **Canvas Confetti 1.9.4** - Celebration effects
+- **HTML2Canvas 1.4.1** - Screenshot generation
+- **jsPDF 3.0.4** - PDF export functionality
+
+### Backend & Cloud Services
+- **Lovable Cloud** - Integrated backend platform
+- **PostgreSQL** - Relational database
+- **Realtime Subscriptions** - WebSocket-based live updates
+- **Authentication** - Built-in auth with email and OAuth
+- **Storage** - File upload and management
+- **Edge Functions** - Serverless backend logic (Deno runtime)
+
+### AI & Analytics
+- **Lovable AI Gateway** - Multi-model AI access
+- **Google Gemini 2.5 Pro/Flash** - Game analysis and coaching
+- **Google Gemini 3 Pro Image** - Image generation
+- **OpenAI GPT-5 Series** - Advanced AI capabilities
+
+### Development Tools
+- **ESLint** - Code quality and consistency
+- **PostCSS** - CSS transformation
+- **Autoprefixer** - CSS vendor prefixing
+
+### Deployment & Hosting
+- **Netlify** - Production hosting with CI/CD
+- **Netlify Functions** - Serverless function support
+- **Git Integration** - Automatic deployments
 
 ## 📁 Project Structure
 
@@ -192,38 +375,227 @@ chessafari/
 
 ## 📦 Deployment
 
-### Deploy to Netlify
+### Netlify Deployment (Recommended)
 
-See **[NETLIFY_DEPLOYMENT.md](./NETLIFY_DEPLOYMENT.md)** for complete deployment instructions.
+Chessafari is optimized for Netlify deployment with automatic CI/CD.
 
 **Quick Deploy:**
-1. Export project to GitHub
-2. Connect repository to Netlify
-3. Set environment variables
-4. Deploy!
 
-### Deploy to Vercel
+1. **Connect Repository**
+   - Login to [Netlify](https://netlify.com)
+   - Click "Add new site" → "Import an existing project"
+   - Connect your Git repository (GitHub, GitLab, Bitbucket)
 
-1. Import GitHub repository to Vercel
-2. Set build command: `npm run build`
-3. Set output directory: `dist`
-4. Add environment variables
-5. Deploy
+2. **Configure Build Settings**
+   - Build command: `npm run build`
+   - Publish directory: `dist`
+   - Node version: 18 or higher
 
-### Deploy to Custom Server
+3. **Environment Variables**
+   Go to Site settings → Environment variables and add:
+   ```
+   VITE_SUPABASE_URL=your_backend_url
+   VITE_SUPABASE_PUBLISHABLE_KEY=your_anon_key
+   VITE_SUPABASE_PROJECT_ID=your_project_id
+   ```
 
-1. Build the project: `npm run build`
-2. Serve the `dist` folder with any static host
-3. Configure redirects for client-side routing
-4. Set up environment variables
+4. **Deploy**
+   - Click "Deploy site"
+   - Netlify will automatically deploy on every push to main branch
+
+**Custom Domain Setup:**
+- Navigate to Domain settings in Netlify
+- Add your custom domain
+- Configure DNS records as instructed
+- SSL certificate is automatically provisioned
+
+### Vercel Deployment
+
+1. Import your repository to [Vercel](https://vercel.com)
+2. Configure:
+   - Framework Preset: Vite
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+3. Add environment variables
+4. Deploy
+
+### Self-Hosting
+
+For custom server deployment:
+
+```bash
+# Build the application
+npm run build
+
+# The dist/ folder contains the production build
+# Serve it with any static file server
+
+# Example with serve
+npm install -g serve
+serve -s dist -l 3000
+
+# Example with nginx
+# Copy dist/ contents to your nginx web root
+```
+
+**Important for Self-Hosting:**
+- Configure proper redirects for client-side routing
+- Set up environment variables in your hosting environment
+- Ensure HTTPS is enabled
+- Configure CORS if needed
+
+### Edge Functions Deployment
+
+Edge functions are automatically deployed when using Lovable Cloud. For manual deployment:
+
+```bash
+# Deploy all functions
+npm run deploy:functions
+
+# Deploy specific function
+supabase functions deploy function-name
+```
 
 ## 🔐 Environment Variables
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `VITE_SUPABASE_URL` | Your Supabase project URL | ✅ |
-| `VITE_SUPABASE_ANON_KEY` | Supabase anonymous key | ✅ |
-| `VITE_SUPABASE_PROJECT_ID` | Supabase project reference ID | ✅ |
+Required environment variables for the application:
+
+| Variable | Description | Required | Example |
+|----------|-------------|----------|---------|
+| `VITE_SUPABASE_URL` | Your backend project URL | ✅ | `https://xxx.supabase.co` |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Public anonymous key | ✅ | `eyJhbGci...` |
+| `VITE_SUPABASE_PROJECT_ID` | Backend project reference ID | ✅ | `abcdefghijk` |
+
+### Setting Up Environment Variables
+
+**Local Development:**
+Create a `.env` file in the root directory:
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=your-anon-key
+VITE_SUPABASE_PROJECT_ID=your-project-id
+```
+
+**Production (Netlify):**
+1. Go to Site settings → Environment variables
+2. Add each variable with its value
+3. Redeploy if necessary
+
+**Production (Vercel):**
+1. Go to Project settings → Environment Variables
+2. Add variables for Production, Preview, and Development
+3. Redeploy to apply changes
+
+## 📚 Database Schema
+
+### Core Tables
+
+**profiles**
+- User profiles with display names, avatars, bio
+- Rating information (overall, bullet, blitz, rapid)
+- Location data (optional)
+- Training stats visibility settings
+
+**games**
+- Complete game records
+- FEN positions, PGN notation
+- Time control settings
+- Player IDs and ratings
+- Game status and results
+- Position history for threefold repetition
+
+**game_moves**
+- Move-by-move game history
+- SAN and UCI notation
+- Time spent per move
+- Special move flags (check, capture, castling, etc.)
+
+**training_sessions**
+- AI training session records
+- Move statistics (good, questionable, mistakes, blunders)
+- Accuracy percentages
+- Session duration and status
+
+**puzzles**
+- Chess puzzle definitions
+- FEN positions
+- Solution moves
+- Difficulty ratings
+- Themes (tactics, endgame, etc.)
+
+**tournaments**
+- Tournament configurations
+- Formats (elimination, Swiss, round-robin)
+- Time controls
+- Participant limits
+- Current round tracking
+
+**chess_clock_sessions**
+- Smart chess clock session data
+- Session codes for device synchronization
+- Time remaining for both players
+- Game results and move counts
+
+### Real-Time Tables
+The following tables have real-time subscriptions enabled:
+- `games` - Live game updates
+- `game_moves` - Move synchronization
+- `game_chat_messages` - In-game chat
+- `notifications` - Real-time notifications
+- `chess_clock_sessions` - Clock synchronization
+
+## 🔌 API & Edge Functions
+
+### Available Edge Functions
+
+**Game Management**
+- `validate-chess-move` - Server-side move validation
+- `make-chess-move` - Process and record moves
+- `chess-game-action` - Handle game actions (resign, draw, undo)
+- `create-chess-game` - Initialize new games
+
+**AI & Analysis**
+- `analyze-game` - Full game analysis with AI
+- `analyze-move` - Real-time move evaluation
+- `explain-opening-move` - Opening move explanations
+- `generate-game-highlight` - AI highlight generation
+
+**Matchmaking & Tournaments**
+- `find-match` - Intelligent matchmaking
+- `manage-tournament` - Tournament operations
+
+**Learning**
+- `recommend-lessons` - Personalized lesson suggestions
+
+### Authentication
+Built-in authentication with:
+- Email/password signup and login
+- Google OAuth integration
+- Password recovery
+- Session management with automatic refresh
+
+### Real-Time Subscriptions
+
+Subscribe to game updates:
+```typescript
+import { supabase } from "@/integrations/supabase/client";
+
+const channel = supabase
+  .channel('game-updates')
+  .on(
+    'postgres_changes',
+    {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'games',
+      filter: `id=eq.${gameId}`
+    },
+    (payload) => {
+      console.log('Game updated:', payload);
+    }
+  )
+  .subscribe();
+```
 
 ## 📝 Available Scripts
 
@@ -259,40 +631,243 @@ The project uses a comprehensive design system defined in:
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/AmazingFeature`
-3. Commit changes: `git commit -m 'Add AmazingFeature'`
-4. Push to branch: `git push origin feature/AmazingFeature`
-5. Open a Pull Request
+We welcome contributions from the community! Whether you're fixing bugs, adding features, or improving documentation, your help is appreciated.
 
-## 🐛 Known Issues & Limitations
+### How to Contribute
 
-- **Lovable AI Migration:** When self-hosting, you'll need to replace Lovable AI with your own AI solution (OpenAI, Gemini, etc.)
-- **Edge Function Secrets:** Configure secrets in Supabase for production
-- **Email Templates:** Customize Supabase email templates for your domain
+1. **Fork the Repository**
+   - Click the "Fork" button on GitHub
+   - Clone your fork locally
+
+2. **Create a Feature Branch**
+   ```bash
+   git checkout -b feature/your-feature-name
+   # or
+   git checkout -b fix/your-bug-fix
+   ```
+
+3. **Make Your Changes**
+   - Write clean, readable code
+   - Follow the existing code style
+   - Add comments for complex logic
+   - Test your changes thoroughly
+
+4. **Commit with Conventional Commits**
+   ```bash
+   git commit -m "feat: add new feature"
+   git commit -m "fix: resolve bug in component"
+   git commit -m "docs: update README"
+   git commit -m "style: format code"
+   git commit -m "refactor: improve performance"
+   git commit -m "test: add unit tests"
+   ```
+
+5. **Push and Create Pull Request**
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+   Then open a PR on GitHub with a clear description
+
+### Contribution Guidelines
+
+**Code Style**
+- Use TypeScript for all new code
+- Follow React best practices and hooks patterns
+- Use functional components
+- Maintain consistent naming conventions
+- Extract reusable logic into custom hooks
+
+**Component Structure**
+- Keep components small and focused
+- Use composition over inheritance
+- Extract shared UI into `/components/ui/`
+- Co-locate component-specific files
+
+**Git Workflow**
+- Keep commits atomic and focused
+- Write meaningful commit messages
+- Rebase before submitting PR
+- Keep PRs focused on single features/fixes
+
+**Testing**
+- Test your changes in development
+- Verify responsive design on different screen sizes
+- Check dark/light theme compatibility
+- Test edge cases and error states
+
+### What to Contribute
+
+**Good First Issues**
+- UI improvements and bug fixes
+- Documentation updates
+- Accessibility enhancements
+- Performance optimizations
+
+**Feature Ideas**
+- New board themes and piece sets
+- Additional puzzle types
+- Enhanced analytics visualizations
+- Tournament features
+- Social features
+- Mobile app development
+
+**Bug Reports**
+When reporting bugs, include:
+- Clear description of the issue
+- Steps to reproduce
+- Expected vs actual behavior
+- Screenshots/videos if applicable
+- Browser and device information
+
+**Feature Requests**
+When requesting features, provide:
+- Clear use case and benefits
+- User stories if applicable
+- Mockups or examples (optional)
+- Technical considerations
+
+## 🗺️ Roadmap
+
+### 🚀 Upcoming Features
+
+#### Q1 2025
+- [ ] **Chess960 (Fischer Random)** - Random starting position variant
+- [ ] **Puzzle Rush Mode** - Solve as many puzzles as possible in time limit
+- [ ] **Enhanced Board Themes** - Multiple board color schemes
+- [ ] **Piece Set Customization** - Choose from various piece designs
+- [ ] **Opening Explorer** - Database of opening moves with statistics
+
+#### Q2 2025
+- [ ] **Mobile Apps** - Native iOS and Android applications
+- [ ] **Video Lessons** - Interactive video content from chess coaches
+- [ ] **Live Streaming Integration** - Watch and learn from live streams
+- [ ] **Team Tournaments** - Compete as a team
+- [ ] **Advanced Stockfish Analysis** - Deeper computer analysis
+
+#### Q3 2025
+- [ ] **Coach Marketplace** - Book sessions with chess coaches
+- [ ] **Study Groups** - Collaborative learning features
+- [ ] **Blindfold Chess Trainer** - Practice playing without seeing the board
+- [ ] **Voice Move Input** - Play using voice commands
+- [ ] **Chess Variants** - Crazyhouse, Atomic, King of the Hill
+
+#### Q4 2025
+- [ ] **VR Chess Experience** - Virtual reality chess rooms
+- [ ] **Tournament Calendar** - Global chess event listings
+- [ ] **Simul System** - Play multiple opponents simultaneously
+- [ ] **Chess Library** - Digital chess book collection
+- [ ] **Custom Training Plans** - AI-generated personalized training
+
+### ✅ Recently Completed
+- [x] Dark/Light theme toggle
+- [x] Smart Chess Clock with device synchronization
+- [x] Real-time multiplayer with live updates
+- [x] AI-powered move analysis
+- [x] Game highlights generation
+- [x] Tournament system with multiple formats
+- [x] Comprehensive learning modules
+- [x] Profile customization
+- [x] Friend system and messaging
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the **MIT License**.
+
+```
+MIT License
+
+Copyright (c) 2024 Chessafari
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
 
 ## 🙏 Acknowledgments
 
-- Built with [Lovable](https://lovable.dev)
-- Chess engine: [chess.js](https://github.com/jhlywa/chess.js)
-- Chessboard: [react-chessboard](https://github.com/Clariity/react-chessboard)
-- UI components: [shadcn/ui](https://ui.shadcn.com)
-- Backend: [Supabase](https://supabase.com)
-- Icons: [Lucide Icons](https://lucide.dev)
+This project wouldn't be possible without these amazing tools and communities:
 
-## 📧 Support & Community
+### Core Technologies
+- **[Lovable](https://lovable.dev)** - Development platform and cloud infrastructure
+- **[React](https://react.dev)** - UI framework
+- **[TypeScript](https://www.typescriptlang.org/)** - Type-safe JavaScript
+- **[Vite](https://vitejs.dev/)** - Build tool and dev server
 
-- **Website:** [chessafari.com](https://chessafari.com)
-- **Discord:** Join our community server
-- **Email:** support@chessafari.com
-- **GitHub Issues:** Report bugs and request features
+### Chess Libraries
+- **[chess.js](https://github.com/jhlywa/chess.js)** - Chess rules engine by Jeff Hlywa
+- **[react-chessboard](https://github.com/Clariity/react-chessboard)** - React chessboard component
+
+### UI & Design
+- **[Shadcn UI](https://ui.shadcn.com)** - Component library by shadcn
+- **[Radix UI](https://www.radix-ui.com/)** - Accessible component primitives
+- **[Tailwind CSS](https://tailwindcss.com/)** - Utility-first CSS framework
+- **[Lucide Icons](https://lucide.dev)** - Beautiful icon library
+- **[Framer Motion](https://www.framer.com/motion/)** - Animation library
+
+### Backend & AI
+- **[Supabase](https://supabase.com/)** - Open-source backend platform
+- **[Google Gemini](https://deepmind.google/technologies/gemini/)** - AI models
+- **[OpenAI](https://openai.com/)** - GPT models
+
+### Community
+- Chess.com and Lichess for inspiration
+- The global chess community for feedback
+- All contributors and beta testers
+
+## 💬 Support & Community
+
+### Get Help
+
+📖 **Documentation**
+- [User Guide](#) - Complete guide to using Chessafari
+- [API Documentation](#) - For developers
+- [FAQ](#) - Frequently asked questions
+
+🐛 **Report Issues**
+- [GitHub Issues](https://github.com/yourusername/chessafari/issues) - Bug reports and feature requests
+- Email: support@chessafari.com
+
+💡 **Community**
+- [Discord Server](#) - Join our community
+- [Twitter](https://twitter.com/chessafari) - Follow for updates
+- [Reddit](#) - r/chessafari community
+
+### Contact
+
+- **General Inquiries**: hello@chessafari.com
+- **Support**: support@chessafari.com
+- **Business**: business@chessafari.com
+- **Press**: press@chessafari.com
 
 ---
 
-**Made with ♟️ and ❤️ by the Chessafari team**
+<div align="center">
 
-*Start your chess safari today!*
+### 🌟 Star this project if you find it useful!
+
+**Built with ♟️ and ❤️ for the chess community**
+
+[⬆ Back to Top](#chessafari-️)
+
+---
+
+*Begin your chess safari today — where every move is a step toward mastery.*
+
+![GitHub stars](https://img.shields.io/github/stars/yourusername/chessafari?style=social)
+![GitHub forks](https://img.shields.io/github/forks/yourusername/chessafari?style=social)
+
+</div>
