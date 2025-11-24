@@ -263,8 +263,7 @@
 - **Autoprefixer** - CSS vendor prefixing
 
 ### Deployment & Hosting
-- **Netlify** - Production hosting with CI/CD
-- **Netlify Functions** - Serverless function support
+- **Vercel** - Production hosting with CI/CD
 - **Git Integration** - Automatic deployments
 
 ## 📁 Project Structure
@@ -302,8 +301,6 @@ chessafari/
 ├── public/                 # Static assets
 │   ├── _headers           # Caching & security headers
 │   └── ...
-├── netlify.toml           # Netlify deployment config
-├── NETLIFY_DEPLOYMENT.md  # Deployment guide
 └── package.json
 ```
 
@@ -375,41 +372,7 @@ chessafari/
 
 ## 📦 Deployment
 
-### Netlify Deployment (Recommended)
-
-Chessafari is optimized for Netlify deployment with automatic CI/CD.
-
-**Quick Deploy:**
-
-1. **Connect Repository**
-   - Login to [Netlify](https://netlify.com)
-   - Click "Add new site" → "Import an existing project"
-   - Connect your Git repository (GitHub, GitLab, Bitbucket)
-
-2. **Configure Build Settings**
-   - Build command: `npm run build`
-   - Publish directory: `dist`
-   - Node version: 18 or higher
-
-3. **Environment Variables**
-   Go to Site settings → Environment variables and add:
-   ```
-   VITE_SUPABASE_URL=your_backend_url
-   VITE_SUPABASE_PUBLISHABLE_KEY=your_anon_key
-   VITE_SUPABASE_PROJECT_ID=your_project_id
-   ```
-
-4. **Deploy**
-   - Click "Deploy site"
-   - Netlify will automatically deploy on every push to main branch
-
-**Custom Domain Setup:**
-- Navigate to Domain settings in Netlify
-- Add your custom domain
-- Configure DNS records as instructed
-- SSL certificate is automatically provisioned
-
-### Vercel Deployment
+### Vercel Deployment (Recommended)
 
 1. Import your repository to [Vercel](https://vercel.com)
 2. Configure:
@@ -475,11 +438,6 @@ VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=your-anon-key
 VITE_SUPABASE_PROJECT_ID=your-project-id
 ```
-
-**Production (Netlify):**
-1. Go to Site settings → Environment variables
-2. Add each variable with its value
-3. Redeploy if necessary
 
 **Production (Vercel):**
 1. Go to Project settings → Environment Variables
