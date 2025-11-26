@@ -1,19 +1,6 @@
 # Chessafari ♟️🦁
 
-<div align="center">
-
-**Your Ultimate Chess Learning & Playing Platform**
-
-[![React](https://img.shields.io/badge/React-18.3.1-blue.svg)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.5.3-blue.svg)](https://www.typescriptlang.org/)
-[![Lovable Cloud](https://img.shields.io/badge/Backend-Lovable_Cloud-green.svg)](https://lovable.dev)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-
-[Live Demo](https://chessafari.lovable.app) | [Documentation](#documentation) | [Report Bug](issues/) | [Request Feature](issues/)
-
-</div>
-
----
+live link https://chessafari.vercel.app/
 
 ## 📋 Table of Contents
 
