@@ -60,7 +60,8 @@ export const FloatingInstallButton = () => {
         setIsInstalled(true);
       }
       setDeferredPrompt(null);
-    } else if (isIOS) {
+    } else {
+      // Show tooltip with instructions for any device
       setShowTooltip(true);
     }
   };
@@ -72,11 +73,6 @@ export const FloatingInstallButton = () => {
 
   // Don't show if already installed or dismissed
   if (isInstalled || isDismissed) {
-    return null;
-  }
-
-  // Only show if we can install (has prompt or is iOS)
-  if (!deferredPrompt && !isIOS) {
     return null;
   }
 
@@ -101,9 +97,12 @@ export const FloatingInstallButton = () => {
                 <Smartphone className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h4 className="font-semibold text-sm mb-1">Install on iOS</h4>
+                <h4 className="font-semibold text-sm mb-1">Install Chessafari</h4>
                 <p className="text-xs text-muted-foreground">
-                  Tap the share button <span className="inline-block px-1">⎙</span> then "Add to Home Screen"
+                  {isIOS 
+                    ? <>Tap the share button <span className="inline-block px-1">⎙</span> then "Add to Home Screen"</>
+                    : <>Open browser menu and select "Install app" or look for the install icon in your address bar</>
+                  }
                 </p>
               </div>
             </div>
