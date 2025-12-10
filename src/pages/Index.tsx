@@ -5,6 +5,7 @@ import { CommunityBar } from "@/components/CommunityBar";
 import { HeroSection } from "@/components/home/HeroSection";
 import { FeaturesSection } from "@/components/home/FeaturesSection";
 import { Footer } from "@/components/Footer";
+import { FloatingInstallButton } from "@/components/FloatingInstallButton";
 
 
 const Index = () => {
@@ -38,6 +39,7 @@ const Index = () => {
       </div>
 
       <Footer />
+      <FloatingInstallButton />
     </div>
   );
 };
