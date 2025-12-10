@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Play, Puzzle, Trophy, Download } from "lucide-react";
+import { Play, Puzzle, Trophy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
@@ -134,15 +134,6 @@ export const HeroSection = () => {
             >
               <Puzzle className="w-5 h-5 mr-2" />
               Solve Puzzles
-            </Button>
-            <Button 
-              size="lg" 
-              variant="secondary"
-              className="text-lg px-8 h-14 hover:scale-105 transition-all"
-              onClick={() => navigate("/install")}
-            >
-              <Download className="w-5 h-5 mr-2" />
-              Get the App
             </Button>
           </div>
         </div>
