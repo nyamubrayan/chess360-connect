@@ -27,6 +27,7 @@ const Highlights = lazy(() => import("./pages/Highlights"));
 const NewsAndEvents = lazy(() => import("./pages/NewsAndEvents"));
 const SharedGameAnalysis = lazy(() => import("./pages/SharedGameAnalysis"));
 const ChessClock = lazy(() => import("./pages/ChessClock"));
+const Install = lazy(() => import("./pages/Install"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -62,6 +63,7 @@ const App = () => (
                 <Route path="/news" element={<NewsAndEvents />} />
                 <Route path="/game-analysis/:gameId" element={<SharedGameAnalysis />} />
                 <Route path="/chess-clock" element={<ChessClock />} />
+                <Route path="/install" element={<Install />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
