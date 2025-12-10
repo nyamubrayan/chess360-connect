@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Download, X, Smartphone } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Download, X } from "lucide-react";
+import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -11,9 +12,8 @@ interface BeforeInstallPromptEvent extends Event {
 export const FloatingInstallButton = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
-  const [showTooltip, setShowTooltip] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Check if dismissed in this session
@@ -21,10 +21,6 @@ export const FloatingInstallButton = () => {
     if (dismissed) {
       setIsDismissed(true);
     }
-
-    // Check if on iOS
-    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    setIsIOS(iOS);
 
     // Check if already installed
     if (window.matchMedia("(display-mode: standalone)").matches) {
@@ -54,6 +50,7 @@ export const FloatingInstallButton = () => {
 
   const handleInstall = async () => {
     if (deferredPrompt) {
+      // Immediately trigger the native install prompt
       await deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       if (outcome === "accepted") {
@@ -61,8 +58,8 @@ export const FloatingInstallButton = () => {
       }
       setDeferredPrompt(null);
     } else {
-      // Show tooltip with instructions for any device
-      setShowTooltip(true);
+      // Redirect to install page with detailed instructions
+      navigate("/install");
     }
   };
 
@@ -77,64 +74,30 @@ export const FloatingInstallButton = () => {
   }
 
   return (
-    <>
-      <AnimatePresence>
-        {showTooltip && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-24 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 z-50 bg-card border border-border rounded-xl p-4 shadow-2xl"
-          >
-            <button
-              onClick={() => setShowTooltip(false)}
-              className="absolute top-2 right-2 p-1 rounded-full hover:bg-muted transition-colors"
-            >
-              <X className="w-4 h-4 text-muted-foreground" />
-            </button>
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Smartphone className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <h4 className="font-semibold text-sm mb-1">Install Chessafari</h4>
-                <p className="text-xs text-muted-foreground">
-                  {isIOS 
-                    ? <>Tap the share button <span className="inline-block px-1">⎙</span> then "Add to Home Screen"</>
-                    : <>Open browser menu and select "Install app" or look for the install icon in your address bar</>
-                  }
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <motion.div
-        initial={{ opacity: 0, y: 100 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 2, duration: 0.5 }}
-        className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-auto z-40"
-      >
-        <div className="bg-card/95 backdrop-blur-md border border-border rounded-full shadow-2xl p-1.5 flex items-center gap-2">
-          <Button
-            onClick={handleInstall}
-            size="sm"
-            className="rounded-full px-4 gap-2"
-          >
-            <Download className="w-4 h-4" />
-            <span className="hidden sm:inline">Install App</span>
-            <span className="sm:hidden">Get App</span>
-          </Button>
-          <button
-            onClick={handleDismiss}
-            className="p-2 rounded-full hover:bg-muted transition-colors"
-            aria-label="Dismiss"
-          >
-            <X className="w-4 h-4 text-muted-foreground" />
-          </button>
-        </div>
-      </motion.div>
-    </>
+    <motion.div
+      initial={{ opacity: 0, y: 100 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 1.5, duration: 0.5 }}
+      className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-auto z-40"
+    >
+      <div className="bg-card/95 backdrop-blur-md border border-border rounded-full shadow-2xl p-1.5 flex items-center gap-2">
+        <Button
+          onClick={handleInstall}
+          size="sm"
+          className="rounded-full px-4 gap-2"
+        >
+          <Download className="w-4 h-4" />
+          <span className="hidden sm:inline">Install App</span>
+          <span className="sm:hidden">Get App</span>
+        </Button>
+        <button
+          onClick={handleDismiss}
+          className="p-2 rounded-full hover:bg-muted transition-colors"
+          aria-label="Dismiss"
+        >
+          <X className="w-4 h-4 text-muted-foreground" />
+        </button>
+      </div>
+    </motion.div>
   );
 };
