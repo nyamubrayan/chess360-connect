@@ -305,7 +305,10 @@ export const ChessPrinciples = () => {
                           </span>
                         </AccordionTrigger>
                         <AccordionContent className="text-muted-foreground leading-relaxed pl-11">
-                          {p.body}
+                          <p>{p.body}</p>
+                          {principleDemos[p.n] && (
+                            <PrincipleDemo demo={principleDemos[p.n]} />
+                          )}
                         </AccordionContent>
                       </AccordionItem>
                     ))}
