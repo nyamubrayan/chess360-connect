@@ -16,6 +16,8 @@ import {
   Lightbulb,
   Search,
 } from 'lucide-react';
+import { PrincipleDemo } from './PrincipleDemo';
+import { principleDemos } from './principleDemos';
 
 type Principle = { n: number; title: string; body: string };
 
@@ -303,7 +305,10 @@ export const ChessPrinciples = () => {
                           </span>
                         </AccordionTrigger>
                         <AccordionContent className="text-muted-foreground leading-relaxed pl-11">
-                          {p.body}
+                          <p>{p.body}</p>
+                          {principleDemos[p.n] && (
+                            <PrincipleDemo demo={principleDemos[p.n]} />
+                          )}
                         </AccordionContent>
                       </AccordionItem>
                     ))}
