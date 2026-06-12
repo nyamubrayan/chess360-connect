@@ -140,7 +140,7 @@ export default function Training() {
         </div>
 
         <Tabs defaultValue="modules" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-8">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 mb-8">
             <TabsTrigger value="basics" className="text-sm sm:text-base">
               <GraduationCap className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">Chess Basics</span>
@@ -150,6 +150,11 @@ export default function Training() {
               <Brain className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">Training Modules</span>
               <span className="sm:hidden">Modules</span>
+            </TabsTrigger>
+            <TabsTrigger value="principles" className="text-sm sm:text-base">
+              <Swords className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">101 Principles</span>
+              <span className="sm:hidden">Rules</span>
             </TabsTrigger>
             <TabsTrigger value="my-notes" className="text-sm sm:text-base">
               <BookmarkCheck className="w-4 h-4 mr-2" />
