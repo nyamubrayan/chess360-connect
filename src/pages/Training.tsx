@@ -431,6 +431,11 @@ export default function Training() {
             </Card>
           </TabsContent>
 
+          {/* 101 Principles Tab */}
+          <TabsContent value="principles" className="space-y-8">
+            <ChessPrinciples />
+          </TabsContent>
+
           {/* Smart Chess Mentor Training Tab */}
           <TabsContent value="ai-coach" className="space-y-8">
             <AICoachPanel />
