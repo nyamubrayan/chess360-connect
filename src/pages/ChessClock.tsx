@@ -59,7 +59,7 @@ const ChessClock = () => {
   } | null>(null);
   
   const { playMove } = useChessSounds();
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
 
   // Generate a random 6-character code
