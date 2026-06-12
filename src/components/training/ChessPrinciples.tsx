@@ -16,6 +16,8 @@ import {
   Lightbulb,
   Search,
 } from 'lucide-react';
+import { PrincipleDemo } from './PrincipleDemo';
+import { principleDemos } from './principleDemos';
 
 type Principle = { n: number; title: string; body: string };
 
