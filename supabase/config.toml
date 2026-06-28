@@ -39,3 +39,6 @@ verify_jwt = true
 [functions.fetch-chess-news]
 verify_jwt = false
 
+[functions.chessafari-ai]
+verify_jwt = false
+
