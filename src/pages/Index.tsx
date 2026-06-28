@@ -40,7 +40,6 @@ const Index = () => {
 
       <Footer />
       <FloatingInstallButton />
-      <ChessafariAIWidget />
     </div>
   );
 };
