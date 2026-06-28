@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Brain, Target, BookOpen, TrendingUp, ArrowRight, GraduationCap, Clock, Grid3x3, BookmarkCheck, Swords } from 'lucide-react';
+import { Brain, Target, BookOpen, TrendingUp, ArrowRight, GraduationCap, Clock, Grid3x3, BookmarkCheck, Swords, Rocket } from 'lucide-react';
 import { CommunityBar } from '@/components/CommunityBar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InteractivePieceDemo } from '@/components/chess/InteractivePieceDemo';
@@ -11,6 +11,7 @@ import { AICoachPanel } from '@/components/training/AICoachPanel';
 import { TrainingHistory } from '@/components/training/TrainingHistory';
 import { MyNotes } from '@/components/lessons/MyNotes';
 import { ChessPrinciples } from '@/components/training/ChessPrinciples';
+import { LearningPath } from '@/components/training/LearningPath';
 
 export default function Training() {
   const navigate = useNavigate();
@@ -139,8 +140,13 @@ export default function Training() {
           </p>
         </div>
 
-        <Tabs defaultValue="modules" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 mb-8">
+        <Tabs defaultValue="roadmap" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-7 mb-8">
+            <TabsTrigger value="roadmap" className="text-sm sm:text-base">
+              <Rocket className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">Roadmap</span>
+              <span className="sm:hidden">Path</span>
+            </TabsTrigger>
             <TabsTrigger value="basics" className="text-sm sm:text-base">
               <GraduationCap className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">Chess Basics</span>
@@ -172,6 +178,12 @@ export default function Training() {
               <span className="sm:hidden">History</span>
             </TabsTrigger>
           </TabsList>
+
+          {/* Roadmap Tab */}
+          <TabsContent value="roadmap" className="space-y-8">
+            <LearningPath />
+          </TabsContent>
+
 
           {/* Chess Basics Tab */}
           <TabsContent value="basics" className="space-y-8">

@@ -19,6 +19,16 @@ export const ChessafariAIWidget = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { prompt?: string } | undefined;
+      setOpen(true);
+      if (detail?.prompt) setInput(detail.prompt);
+    };
+    window.addEventListener("open-chessafari-ai", handler);
+    return () => window.removeEventListener("open-chessafari-ai", handler);
+  }, []);
+
+  useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, loading]);
 
