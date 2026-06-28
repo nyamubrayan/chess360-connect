@@ -6,6 +6,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { z } from 'zod';
+
+const messageSchema = z.string().trim().min(1, 'Message cannot be empty').max(500, 'Message must be less than 500 characters');
 
 interface GameChatProps {
   gameId: string;
