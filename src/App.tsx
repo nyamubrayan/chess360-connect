@@ -33,6 +33,12 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
+const GlobalAI = () => {
+  const { pathname } = useLocation();
+  if (pathname.startsWith("/auth")) return null;
+  return <ChessafariAIWidget />;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
@@ -69,6 +75,7 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
+            <GlobalAI />
           </main>
         </BrowserRouter>
       </TooltipProvider>
