@@ -85,14 +85,18 @@ export const GameChat = ({
   };
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim()) return;
+    const validation = messageSchema.safeParse(newMessage);
+    if (!validation.success) {
+      toast.error(validation.error.errors[0].message);
+      return;
+    }
 
     const { error } = await supabase
       .from('game_chat_messages' as any)
       .insert({
         game_id: gameId,
         user_id: currentUserId,
-        message: newMessage.trim(),
+        message: validation.data,
       });
 
     if (error) {
