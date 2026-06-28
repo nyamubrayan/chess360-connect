@@ -140,8 +140,13 @@ export default function Training() {
           </p>
         </div>
 
-        <Tabs defaultValue="modules" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 mb-8">
+        <Tabs defaultValue="roadmap" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-7 mb-8">
+            <TabsTrigger value="roadmap" className="text-sm sm:text-base">
+              <Rocket className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">Roadmap</span>
+              <span className="sm:hidden">Path</span>
+            </TabsTrigger>
             <TabsTrigger value="basics" className="text-sm sm:text-base">
               <GraduationCap className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">Chess Basics</span>
@@ -173,6 +178,12 @@ export default function Training() {
               <span className="sm:hidden">History</span>
             </TabsTrigger>
           </TabsList>
+
+          {/* Roadmap Tab */}
+          <TabsContent value="roadmap" className="space-y-8">
+            <LearningPath />
+          </TabsContent>
+
 
           {/* Chess Basics Tab */}
           <TabsContent value="basics" className="space-y-8">
