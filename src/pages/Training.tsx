@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Brain, Target, BookOpen, TrendingUp, ArrowRight, GraduationCap, Clock, Grid3x3, BookmarkCheck, Swords } from 'lucide-react';
+import { Brain, Target, BookOpen, TrendingUp, ArrowRight, GraduationCap, Clock, Grid3x3, BookmarkCheck, Swords, Rocket } from 'lucide-react';
 import { CommunityBar } from '@/components/CommunityBar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InteractivePieceDemo } from '@/components/chess/InteractivePieceDemo';
@@ -11,6 +11,7 @@ import { AICoachPanel } from '@/components/training/AICoachPanel';
 import { TrainingHistory } from '@/components/training/TrainingHistory';
 import { MyNotes } from '@/components/lessons/MyNotes';
 import { ChessPrinciples } from '@/components/training/ChessPrinciples';
+import { LearningPath } from '@/components/training/LearningPath';
 
 export default function Training() {
   const navigate = useNavigate();
